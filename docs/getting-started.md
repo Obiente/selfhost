@@ -28,6 +28,41 @@ Choose one installation method. The dashboard and service catalog are included i
 the CLI, but you choose which command to run. Docker with Compose is needed to run
 containers; generating a standalone setup does not require a running engine.
 
+### Install a binary directly
+
+No Node.js, npm, Cargo or compiler is required. Linux, macOS and Windows are
+supported on x64 and ARM64.
+
+Linux or macOS:
+
+```sh
+curl --proto '=https' --tlsv1.2 -fsSL https://github.com/Obiente/selfhost/releases/latest/download/install.sh | sh -s -- --version 0.1.1
+```
+
+Windows PowerShell:
+
+```powershell
+& ([scriptblock]::Create((Invoke-RestMethod https://github.com/Obiente/selfhost/releases/latest/download/install.ps1))) -Version 0.1.1
+```
+
+The installer checks the download's SHA-256 checksum and reported version before
+installing. It uses `~/.local/bin` on Linux/macOS or `%LOCALAPPDATA%\Selfhost\bin`
+on Windows. It needs no administrator access and starts no services. The shell
+installer prints PATH guidance; the Windows installer adds its directory to your
+user PATH. Open a new terminal if needed, then run `selfhost --help`.
+
+You can download and inspect the installer before running it, or download the
+binary directly from [the release assets](https://github.com/Obiente/selfhost/releases/tag/v0.1.1)
+and verify it against `BINARY-SHA256SUMS`. Rename it to `selfhost` on Linux/macOS
+or keep the platform's executable extension on Windows. On Linux/macOS, make it
+executable with `chmod +x selfhost` and put it on PATH.
+
+For a custom location use `--bin-dir DIRECTORY` or PowerShell `-BinDir DIRECTORY`.
+PowerShell `-NoModifyPath` leaves PATH unchanged. See [updates](updates.md#direct-binary-installations)
+for replacement and rollback. These downloads have checksums but are not yet
+signed or notarized; checksums from the same release do not independently
+authenticate its publisher.
+
 ### npx
 
 With Node.js 22 or newer:

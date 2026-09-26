@@ -134,6 +134,9 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with: { path: .local/inputs, pattern: '*-*' }
       - run: node scripts/assemble-npm.mjs .local/inputs .local/npm
+      - run: node scripts/assemble-binary-release.mjs .local/npm .local/binary-release
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with: { name: binary-release, path: .local/binary-release, if-no-files-found: error }
       - run: mkdir -p .local/release && npm pack ./.local/npm --pack-destination .local/release
       - run: cd .local/release && sha256sum *.tgz > SHA256SUMS
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -166,6 +169,13 @@ jobs:
           npm install --global pnpm@10.34.5
           pnpm --config.manage-package-manager-versions=false dlx "$package" --version
           pnpx "$package" --version
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with: { name: binary-release, path: .local/binary-release }
+      - if: runner.os != 'Windows'
+        run: sh scripts/test-binary-installer.sh .local/binary-release
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/test-binary-installer.ps1 -Assets .local/binary-release
       - name: Verify installed embedded app
         run: |
           binary=$(node -e 'const p=process.platform,a=process.arch;console.log(`.local/installed/node_modules/selfhost/native/selfhost-${p}-${a}${p==="win32"?".exe":""}`)')

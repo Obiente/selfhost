@@ -121,6 +121,13 @@ smoke test and a separate workflow artifact. Recovery does not rebuild binaries,
 move the tag or publish Cargo again. Use this only for an
 already reviewed release; it cannot bypass failed build or installation tests.
 
+The `binary-release` artifact contains the six native executables, shell and
+PowerShell installers, and `BINARY-SHA256SUMS`. It is assembled from the same
+checksum-verified binaries bundled in npm. Installation tests cover refusal to
+overwrite, corrupt-download rejection, explicit replacement and backup on the
+six native runners. Upload these files together as GitHub Release assets to enable
+direct installation. Keep binary checksums separate from npm/crate archive checksums.
+
 This workflow does not create a GitHub Release or publish the documentation site.
 Those are separate publication actions.
 

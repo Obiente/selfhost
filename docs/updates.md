@@ -12,7 +12,8 @@ does not install anything. The dashboard Updates button, terminal UI and
 | Official crates.io release installed by Cargo          | Build an exact release in private staging, review activation, then replace the executable after Selfhost exits.                                                 |
 | Verified bundled npm launcher                          | Report the published launcher version and exact `npx --package=selfhost@VERSION selfhost` invocation. Existing npm packages and npx caches are not overwritten. |
 | Debug build, source checkout or Cargo path/git install | Instructions to update the checkout and rebuild. Selfhost never overwrites these builds.                                                                        |
-| Unidentified standalone binary                         | Use its original installation method. No automatic binary download or replacement.                                                                              |
+| Direct release binary                                  | Rerun the release installer with explicit replacement and a retained backup. Version 0.1.1 does not automate this through `selfhost update`.                    |
+| Other standalone binary                                | Use its original installation method. No automatic binary download or replacement.                                                                              |
 
 Cargo identification requires a release executable in the recorded installation's
 `bin` directory, matching official crates.io installation metadata and the current
@@ -20,6 +21,37 @@ version. A binary filename alone does not enable updates. npm identification
 checks the bundled manifest, package identity and executable checksum. The legacy
 public npm package is not advertised as a new CLI launcher unless its package
 metadata identifies the Obiente launcher.
+
+## Direct binary installations
+
+Stop Selfhost before replacing its executable, especially a persistent dashboard
+service on Windows. Back up its private data before upgrading. Download the
+installer again from the [latest release](https://github.com/Obiente/selfhost/releases/latest),
+then explicitly allow replacement:
+
+```sh
+sh install.sh --version 0.1.1 --force
+```
+
+```powershell
+./install.ps1 -Version 0.1.1 -Force
+```
+
+Choose the version you want; omit the version option to use the latest stable
+release. Use the same custom installation directory if you originally chose one.
+The installer verifies the checksum and executable version before replacing the
+installed file, and keeps the previous binary beside it with a `.backup.` suffix.
+A failed download or verification leaves the current installation intact. Restart
+the dashboard afterward using its existing service or command.
+
+To roll back, stop Selfhost and restore the printed backup path to the original
+executable path. Binary rollback does not reverse application or configuration
+changes. Removing the installed executable and its PATH entry uninstalls the CLI;
+it does not remove your projects, containers or private data.
+
+In version 0.1.1, `selfhost update` treats direct binaries as standalone installs
+and directs you to the original installation method. Its staged activation flow
+below applies to official Cargo installations.
 
 ## Review, stage and activate
 
