@@ -75,6 +75,31 @@ test('native override preserves arguments, input, working directory and exit sta
   }
 });
 
+test(
+  'Windows launches native binaries from long package-cache paths',
+  { skip: process.platform !== 'win32' },
+  () => {
+    const directory = mkdtempSync(join(tmpdir(), 'selfhost-launcher-'));
+    try {
+      const deep = join(directory, 'package-cache-'.repeat(8), 'nested-package-'.repeat(8));
+      mkdirSync(deep, { recursive: true });
+      const binary = join(deep, 'selfhost.exe');
+      assert.ok(binary.length > 260);
+      copyFileSync(process.execPath, binary);
+      const result = spawnSync(process.execPath, [launcher, '--version'], {
+        cwd: directory,
+        encoding: 'utf8',
+        env: { ...process.env, SELFHOST_BINARY: binary },
+        timeout: 10000,
+      });
+      assert.equal(result.status, 0, result.stderr);
+      assert.equal(result.stdout.trim(), process.version);
+    } finally {
+      clean(directory);
+    }
+  },
+);
+
 test('bundled binaries require a valid checksum and confined manifest path', () => {
   const directory = mkdtempSync(join(tmpdir(), 'selfhost-launcher-'));
   try {

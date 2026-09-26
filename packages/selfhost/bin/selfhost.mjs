@@ -2,7 +2,7 @@
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { constants, accessSync, readFileSync, realpathSync, statSync } from 'node:fs';
-import { delimiter, dirname, isAbsolute, join, resolve } from 'node:path';
+import { delimiter, dirname, isAbsolute, join, resolve, toNamespacedPath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -87,7 +87,8 @@ function findBinary() {
 }
 
 try {
-  const child = spawn(findBinary(), process.argv.slice(2), {
+  // pnpm's nested Windows cache can exceed MAX_PATH even when file reads succeed.
+  const child = spawn(toNamespacedPath(findBinary()), process.argv.slice(2), {
     cwd: process.cwd(),
     env: process.env,
     stdio: 'inherit',
