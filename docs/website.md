@@ -37,6 +37,49 @@ Before deployment, choose the public hostname and any base path, verify navigati
 and search, then review the generated files. A successful local build is not a
 public deployment. No tracking, analytics or external account is required.
 
+## Deploy on Obiente Cloud
+
+Create a Git-backed application with these settings:
+
+| Setting                                            | Value                                                    |
+| -------------------------------------------------- | -------------------------------------------------------- |
+| Repository                                         | `Obiente/selfhost`                                       |
+| Branch                                             | `main`                                                   |
+| Build type                                         | Dockerfile                                               |
+| Build context                                      | Repository root (`.` or `/`, depending on the interface) |
+| Dockerfile path                                    | `site/Dockerfile`                                        |
+| Container port                                     | `8080`                                                   |
+| Domain                                             | `selfhost.obiente.org`                                   |
+| HTTPS                                              | Enable at the Obiente Cloud proxy                        |
+| Health check                                       | HTTP `GET /` on port `8080`                              |
+| Environment variables, secrets, persistent volumes | None required                                            |
+
+Point the domain's DNS record at your Obiente Cloud ingress, then deploy. The proxy
+terminates HTTPS and forwards HTTP to the container's port 8080. The site is built
+with Node.js and served by Caddy as a non-root user. The running container contains
+only the static website and needs no Docker socket, database or Selfhost API access.
+
+The build context must include the repository root: catalogue generation reads
+`catalog/`, shared Vue components and the root build dependencies. The Dockerfile's
+ignore file excludes local data, existing builds and blog drafts. Only the generated
+website is copied into the runtime image. `/blog/` remains unavailable.
+
+Caddy resolves clean URLs such as `/getting-started` and `/apps/nextcloud` to their
+generated HTML pages, including on a direct visit or refresh. Unknown URLs return
+the generated 404 page with HTTP status 404. Hashed assets can be cached for a year.
+
+For a local container check:
+
+```sh
+docker build -f site/Dockerfile -t selfhost-site .
+docker run --rm -p 127.0.0.1:8080:8080 selfhost-site
+```
+
+After deployment, verify HTTPS, a direct visit to `/apps/nextcloud`, search and the
+CLI selector. Confirm `/blog/` and an unknown URL return 404. The sitemap uses
+`https://selfhost.obiente.org`; update `site/.vitepress/config.mts` if that changes.
+This configuration expects the site at the domain root.
+
 ## Public catalogue
 
 The [full catalogue](/catalogue) is generated before website development and builds

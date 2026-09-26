@@ -12,6 +12,7 @@ export default defineConfig({
   srcExclude: ['blog/**'],
   appearance: 'force-dark',
   cleanUrls: true,
+  sitemap: { hostname: 'https://selfhost.obiente.org' },
   lastUpdated: false,
   markdown: { config: cliMarkdown },
   head: [['link', { rel: 'icon', href: '/brand/selfhost-monogram.svg', type: 'image/svg+xml' }]],
