@@ -23,7 +23,20 @@ env:
   RUST_TOOLCHAIN: 1.98.1
 
 jobs:
+  dashboard:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: '24' }
+      - run: npm ci --prefix ui && npm run build --prefix ui
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with: { name: dashboard, path: ui/dist, if-no-files-found: error }
+
   source:
+    needs: dashboard
     runs-on: ubuntu-22.04
     timeout-minutes: 40
     env:
@@ -36,7 +49,8 @@ jobs:
       - run: rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --component rustfmt --component clippy
       - run: rustup default "$RUST_TOOLCHAIN"
       - run: npm ci --ignore-scripts && npm run format:check
-      - run: npm ci --prefix ui && npm run build --prefix ui
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with: { name: dashboard, path: ui/dist }
       - run: node scripts/check-release.mjs
       - run: node --test packages/selfhost/test/*.test.mjs scripts/release.test.mjs scripts/catalogue-data.test.mjs scripts/catalog-maintenance.test.mjs site/.vitepress/cli-markdown.test.mjs
       - run: cargo fmt --all --check && cargo clippy --locked --all-targets -- -D warnings
@@ -53,12 +67,10 @@ jobs:
           node scripts/smoke-release.mjs .local/cargo-installed/bin/selfhost
       - run: npm ci --prefix site && npm run build --prefix site
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with: { name: dashboard, path: ui/dist, if-no-files-found: error }
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with: { name: crate, path: 'target/package/*.crate', if-no-files-found: error }
 
   native:
-    needs: source
+    needs: dashboard
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -94,10 +106,8 @@ jobs:
       - run: rustup default "$RUST_TOOLCHAIN"
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - uses: ./.github/actions/setup-compose
       - name: Build embedded release
-        env:
-          CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then export RUSTFLAGS='-C target-feature=+crt-static'; fi
           cargo build --release --locked --target '${{ matrix.target }}'
@@ -108,7 +118,7 @@ jobs:
         with: { name: '${{ matrix.host }}', path: .local/platform, if-no-files-found: error }
 
   npm-package:
-    needs: native
+    needs: [source, native]
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
@@ -141,6 +151,7 @@ jobs:
         with: { node-version: '24' }
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with: { name: npm-release, path: .local/release }
+      - uses: ./.github/actions/setup-compose
       - name: Install with lifecycle scripts disabled
         run: |
           package=$(find "$PWD/.local/release" -name '*.tgz' -type f)

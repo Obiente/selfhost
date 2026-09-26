@@ -19,7 +19,11 @@ try {
       timeout: 30000,
       windowsHide: true,
     });
-    assert.equal(result.status, 0, result.stderr);
+    assert.equal(
+      result.status,
+      0,
+      result.error?.message || result.stderr || `Process terminated by ${result.signal}`,
+    );
     return result.stdout;
   };
   assert.equal(run(['--version']).trim(), `selfhost ${version}`);
