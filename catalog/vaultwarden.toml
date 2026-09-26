@@ -1,0 +1,33 @@
+schema = 1
+id = "vaultwarden"
+name = "Vaultwarden"
+description = "Store passwords and share credentials with your household."
+category = "Security"
+image = "vaultwarden/server:1.37.3"
+port = 8081
+container_port = 80
+data_path = "/data"
+docs = "https://github.com/dani-garcia/vaultwarden/wiki"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/vaultwarden.svg"
+
+# Initially bound to localhost. Set DOMAIN and configure HTTPS before exposing it.
+[environment]
+SIGNUPS_ALLOWED = "true"
+
+[database]
+engines = ["mysql", "mariadb"]
+engine = "postgres"
+
+[database.environment]
+DATABASE_URL = "${DATABASE_URL}"
+
+[database.engine_environment.mysql]
+DATABASE_URL = "${DATABASE_URL}?ssl_mode=disabled"
+
+[database.engine_environment.mariadb]
+DATABASE_URL = "${DATABASE_URL}?ssl_mode=disabled"
+
+[database.engine_ssl_modes]
+postgres = ["disable","require","verify-full"]
+mysql = ["disable"]
+mariadb = ["disable"]

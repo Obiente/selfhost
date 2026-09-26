@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "name": "Beszel Hub",
+  "documentation": "https://beszel.dev/guide/environment-variables",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "public-url",
+      "label": "Public URL",
+      "kind": "string",
+      "path": ["APP_URL"]
+    },
+    {
+      "id": "first-user",
+      "label": "Initial administrator email",
+      "kind": "string",
+      "path": ["USER_EMAIL"],
+      "description": "Used only when the hub has no users."
+    },
+    {
+      "id": "first-password",
+      "label": "Initial administrator password",
+      "kind": "secret",
+      "path": ["USER_PASSWORD"],
+      "description": "Used only when creating the first user. Changing this does not reset existing passwords."
+    },
+    {
+      "id": "user-creation",
+      "label": "Create accounts from OIDC",
+      "kind": "string",
+      "path": ["USER_CREATION"],
+      "description": "Configure the provider in the PocketBase admin UI first.",
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "password-auth",
+      "label": "Disable password login",
+      "kind": "string",
+      "path": ["DISABLE_PASSWORD_AUTH"],
+      "description": "Enable only after verifying another login method.",
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "mfa",
+      "label": "Email one-time passwords",
+      "kind": "string",
+      "path": ["MFA_OTP"],
+      "description": "Requires working SMTP.",
+      "choices": ["false", "true", "superusers"]
+    },
+    {
+      "id": "container-details",
+      "label": "Allow container details",
+      "kind": "string",
+      "path": ["CONTAINER_DETAILS"],
+      "description": "Allows users to inspect container metadata and logs.",
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "heartbeat-url",
+      "label": "External heartbeat receiver",
+      "kind": "secret",
+      "path": ["HEARTBEAT_URL"],
+      "description": "Optional status receiver; includes system health details. Treat token-bearing URLs as credentials."
+    },
+    {
+      "id": "heartbeat-method",
+      "label": "Heartbeat HTTP method",
+      "kind": "string",
+      "path": ["HEARTBEAT_METHOD"],
+      "choices": ["GET", "POST", "HEAD"]
+    },
+    {
+      "id": "heartbeat-interval",
+      "label": "Heartbeat interval",
+      "kind": "string",
+      "path": ["HEARTBEAT_INTERVAL"],
+      "description": "Seconds between notifications."
+    }
+  ],
+  "actions": [],
+  "warnings": []
+}

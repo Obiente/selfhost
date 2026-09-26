@@ -1,0 +1,88 @@
+name: Review catalogue updates
+on:
+  workflow_dispatch:
+    inputs:
+      prepare_pr:
+        description: Run disposable upgrade smoke tests and open a draft review PR
+        type: boolean
+        default: false
+  schedule:
+    - cron: '23 6 * * 1'
+
+permissions:
+  contents: read
+concurrency:
+  group: catalogue-updates
+  cancel-in-progress: false
+
+jobs:
+  candidates:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUST_TOOLCHAIN: 1.98.1
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: '24' }
+      - run: npm ci --ignore-scripts
+      - run: node --test scripts/catalog-maintenance.test.mjs
+      - name: Check catalogue icons
+        run: node scripts/check-catalogue-icons.mjs
+      - name: Discover upstream candidates
+        run: node scripts/catalog-maintenance.mjs
+      - name: Avoid duplicate review branches
+        id: review
+        run: |
+          count=$(gh pr list --state open --limit 100 --json headRefName --jq '[.[] | select(.headRefName | startswith("chore/catalog-"))] | length')
+          echo "available=$([ "$count" = 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      - name: Build the candidate validation CLI
+        if: steps.review.outputs.available == 'true' && (github.event_name == 'schedule' || inputs.prepare_pr)
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
+          rustup default "$RUST_TOOLCHAIN"
+          npm ci --prefix ui
+          npm run build --prefix ui
+          cargo build --locked
+      - name: Gate candidate images and prepare recipe changes
+        if: steps.review.outputs.available == 'true' && (github.event_name == 'schedule' || inputs.prepare_pr)
+        run: |
+          node scripts/catalog-maintenance.mjs --prepare --allow-docker-smoke --binary target/debug/selfhost
+          node node_modules/prettier/bin/prettier.cjs --write 'catalog/versions/*.json'
+          cargo test --locked catalog::tests::bundled_manifests_validate
+      - name: Open a draft for human review
+        if: steps.review.outputs.available == 'true' && (github.event_name == 'schedule' || inputs.prepare_pr)
+        run: |
+          if git diff --quiet -- catalog; then exit 0; fi
+          branch="chore/catalog-${GITHUB_RUN_ID}"
+          git switch -c "$branch"
+          git add -- catalog
+          git diff --cached --check
+          while IFS= read -r path; do
+            case "$path" in catalog/*.toml|catalog/versions/*.json) ;; *) echo 'Unexpected staged path'; exit 1 ;; esac
+          done < <(git diff --cached --name-only)
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore(catalog): prepare verified patch candidates'
+          gh auth setup-git
+          git push origin "$branch"
+          cat > "$RUNNER_TEMP/catalog-pr.md" <<'EOF'
+          ## Catalogue candidates
+
+          These explicit patch-stream candidates passed image-manifest inspection, generated Compose validation, isolated startup, an upgrade retaining a persistent-data marker, and declared non-confirming recipe actions on Linux amd64.
+
+          Review upstream release notes, application data migrations, native setup and identity profiles, rollback requirements and other architectures before merging. Semantic version numbers and these smoke tests do not guarantee compatibility. No existing deployment is changed by this PR. The discovery report is attached to this workflow run. Automatic merge and publishing are disabled.
+          EOF
+          gh pr create --draft --head "$branch" --title 'chore(catalog): review app version candidates' --body-file "$RUNNER_TEMP/catalog-pr.md"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: catalogue-candidates
+          path: .local/catalog-candidates.json
+          if-no-files-found: ignore

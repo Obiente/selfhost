@@ -1,0 +1,107 @@
+{
+  "id": "authentik",
+  "icon": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/authentik.svg",
+  "name": "authentik",
+  "category": "Identity",
+  "description": "Run your own identity provider, background worker and private PostgreSQL database.",
+  "inputs": {
+    "port": {
+      "label": "Local HTTP port behind your TLS proxy",
+      "kind": "port",
+      "default": 19000
+    },
+    "admin-email": {
+      "label": "Administrator email",
+      "kind": "email",
+      "default": "admin@example.com"
+    }
+  },
+  "secrets": {
+    "DATABASE_PASSWORD": {
+      "bytes": 24
+    },
+    "ADMIN_PASSWORD": {
+      "bytes": 24,
+      "prefix": "Sh1!"
+    },
+    "AUTHENTIK_SECRET_KEY": {
+      "bytes": 48
+    }
+  },
+  "compose": {
+    "services": {
+      "database": {
+        "image": "postgres:16-alpine",
+        "restart": "unless-stopped",
+        "environment": {
+          "POSTGRES_USER": "authentik",
+          "POSTGRES_DB": "authentik",
+          "POSTGRES_PASSWORD": "${DATABASE_PASSWORD}"
+        },
+        "volumes": ["database:/var/lib/postgresql/data"],
+        "healthcheck": {
+          "test": ["CMD-SHELL", "pg_isready -U authentik -d authentik"],
+          "interval": "5s",
+          "timeout": "5s",
+          "retries": 30
+        }
+      },
+      "identity": {
+        "image": "ghcr.io/goauthentik/server:2026.8.3",
+        "command": ["server"],
+        "restart": "unless-stopped",
+        "shm_size": "512mb",
+        "ports": ["127.0.0.1:{{port}}:9000"],
+        "depends_on": {
+          "database": {
+            "condition": "service_healthy"
+          }
+        },
+        "environment": {
+          "AUTHENTIK_POSTGRESQL__HOST": "database",
+          "AUTHENTIK_POSTGRESQL__NAME": "authentik",
+          "AUTHENTIK_POSTGRESQL__USER": "authentik",
+          "AUTHENTIK_POSTGRESQL__PASSWORD": "${DATABASE_PASSWORD}",
+          "AUTHENTIK_SECRET_KEY": "${AUTHENTIK_SECRET_KEY}"
+        },
+        "volumes": ["data:/data", "templates:/templates"]
+      },
+      "worker": {
+        "image": "ghcr.io/goauthentik/server:2026.8.3",
+        "command": ["worker"],
+        "restart": "unless-stopped",
+        "shm_size": "512mb",
+        "depends_on": {
+          "database": {
+            "condition": "service_healthy"
+          }
+        },
+        "environment": {
+          "AUTHENTIK_POSTGRESQL__HOST": "database",
+          "AUTHENTIK_POSTGRESQL__NAME": "authentik",
+          "AUTHENTIK_POSTGRESQL__USER": "authentik",
+          "AUTHENTIK_POSTGRESQL__PASSWORD": "${DATABASE_PASSWORD}",
+          "AUTHENTIK_SECRET_KEY": "${AUTHENTIK_SECRET_KEY}",
+          "AUTHENTIK_BOOTSTRAP_EMAIL": "{{admin-email}}",
+          "AUTHENTIK_BOOTSTRAP_PASSWORD": "${ADMIN_PASSWORD}"
+        },
+        "volumes": ["data:/data", "templates:/templates"]
+      }
+    },
+    "volumes": {
+      "database": {},
+      "data": {},
+      "templates": {}
+    },
+    "x-selfhost": {
+      "wait_seconds": 600
+    }
+  },
+  "instructions": [
+    "Review the generated Compose and environment, then start the project.",
+    "Route your public identity hostname to the loopback port through a TLS proxy. The proxy must replace incoming forwarding headers. Use a restricted SSH tunnel or verified HTTPS for another server.",
+    "Sign in as akadmin using ADMIN_PASSWORD from the project environment, then change the password and configure your own administrator.",
+    "Create an OAuth2/OpenID Connect application with Authorization Code and PKCE and Selfhost's HTTPS /auth/callback URL. Add its application issuer, client and your exact subject ID in Selfhost login settings.",
+    "Outposts are managed separately; this stack does not grant access to the Docker socket."
+  ]
+}

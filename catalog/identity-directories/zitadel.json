@@ -1,0 +1,34 @@
+{
+  "id": "zitadel",
+  "name": "ZITADEL",
+  "image_markers": ["zitadel/zitadel"],
+  "environment_issuer": ["ZITADEL_ISSUER", "OIDC_ISSUER"],
+  "instructions": [
+    "Use the issuer shown in the application's URLs page. External domain alone does not establish scheme or port.",
+    "Create a Web OIDC application with PKCE or use Selfhost's reviewed registration command. HTTP loopback callbacks require development mode.",
+    "Copy the administrator's exact user ID from Users."
+  ],
+  "native_yaml": [
+    {
+      "file": "zitadel.yaml",
+      "values": {
+        "ZITADEL_EXTERNALDOMAIN": "/ExternalDomain",
+        "ZITADEL_EXTERNALPORT": "/ExternalPort",
+        "ZITADEL_EXTERNALSECURE": "/ExternalSecure"
+      }
+    },
+    {
+      "file": "zitadel.yml",
+      "values": {
+        "ZITADEL_EXTERNALDOMAIN": "/ExternalDomain",
+        "ZITADEL_EXTERNALPORT": "/ExternalPort",
+        "ZITADEL_EXTERNALSECURE": "/ExternalSecure"
+      }
+    }
+  ],
+  "origin_parts": {
+    "host": "ZITADEL_EXTERNALDOMAIN",
+    "port": "ZITADEL_EXTERNALPORT",
+    "secure": "ZITADEL_EXTERNALSECURE"
+  }
+}

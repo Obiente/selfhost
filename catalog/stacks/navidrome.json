@@ -1,0 +1,43 @@
+{
+  "id": "navidrome",
+  "name": "Navidrome",
+  "category": "Media",
+  "description": "Stream a private music library with Subsonic clients and native library management.",
+  "inputs": {
+    "port": {
+      "label": "Local HTTP port",
+      "kind": "port",
+      "default": 4533
+    }
+  },
+  "secrets": {},
+  "compose": {
+    "services": {
+      "navidrome": {
+        "image": "deluan/navidrome:0.64.2",
+        "x-selfhost-app": "navidrome",
+        "restart": "unless-stopped",
+        "ports": ["127.0.0.1:{{port}}:4533"],
+        "volumes": [
+          "data:/data",
+          "music:/music:ro",
+          "./files/navidrome.yaml:/config/navidrome.yaml:ro"
+        ],
+        "command": ["--configfile", "/config/navidrome.yaml"]
+      }
+    },
+    "volumes": {
+      "data": {},
+      "music": {}
+    }
+  },
+  "files": {
+    "navidrome.yaml": "DataFolder: /data\nMusicFolder: /music\nAddress: 0.0.0.0\nPort: 4533\nEnableInsightsCollector: false\nScanner:\n  Schedule: \"@every 1h\"\nBackup:\n  Path: /data/backups\n  Schedule: \"0 3 * * *\"\n  Count: 7\n"
+  },
+  "instructions": [
+    "Review the portable Compose and native configuration before starting.",
+    "The default listener is local-only. Add an authenticated HTTPS proxy before exposing private data.",
+    "Create your administrator on the first visit. Import music into the music volume or replace its mount with a read-only library path in a custom setup.",
+    "Native backups cover the database, not your music. Keep a separate media backup."
+  ]
+}

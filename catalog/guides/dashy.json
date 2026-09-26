@@ -1,0 +1,14 @@
+{
+  "setup": [
+    "The native deployment creates files/dashy.yaml and mounts it as /app/user-data/conf.yml.",
+    "Configure page details, sections and pages in Native settings. Runtime editing is disabled because the portable configuration is mounted read-only."
+  ],
+  "integration_notes": [
+    "Native fields cover layout, theme, status checks, navigation, authentication and Keycloak settings.",
+    "Keep keys and service credentials in appropriate protected configuration and review widget network access."
+  ],
+  "limitations": [
+    "Browser-side authentication alone does not protect all HTTP resources. Use reverse proxy authentication for sensitive deployments.",
+    "Selfhost does not automatically register a Keycloak client or synchronize dashboard links for Dashy."
+  ]
+}

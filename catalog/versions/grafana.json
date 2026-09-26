@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "grafana/grafana:13.2.2",
+      "label": "13.2.2",
+      "notes": "Local Docker startup, generated administrator login, plugin action and volume persistence verified. OIDC browser login must be tested separately."
+    }
+  ],
+  "source": {
+    "repository": "grafana/grafana",
+    "tag_prefix": "v",
+    "image_prefix": "",
+    "stream": "13.2",
+    "automatic": false,
+    "smoke_path": "/api/health",
+    "smoke_status": 200
+  }
+}

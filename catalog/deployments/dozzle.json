@@ -1,0 +1,10 @@
+[
+  {
+    "app": "dozzle",
+    "id": "native",
+    "name": "Native configuration",
+    "description": "Browse container logs with optional scoped users and identity-provider login.",
+    "blueprint": "dozzle",
+    "default": true
+  }
+]

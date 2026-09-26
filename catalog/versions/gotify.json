@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "gotify/server:3.1.1",
+      "label": "3.1.1",
+      "notes": "Local Docker startup, generated administrator login, volume persistence and standalone update workflow verified. Isolated 3.1.0 to 3.1.1 upgrade passed HTTP health, persistent data marker and declared recipe action checks."
+    }
+  ],
+  "source": {
+    "repository": "gotify/server",
+    "tag_prefix": "v",
+    "image_prefix": "",
+    "stream": "3.1",
+    "automatic": true,
+    "smoke_path": "/health",
+    "smoke_status": 200
+  }
+}

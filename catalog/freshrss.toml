@@ -1,0 +1,15 @@
+schema = 1
+id = "freshrss"
+name = "FreshRSS"
+description = "Read and organize RSS feeds on your own server."
+category = "News"
+image = "freshrss/freshrss:1.30.0"
+port = 8083
+container_port = 80
+data_path = "/var/www/FreshRSS/data"
+docs = "https://github.com/FreshRSS/FreshRSS/tree/edge/Docker"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/freshrss.svg"
+
+[environment]
+TZ = "UTC"
+CRON_MIN = "7,37"

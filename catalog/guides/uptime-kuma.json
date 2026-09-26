@@ -1,0 +1,13 @@
+{
+  "setup": [
+    "Open Uptime Kuma and create its initial administrator.",
+    "Create monitors and notification destinations in Uptime Kuma."
+  ],
+  "integration_notes": [
+    "Health checks run the bundled application checker; SQLite connection mode and a mounted CA bundle can be configured."
+  ],
+  "limitations": [
+    "Monitor provisioning and administrator setup use Socket.IO, which this profile does not automate.",
+    "Back up the complete data directory after a clean stop for a consistent manual snapshot."
+  ]
+}

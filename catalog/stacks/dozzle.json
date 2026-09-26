@@ -1,0 +1,52 @@
+{
+  "id": "dozzle",
+  "name": "Dozzle",
+  "category": "Monitoring",
+  "description": "Browse container logs with optional scoped users and identity-provider login.",
+  "inputs": {
+    "port": {
+      "label": "Local HTTP port",
+      "kind": "port",
+      "default": 18083
+    }
+  },
+  "secrets": {},
+  "compose": {
+    "services": {
+      "dozzle": {
+        "image": "amir20/dozzle:v11.1.1",
+        "x-selfhost-app": "dozzle",
+        "restart": "unless-stopped",
+        "ports": ["127.0.0.1:{{port}}:8080"],
+        "volumes": ["data:/data", "/var/run/docker.sock:/var/run/docker.sock:ro"],
+        "environment": {
+          "DOZZLE_NO_ANALYTICS": "true",
+          "DOZZLE_ENABLE_ACTIONS": "false",
+          "DOZZLE_ENABLE_SHELL": "false",
+          "DOZZLE_ENABLE_MCP": "false"
+        }
+      }
+    },
+    "volumes": {
+      "data": {}
+    },
+    "x-selfhost": {
+      "host_resources": {
+        "docker_socket": true
+      }
+    }
+  },
+  "files": {},
+  "instructions": [
+    "Review the portable Compose and native configuration before starting.",
+    "The default listener is local-only. Add an authenticated HTTPS proxy before exposing private data.",
+    "The Docker socket provides root-equivalent access, even with :ro. Keep the dashboard local until authentication is configured.",
+    "To use OIDC, configure provider roles and container filters before enabling it. OIDC replaces local users; verify provider access before restarting."
+  ],
+  "requirements": [
+    {
+      "id": "docker-socket",
+      "label": "Allow Dozzle root-equivalent access to this Docker engine through its socket, even with a read-only mount."
+    }
+  ]
+}

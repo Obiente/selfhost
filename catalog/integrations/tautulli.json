@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "name": "Tautulli",
+  "documentation": "https://github.com/Tautulli/Tautulli/blob/v2.18.1/Dockerfile",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "timezone",
+      "label": "Time zone",
+      "kind": "string",
+      "path": ["TZ"]
+    },
+    {
+      "id": "user-id",
+      "label": "Container user ID",
+      "kind": "string",
+      "path": ["PUID"],
+      "description": "The entrypoint updates ownership of /config."
+    },
+    {
+      "id": "group-id",
+      "label": "Container group ID",
+      "kind": "string",
+      "path": ["PGID"]
+    }
+  ],
+  "warnings": [
+    "Use Tautulli initial setup to connect a Plex server and enable authentication. Its native config.ini and history database remain under /config; environment settings do not rewrite Plex credentials."
+  ],
+  "actions": []
+}

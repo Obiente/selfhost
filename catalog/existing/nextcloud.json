@@ -1,0 +1,31 @@
+{
+  "id": "nextcloud",
+  "name": "Nextcloud Docker",
+  "description": "Connect an existing Nextcloud installation while preserving its deployment and storage.",
+  "image_repositories": ["nextcloud", "docker.io/library/nextcloud"],
+  "container_hint": "nextcloud",
+  "actions": [
+    {
+      "id": "status",
+      "label": "Nextcloud status",
+      "description": "Read version, installation and maintenance status.",
+      "argv": ["php", "/var/www/html/occ", "status", "--output=json"],
+      "user": "www-data"
+    },
+    {
+      "id": "apps",
+      "label": "Installed apps",
+      "description": "List enabled and disabled Nextcloud apps.",
+      "argv": ["php", "/var/www/html/occ", "app:list", "--output=json"],
+      "user": "www-data"
+    },
+    {
+      "id": "update-apps",
+      "label": "Update Nextcloud apps",
+      "description": "Update installed Nextcloud apps after making a backup.",
+      "argv": ["php", "/var/www/html/occ", "app:update", "--all"],
+      "user": "www-data",
+      "write": true
+    }
+  ]
+}

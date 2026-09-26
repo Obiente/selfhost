@@ -1,0 +1,10 @@
+[
+  {
+    "app": "gatus",
+    "id": "native",
+    "name": "Native configuration",
+    "description": "Monitor endpoint conditions and publish a status page with persistent history.",
+    "blueprint": "gatus",
+    "default": true
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "engine": "mariadb",
+  "name": "MariaDB",
+  "image": "mariadb:11.4",
+  "port": 3306,
+  "data_path": "/var/lib/mysql",
+  "healthcheck": {
+    "test": ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"],
+    "interval": "5s",
+    "timeout": "5s",
+    "retries": 40,
+    "start_period": "20s"
+  }
+}

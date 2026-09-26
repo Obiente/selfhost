@@ -1,0 +1,16 @@
+{
+  "setup": [
+    "Choose the native configuration deployment. Persistent application data lives in /data; mount or populate a separate music volume at /music.",
+    "Review Automatic app setup to create the first administrator. Existing users prevent bootstrap from running again.",
+    "Native YAML settings include scanning, transcoding, backups, Subsonic clients and supported external music metadata services."
+  ],
+  "integration_notes": [
+    "Navidrome uses its own local database. Back up the data volume and preserve your media separately.",
+    "External authentication settings trust an upstream authentication proxy. Restrict direct access before trusting identity headers.",
+    "The version check and user list are read-only actions. Library scans require confirmation."
+  ],
+  "limitations": [
+    "Selfhost does not upload media or configure transcoding binaries for you.",
+    "External authentication does not provision an OIDC client directly. Provider and proxy configuration must be completed separately."
+  ]
+}

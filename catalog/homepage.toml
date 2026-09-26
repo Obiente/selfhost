@@ -1,0 +1,20 @@
+schema = 1
+id = "homepage"
+name = "Homepage"
+description = "Build a private dashboard of services, bookmarks and application widgets."
+category = "Dashboards"
+image = "ghcr.io/gethomepage/homepage:v2.4.0"
+port = 13000
+container_port = 3000
+data_path = "/app/config"
+docs = "https://gethomepage.dev/installation/docker/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/homepage.png"
+deployment_only = true
+
+[[actions]]
+id = "check-config"
+label = "Validate settings YAML"
+description = "Parse the native settings YAML without changing it."
+command = ["node", "-e", "const fs=require('fs');require('js-yaml').load(fs.readFileSync('/app/config/settings.yaml','utf8'));console.log('Settings YAML is valid')"]
+timeout_seconds = 60
+confirm = false

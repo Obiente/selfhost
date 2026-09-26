@@ -1,0 +1,76 @@
+{
+  "id": "wiki-js",
+  "name": "Wiki.js with PostgreSQL",
+  "description": "A wiki with PostgreSQL persistence and a reviewed first-administrator setup.",
+  "category": "Knowledge",
+  "inputs": {
+    "port": {
+      "label": "Local HTTP port",
+      "kind": "port",
+      "default": 3005
+    },
+    "hostname": {
+      "label": "Initial hostname (change public URL later in app settings)",
+      "kind": "hostname",
+      "default": "localhost"
+    }
+  },
+  "secrets": {
+    "DATABASE_PASSWORD": {
+      "bytes": 24
+    }
+  },
+  "compose": {
+    "services": {
+      "database": {
+        "image": "postgres:17-alpine",
+        "restart": "unless-stopped",
+        "environment": {
+          "POSTGRES_DB": "wiki",
+          "POSTGRES_USER": "wiki",
+          "POSTGRES_PASSWORD": "${DATABASE_PASSWORD}"
+        },
+        "volumes": ["database:/var/lib/postgresql/data"],
+        "healthcheck": {
+          "test": ["CMD-SHELL", "pg_isready -U wiki -d wiki"],
+          "interval": "5s",
+          "timeout": "5s",
+          "retries": 30
+        }
+      },
+      "wiki-js": {
+        "image": "ghcr.io/requarks/wiki:2.5.315",
+        "restart": "unless-stopped",
+        "ports": ["127.0.0.1:{{port}}:3000"],
+        "environment": {
+          "DB_TYPE": "postgres",
+          "DB_HOST": "database",
+          "DB_PORT": "5432",
+          "DB_USER": "wiki",
+          "DB_PASS": "${DATABASE_PASSWORD}",
+          "DB_NAME": "wiki"
+        },
+        "volumes": ["content:/wiki/data", "./files/wiki-manage.cjs:/selfhost/wiki-manage.cjs:ro"],
+        "x-selfhost-app": "wiki-js",
+        "depends_on": {
+          "database": {
+            "condition": "service_healthy"
+          }
+        }
+      }
+    },
+    "volumes": {
+      "database": {},
+      "content": {}
+    }
+  },
+  "instructions": [
+    "Review the generated Compose and environment before starting. Only the app HTTP port is published, on loopback.",
+    "Keep credentials, database and data volumes together in an independent backup. Exported Compose files do not include volume data.",
+    "Use App setup to select the first administrator and site URL; telemetry is disabled by the setup profile.",
+    "Configure content storage destinations and additional identity providers in Wiki.js administration."
+  ],
+  "files": {
+    "wiki-manage.cjs": "// App-native GraphQL operations for Wiki.js 2.5. Credentials are never printed.\nconst { createHash } = require('node:crypto');\nclass OperationError extends Error {}\nconst env = process.env;\nconst endpoint = 'http://127.0.0.1:3000/graphql';\nlet jwt = '';\nasync function graphql(query, variables = {}) {\n  const response = await fetch(endpoint, {\n    method: 'POST',\n    headers: {\n      'Content-Type': 'application/json',\n      ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),\n    },\n    body: JSON.stringify({ query, variables }),\n    signal: AbortSignal.timeout(20000),\n    redirect: 'error',\n  });\n  if (!response.ok) throw new OperationError('Wiki.js rejected the operation');\n  const body = await response.json();\n  if (body.errors?.length) throw new OperationError('Wiki.js rejected the GraphQL operation');\n  return body.data;\n}\nconst currentQuery =\n  '{authentication{activeStrategies{key strategy{key} displayName order isEnabled selfRegistration domainWhitelist autoEnrollGroups config{key value}}}}';\nconst digest = (value) => createHash('sha256').update(JSON.stringify(value)).digest('hex');\nasync function main() {\n  const login = await graphql(\n    'mutation($username:String!,$password:String!){authentication{login(username:$username,password:$password,strategy:\"local\"){responseResult{succeeded} jwt mustProvideTFA mustChangePwd}}}',\n    { username: env.SELFHOST_ADMIN_EMAIL, password: env.SELFHOST_ADMIN_PASSWORD },\n  );\n  const auth = login.authentication.login;\n  if (!auth.responseResult?.succeeded || !auth.jwt || auth.mustProvideTFA || auth.mustChangePwd)\n    throw new OperationError(\n      'A local administrator without a pending MFA or password challenge is required; otherwise use Wiki.js administration',\n    );\n  jwt = auth.jwt;\n  const current = (await graphql(currentQuery)).authentication.activeStrategies;\n  if (env.SELFHOST_OPERATION === 'inspect') {\n    console.log(\n      JSON.stringify({\n        revision: digest(current),\n        providers: current.map((s) => ({\n          id: s.key,\n          name: s.displayName,\n          kind: s.strategy.key,\n          enabled: s.isEnabled,\n        })),\n      }),\n    );\n    return;\n  }\n  if (env.SELFHOST_OPERATION !== 'oidc') throw new OperationError('Unsupported operation');\n  if (digest(current) !== env.SELFHOST_REVISION)\n    throw new OperationError(\n      'Identity providers changed; inspect them again before adding a provider',\n    );\n  const key = env.SELFHOST_PROVIDER;\n  if (!/^[a-z][a-z0-9-]{2,40}$/.test(key) || key === 'local' || current.some((s) => s.key === key))\n    throw new OperationError('Choose a new provider ID; existing providers are never replaced');\n  for (const name of ['ISSUER', 'AUTHORIZE_URL', 'TOKEN_URL', 'USERINFO_URL']) {\n    const url = new URL(env[`SELFHOST_${name}`]);\n    if (url.protocol !== 'https:' || url.username || url.password || url.hash)\n      throw new OperationError('Provider endpoints must use HTTPS without credentials');\n  }\n  const previous = current.map((s) => ({\n    key: s.key,\n    strategyKey: s.strategy.key,\n    displayName: s.displayName,\n    order: s.order,\n    isEnabled: s.isEnabled,\n    selfRegistration: s.selfRegistration,\n    domainWhitelist: s.domainWhitelist,\n    autoEnrollGroups: s.autoEnrollGroups,\n    config: s.config.map((c) => ({\n      key: c.key,\n      value: JSON.stringify({ v: JSON.parse(c.value).value }),\n    })),\n  }));\n  const config = {\n    clientId: env.SELFHOST_CLIENT_ID,\n    clientSecret: env.SELFHOST_CLIENT_SECRET,\n    issuer: env.SELFHOST_ISSUER,\n    authorizationURL: env.SELFHOST_AUTHORIZE_URL,\n    tokenURL: env.SELFHOST_TOKEN_URL,\n    userInfoURL: env.SELFHOST_USERINFO_URL,\n    skipUserProfile: false,\n    emailClaim: 'email',\n    displayNameClaim: 'name',\n    pictureClaim: 'picture',\n    mapGroups: false,\n    groupsClaim: 'groups',\n    logoutURL: '',\n    acrValues: '',\n  };\n  const next = {\n    key,\n    strategyKey: 'oidc',\n    displayName: env.SELFHOST_LABEL,\n    order: current.length,\n    isEnabled: true,\n    selfRegistration: false,\n    domainWhitelist: [],\n    autoEnrollGroups: [],\n    config: Object.entries(config).map(([key, v]) => ({ key, value: JSON.stringify({ v }) })),\n  };\n  if (\n    digest((await graphql(currentQuery)).authentication.activeStrategies) !== env.SELFHOST_REVISION\n  )\n    throw new OperationError('Identity providers changed during review');\n  const result = await graphql(\n    'mutation($strategies:[AuthenticationStrategyInput]!){authentication{updateStrategies(strategies:$strategies){responseResult{succeeded}}}}',\n    { strategies: [...previous, next] },\n  );\n  if (!result.authentication.updateStrategies.responseResult?.succeeded)\n    throw new OperationError(\n      'Wiki.js could not complete the change; inspect provider state before retrying',\n    );\n  console.log(\n    JSON.stringify({\n      configured: key,\n      localLoginPreserved: previous.some((s) => s.strategyKey === 'local' && s.isEnabled),\n      selfRegistration: false,\n      administratorMapping: false,\n    }),\n  );\n}\nmain().catch((error) => {\n  console.error(\n    error instanceof OperationError\n      ? error.message\n      : 'Wiki.js operation failed; inspect provider state before retrying.',\n  );\n  process.exitCode = 1;\n});\n"
+  }
+}

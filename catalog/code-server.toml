@@ -1,0 +1,24 @@
+# https://coder.com/docs/code-server/install#docker
+# One named volume contains configuration, extensions and workspace files.
+schema = 1
+id = "code-server"
+name = "code-server"
+description = "Edit code in your browser with a persistent private development workspace."
+category = "Development"
+image = "codercom/code-server:4.139.1"
+port = 8443
+container_port = 8080
+data_path = "/home/coder"
+docs = "https://coder.com/docs/code-server/install#docker"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/code-server.png"
+
+[[secrets]]
+environment = "PASSWORD"
+bytes = 24
+
+[[actions]]
+id = "list-extensions"
+label = "List installed extensions"
+description = "Show installed editor extensions and their versions."
+command = ["code-server", "--list-extensions", "--show-versions"]
+timeout_seconds = 30

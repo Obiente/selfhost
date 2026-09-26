@@ -1,0 +1,13 @@
+{
+  "setup": [
+    "Start the app, create its access password, then add a watch.",
+    "For JavaScript pages, configure a trusted Playwright browser connection."
+  ],
+  "integration_notes": [
+    "Adjust worker count, recheck interval and public URL through native settings."
+  ],
+  "limitations": [
+    "Watch creation, notification credentials and browser authentication remain in the app.",
+    "The browser can access networks reachable from its host."
+  ]
+}

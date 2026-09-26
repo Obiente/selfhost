@@ -1,0 +1,30 @@
+schema = 1
+id = "linkding"
+name = "Linkding"
+description = "Organize bookmarks with tags, notes, and search."
+category = "Productivity"
+image = "sissbruecker/linkding:1.47.0"
+port = 9090
+container_port = 9090
+data_path = "/etc/linkding/data"
+docs = "https://linkding.link/installation/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/linkding.svg"
+
+[database]
+engine = "postgres"
+
+[database.environment]
+LD_DB_ENGINE = "postgres"
+LD_DB_HOST = "${DATABASE_HOST}"
+LD_DB_PORT = "${DATABASE_PORT}"
+LD_DB_DATABASE = "${DATABASE_NAME}"
+LD_DB_USER = "${DATABASE_USER}"
+LD_DB_PASSWORD = "${DATABASE_PASSWORD}"
+LD_DB_OPTIONS = '{"sslmode":"${DATABASE_SSL_MODE}"}'
+
+[environment]
+LD_SUPERUSER_NAME = "admin"
+
+[[secrets]]
+environment = "LD_SUPERUSER_PASSWORD"
+bytes = 24

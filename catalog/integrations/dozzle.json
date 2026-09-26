@@ -1,0 +1,303 @@
+{
+  "schema": 1,
+  "name": "Dozzle",
+  "documentation": "https://dozzle.dev/guide/supported-env-vars",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "dozzle-filter",
+      "label": "DOZZLE_FILTER",
+      "kind": "string",
+      "path": ["DOZZLE_FILTER"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-remote-host",
+      "label": "DOZZLE_REMOTE_HOST",
+      "kind": "string",
+      "path": ["DOZZLE_REMOTE_HOST"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-remote-agent",
+      "label": "DOZZLE_REMOTE_AGENT",
+      "kind": "string",
+      "path": ["DOZZLE_REMOTE_AGENT"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-namespace",
+      "label": "DOZZLE_NAMESPACE",
+      "kind": "string",
+      "path": ["DOZZLE_NAMESPACE"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-addr",
+      "label": "DOZZLE_ADDR",
+      "kind": "string",
+      "path": ["DOZZLE_ADDR"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-base",
+      "label": "DOZZLE_BASE",
+      "kind": "string",
+      "path": ["DOZZLE_BASE"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-hostname",
+      "label": "DOZZLE_HOSTNAME",
+      "kind": "string",
+      "path": ["DOZZLE_HOSTNAME"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-host-id",
+      "label": "DOZZLE_HOST_ID",
+      "kind": "string",
+      "path": ["DOZZLE_HOST_ID"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-level",
+      "label": "DOZZLE_LEVEL",
+      "kind": "string",
+      "path": ["DOZZLE_LEVEL"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-mode",
+      "label": "DOZZLE_MODE",
+      "kind": "string",
+      "path": ["DOZZLE_MODE"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-timeout",
+      "label": "DOZZLE_TIMEOUT",
+      "kind": "string",
+      "path": ["DOZZLE_TIMEOUT"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-no-analytics",
+      "label": "DOZZLE_NO_ANALYTICS",
+      "kind": "string",
+      "path": ["DOZZLE_NO_ANALYTICS"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-cert",
+      "label": "DOZZLE_CERT",
+      "kind": "string",
+      "path": ["DOZZLE_CERT"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-key",
+      "label": "DOZZLE_KEY",
+      "kind": "string",
+      "path": ["DOZZLE_KEY"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-enable-actions",
+      "label": "DOZZLE_ENABLE_ACTIONS",
+      "kind": "string",
+      "path": ["DOZZLE_ENABLE_ACTIONS"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-enable-shell",
+      "label": "DOZZLE_ENABLE_SHELL",
+      "kind": "string",
+      "path": ["DOZZLE_ENABLE_SHELL"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-enable-mcp",
+      "label": "DOZZLE_ENABLE_MCP",
+      "kind": "string",
+      "path": ["DOZZLE_ENABLE_MCP"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-disable-avatars",
+      "label": "DOZZLE_DISABLE_AVATARS",
+      "kind": "string",
+      "path": ["DOZZLE_DISABLE_AVATARS"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-release-check-mode",
+      "label": "DOZZLE_RELEASE_CHECK_MODE",
+      "kind": "string",
+      "path": ["DOZZLE_RELEASE_CHECK_MODE"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-image-check-mode",
+      "label": "DOZZLE_IMAGE_CHECK_MODE",
+      "kind": "string",
+      "path": ["DOZZLE_IMAGE_CHECK_MODE"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auto-update",
+      "label": "DOZZLE_AUTO_UPDATE",
+      "kind": "string",
+      "path": ["DOZZLE_AUTO_UPDATE"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auto-update-time",
+      "label": "DOZZLE_AUTO_UPDATE_TIME",
+      "kind": "string",
+      "path": ["DOZZLE_AUTO_UPDATE_TIME"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-provider",
+      "label": "DOZZLE_AUTH_PROVIDER",
+      "kind": "string",
+      "path": ["DOZZLE_AUTH_PROVIDER"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-ttl",
+      "label": "DOZZLE_AUTH_TTL",
+      "kind": "string",
+      "path": ["DOZZLE_AUTH_TTL"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-logout-url",
+      "label": "DOZZLE_AUTH_LOGOUT_URL",
+      "kind": "string",
+      "path": ["DOZZLE_AUTH_LOGOUT_URL"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-github-client-id",
+      "label": "DOZZLE_AUTH_GITHUB_CLIENT_ID",
+      "kind": "string",
+      "path": ["DOZZLE_AUTH_GITHUB_CLIENT_ID"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-github-client-secret",
+      "label": "DOZZLE_AUTH_GITHUB_CLIENT_SECRET",
+      "kind": "secret",
+      "path": ["DOZZLE_AUTH_GITHUB_CLIENT_SECRET"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-oidc-issuer",
+      "label": "DOZZLE_AUTH_OIDC_ISSUER",
+      "kind": "string",
+      "path": ["DOZZLE_AUTH_OIDC_ISSUER"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-oidc-client-id",
+      "label": "DOZZLE_AUTH_OIDC_CLIENT_ID",
+      "kind": "string",
+      "path": ["DOZZLE_AUTH_OIDC_CLIENT_ID"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-oidc-client-secret",
+      "label": "DOZZLE_AUTH_OIDC_CLIENT_SECRET",
+      "kind": "secret",
+      "path": ["DOZZLE_AUTH_OIDC_CLIENT_SECRET"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-oidc-name",
+      "label": "DOZZLE_AUTH_OIDC_NAME",
+      "kind": "string",
+      "path": ["DOZZLE_AUTH_OIDC_NAME"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-oidc-roles-claim",
+      "label": "DOZZLE_AUTH_OIDC_ROLES_CLAIM",
+      "kind": "string",
+      "path": ["DOZZLE_AUTH_OIDC_ROLES_CLAIM"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-oidc-filters-claim",
+      "label": "DOZZLE_AUTH_OIDC_FILTERS_CLAIM",
+      "kind": "string",
+      "path": ["DOZZLE_AUTH_OIDC_FILTERS_CLAIM"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-oidc-scopes",
+      "label": "DOZZLE_AUTH_OIDC_SCOPES",
+      "kind": "string",
+      "path": ["DOZZLE_AUTH_OIDC_SCOPES"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-header-user",
+      "label": "DOZZLE_AUTH_HEADER_USER",
+      "kind": "string",
+      "path": ["DOZZLE_AUTH_HEADER_USER"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-header-email",
+      "label": "DOZZLE_AUTH_HEADER_EMAIL",
+      "kind": "string",
+      "path": ["DOZZLE_AUTH_HEADER_EMAIL"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-header-name",
+      "label": "DOZZLE_AUTH_HEADER_NAME",
+      "kind": "string",
+      "path": ["DOZZLE_AUTH_HEADER_NAME"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-header-filter",
+      "label": "DOZZLE_AUTH_HEADER_FILTER",
+      "kind": "string",
+      "path": ["DOZZLE_AUTH_HEADER_FILTER"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-auth-header-roles",
+      "label": "DOZZLE_AUTH_HEADER_ROLES",
+      "kind": "string",
+      "path": ["DOZZLE_AUTH_HEADER_ROLES"],
+      "advanced": true
+    },
+    {
+      "id": "dozzle-agent-addr",
+      "label": "DOZZLE_AGENT_ADDR",
+      "kind": "string",
+      "path": ["DOZZLE_AGENT_ADDR"],
+      "advanced": true
+    }
+  ],
+  "oidc_client": {
+    "callback_path": "/api/auth/callback",
+    "environment": {
+      "DOZZLE_AUTH_PROVIDER": "oidc",
+      "DOZZLE_AUTH_OIDC_ISSUER": "{{issuer-url}}",
+      "DOZZLE_AUTH_OIDC_CLIENT_ID": "{{client-id}}",
+      "DOZZLE_AUTH_OIDC_CLIENT_SECRET": "{{client-secret}}"
+    }
+  },
+  "warnings": [
+    "Docker socket access is root-equivalent. Enabling actions, shells or MCP increases access to this engine.",
+    "OIDC requires role claims and replaces local users. Assign provider roles and container filters before switching authentication."
+  ]
+}

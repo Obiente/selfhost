@@ -1,0 +1,15 @@
+{
+  "setup": [
+    "The native deployment creates files/gatus.yaml, mounted at /config/config.yaml, with persistent SQLite storage in /data.",
+    "Edit endpoints as a JSON array through Native settings or edit the portable YAML directly. Each endpoint can define its URL, interval and conditions."
+  ],
+  "integration_notes": [
+    "Configure alerting providers, external endpoints, UI buttons and tunneling using their native structured configuration.",
+    "Basic authentication and OIDC are available in the native configuration. The issuer, client, callback and permitted subjects must match your provider.",
+    "Storage can use SQLite or an explicitly configured PostgreSQL connection."
+  ],
+  "limitations": [
+    "Selfhost does not provision a Gatus OIDC client or PostgreSQL database automatically through this profile.",
+    "Alert provider credentials and custom endpoint URLs must be supplied by the operator."
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "setup": [
+    "Choose the PostgreSQL and Redis stack. Select the initial administrator username and email; the generated ADMIN_PASSWORD initializes a fresh instance.",
+    "OCR defaults to English with one worker and one thread. Configure OCR languages and installed language packs to match your documents before importing a large collection."
+  ],
+  "integration_notes": [
+    "Document export, sanity check, search optimization, reindexing, thumbnail regeneration and classifier training use Paperless native management commands. Exports are written into the persistent export volume.",
+    "OIDC connection writes structured django-allauth provider settings. Its callback ends in /accounts/oidc/selfhost/login/callback/. Password login remains enabled and new social accounts receive no automatic administrator role.",
+    "Native settings cover database, Redis, mail, file naming, consumption and optional Tika and Gotenberg endpoints. Recreate the service after applying environment changes.",
+    "Back up PostgreSQL, data, media, export and consume volumes together. A native document export is useful portability data, but is not a full configuration and database backup.",
+    "Database placement supports PostgreSQL and MariaDB. Version 3 uses PAPERLESS_DB_OPTIONS for TLS driver options; its older DBSSLMODE variables are no longer supported."
+  ],
+  "limitations": [
+    "Tika and Gotenberg are optional external services; this deployment does not include them. Enable document conversion only after their endpoints are configured.",
+    "Social account linking and administrator assignment remain explicit Paperless account administration steps. No production OIDC browser round trip is implied by configuration tests."
+  ]
+}

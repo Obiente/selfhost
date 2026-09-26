@@ -1,0 +1,15 @@
+{
+  "id": "code-server",
+  "name": "code-server",
+  "description": "Discover an existing code-server container without taking ownership of its deployment or storage.",
+  "image_repositories": ["codercom/code-server", "docker.io/codercom/code-server"],
+  "container_hint": "code-server",
+  "actions": [
+    {
+      "id": "list-extensions",
+      "label": "List installed extensions",
+      "description": "Show installed editor extensions and their versions.",
+      "argv": ["code-server", "--list-extensions", "--show-versions"]
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "nextcloud-aio",
+  "name": "Nextcloud AIO",
+  "description": "Link the running Nextcloud app container. AIO continues to own containers, backups and upgrades.",
+  "image_repositories": ["ghcr.io/nextcloud-releases/aio-nextcloud", "nextcloud/aio-nextcloud"],
+  "container_hint": "nextcloud-aio-nextcloud",
+  "actions": [
+    {
+      "id": "status",
+      "label": "Nextcloud status",
+      "description": "Read version, installation and maintenance status.",
+      "argv": ["php", "/var/www/html/occ", "status", "--output=json"],
+      "user": "www-data"
+    },
+    {
+      "id": "apps",
+      "label": "Installed apps",
+      "description": "List enabled and disabled Nextcloud apps.",
+      "argv": ["php", "/var/www/html/occ", "app:list", "--output=json"],
+      "user": "www-data"
+    },
+    {
+      "id": "update-apps",
+      "label": "Update Nextcloud apps",
+      "description": "Update all installed Nextcloud apps. Create an AIO backup first. Core and container upgrades stay in AIO.",
+      "argv": ["php", "/var/www/html/occ", "app:update", "--all"],
+      "user": "www-data",
+      "write": true
+    },
+    {
+      "id": "repair",
+      "label": "Run maintenance repair",
+      "description": "Run Nextcloud maintenance repair. Create and verify a backup before proceeding.",
+      "argv": ["php", "/var/www/html/occ", "maintenance:repair"],
+      "user": "www-data",
+      "write": true
+    }
+  ]
+}

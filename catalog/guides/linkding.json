@@ -1,0 +1,12 @@
+{
+  "setup": [
+    "Start the app and sign in as the configured administrator using the generated password.",
+    "Set trusted public origins when introducing a domain."
+  ],
+  "integration_notes": [
+    "OIDC retains the local login form. Django system checks are available as an action."
+  ],
+  "limitations": [
+    "The generated superuser password bootstraps the account; editing it later is not an account password reset."
+  ]
+}

@@ -1,0 +1,27 @@
+# https://github.com/alexta69/metube#configuration-via-environment-variables
+schema = 1
+id = "metube"
+name = "MeTube"
+description = "Download videos and audio through a browser using yt-dlp."
+category = "Media"
+image = "ghcr.io/alexta69/metube:2026.09.25"
+port = 8081
+container_port = 8081
+data_path = "/downloads"
+docs = "https://github.com/alexta69/metube#readme"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/metube.svg"
+
+[environment]
+DOWNLOAD_DIR = "/downloads"
+STATE_DIR = "/downloads/.metube"
+DOWNLOAD_DIRS_INDEXABLE = "false"
+ALLOW_YTDL_OPTIONS_OVERRIDES = "false"
+ALLOW_PRIVATE_ADDRESSES = "false"
+TZ = "UTC"
+
+[[actions]]
+id = "download-usage"
+label = "Check download storage"
+description = "Show disk space used by downloaded media and queue state."
+command = ["du", "-sh", "/downloads"]
+timeout_seconds = 30

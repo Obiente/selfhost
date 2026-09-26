@@ -1,0 +1,12 @@
+schema = 1
+id = "wallabag"
+name = "Wallabag"
+description = "Save articles for later with persistent SQLite data and downloaded images."
+category = "Productivity"
+image = "wallabag/wallabag:2.6.14"
+port = 8087
+container_port = 80
+data_path = "/var/www/wallabag/data"
+docs = "https://doc.wallabag.org/admin/installation/installation/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/wallabag.svg"
+deployment_only = true

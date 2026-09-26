@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "name": "Kavita administrator setup",
+  "state_path": "/api/Admin/exists",
+  "state_pointer": "",
+  "initial_state": "false",
+  "board_url": "{base}",
+  "default_icon": "",
+  "app_name_max": 255,
+  "app_description_max": 512,
+  "warnings": [
+    "Creates the first administrator only. Existing installations are never reset. Library paths and media access remain under your control."
+  ],
+  "fields": [
+    {
+      "id": "username",
+      "label": "Administrator username",
+      "kind": "string",
+      "required": true,
+      "modes": ["bootstrap"],
+      "minimum_length": 1,
+      "maximum_length": 64,
+      "default": "admin"
+    },
+    {
+      "id": "password",
+      "label": "Administrator password",
+      "kind": "secret",
+      "required": true,
+      "modes": ["bootstrap"],
+      "minimum_length": 12,
+      "maximum_length": 128
+    },
+    {
+      "id": "email",
+      "label": "Administrator email",
+      "kind": "string",
+      "required": true,
+      "modes": ["bootstrap"],
+      "maximum_length": 254
+    }
+  ],
+  "steps": [
+    {
+      "id": "administrator",
+      "label": "Create the first administrator",
+      "method": "POST",
+      "path": "/api/Account/register",
+      "body": {
+        "username": "{username}",
+        "password": "{password}",
+        "email": "{email}"
+      },
+      "modes": ["bootstrap"]
+    },
+    {
+      "id": "verify",
+      "label": "Verify administrator creation",
+      "method": "GET",
+      "path": "/api/Admin/exists",
+      "expect": {
+        "": true
+      },
+      "modes": ["bootstrap"]
+    }
+  ]
+}

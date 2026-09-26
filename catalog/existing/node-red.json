@@ -1,0 +1,15 @@
+{
+  "id": "node-red",
+  "name": "Node-RED",
+  "description": "Discover an existing Node-RED container without taking ownership of its deployment or storage.",
+  "image_repositories": ["nodered/node-red", "docker.io/nodered/node-red"],
+  "container_hint": "node-red",
+  "actions": [
+    {
+      "id": "check-settings",
+      "label": "Check settings syntax",
+      "description": "Check JavaScript syntax in settings.js. This does not validate credentials or flows.",
+      "argv": ["node", "--check", "/data/settings.js"]
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "name": "ZITADEL",
+  "documentation": "https://zitadel.com/docs/self-hosting/manage/configure/configure",
+  "driver": {
+    "kind": "yaml",
+    "file": "zitadel.yaml",
+    "mount": "/config/zitadel.yaml",
+    "argument": "--config"
+  },
+  "fields": [
+    {
+      "id": "external-domain",
+      "label": "External domain",
+      "kind": "string",
+      "path": ["ExternalDomain"],
+      "environment": "ZITADEL_EXTERNALDOMAIN"
+    },
+    {
+      "id": "external-port",
+      "label": "External port",
+      "kind": "integer",
+      "path": ["ExternalPort"],
+      "environment": "ZITADEL_EXTERNALPORT",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    {
+      "id": "external-secure",
+      "label": "Public HTTPS",
+      "kind": "boolean",
+      "path": ["ExternalSecure"],
+      "environment": "ZITADEL_EXTERNALSECURE"
+    },
+    {
+      "id": "listen-port",
+      "label": "Listen port",
+      "kind": "integer",
+      "path": ["Port"],
+      "advanced": true,
+      "environment": "ZITADEL_PORT",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    {
+      "id": "tls-enabled",
+      "label": "Internal TLS",
+      "kind": "boolean",
+      "path": ["TLS", "Enabled"],
+      "advanced": true,
+      "environment": "ZITADEL_TLS_ENABLED"
+    },
+    {
+      "id": "log-level",
+      "label": "Log level",
+      "kind": "string",
+      "path": ["Log", "Level"],
+      "choices": ["debug", "info", "warn", "error"],
+      "advanced": true,
+      "environment": "ZITADEL_LOG_LEVEL"
+    }
+  ],
+  "actions": [],
+  "oidc_provider": {
+    "client_id_pointer": "/oidcConfiguration/clientId",
+    "client_secret_pointer": "/oidcConfiguration/clientSecret",
+    "create_path": "/zitadel.application.v2.ApplicationService/CreateApplication",
+    "body": {
+      "applicationId": "{{application-id}}",
+      "projectId": "{{project-id}}",
+      "oidcConfiguration": {
+        "grantTypes": ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE"],
+        "redirectUris": ["{{redirect-uri}}"],
+        "applicationType": "OIDC_APP_TYPE_WEB",
+        "responseTypes": ["OIDC_RESPONSE_TYPE_CODE"],
+        "authMethodType": "OIDC_AUTH_METHOD_TYPE_BASIC",
+        "developmentMode": "{{loopback-development}}"
+      },
+      "name": "{{name}}"
+    },
+    "headers": {
+      "Connect-Protocol-Version": "1"
+    }
+  }
+}

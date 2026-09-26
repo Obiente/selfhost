@@ -1,0 +1,90 @@
+{
+  "schema": 1,
+  "name": "Trilium Notes",
+  "documentation": "https://github.com/TriliumNext/Trilium/blob/v0.105.0/apps/server/src/assets/config-sample.ini",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "instance-name",
+      "label": "Instance name",
+      "kind": "string",
+      "path": ["TRILIUM_GENERAL_INSTANCENAME"]
+    },
+    {
+      "id": "readonly",
+      "label": "Read-only mode",
+      "kind": "string",
+      "path": ["TRILIUM_GENERAL_READONLY"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "disable-backup",
+      "label": "Disable native backups",
+      "kind": "string",
+      "path": ["TRILIUM_GENERAL_NOBACKUP"],
+      "description": "Leave false unless another complete and tested backup method is in place.",
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "trusted-proxy",
+      "label": "Trusted reverse proxy",
+      "kind": "string",
+      "path": ["TRILIUM_NETWORK_TRUSTEDREVERSEPROXY"],
+      "description": "Use exact proxy IPs/CIDRs; avoid trusting arbitrary forwarding headers."
+    },
+    {
+      "id": "session-duration",
+      "label": "Remember-me lifetime",
+      "kind": "string",
+      "path": ["TRILIUM_SESSION_COOKIEMAXAGE"],
+      "description": "Seconds."
+    },
+    {
+      "id": "sync-host",
+      "label": "Sync server URL",
+      "kind": "string",
+      "path": ["TRILIUM_SYNC_SYNCSERVERHOST"]
+    },
+    {
+      "id": "public-url",
+      "label": "OIDC public URL",
+      "kind": "string",
+      "path": ["TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL"]
+    },
+    {
+      "id": "oidc-issuer",
+      "label": "OIDC issuer",
+      "kind": "string",
+      "path": ["TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL"]
+    },
+    {
+      "id": "oidc-client",
+      "label": "OIDC client ID",
+      "kind": "string",
+      "path": ["TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID"]
+    },
+    {
+      "id": "oidc-secret",
+      "label": "OIDC client secret",
+      "kind": "secret",
+      "path": ["TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET"]
+    }
+  ],
+  "warnings": [
+    "After configuring OIDC, connect your existing Trilium account through its Options interface. Disconnect that account before switching providers. Selfhost does not replace or rebind the existing account."
+  ],
+  "actions": [],
+  "oidc_client": {
+    "callback_path": "/callback",
+    "environment": {
+      "TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL": "{{app-url}}",
+      "TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL": "{{issuer-url}}",
+      "TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID": "{{client-id}}",
+      "TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET": "{{client-secret}}",
+      "TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME": "{{name}}",
+      "TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTAUTHMETHOD": "client_secret_basic"
+    }
+  }
+}

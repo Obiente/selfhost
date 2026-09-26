@@ -1,0 +1,20 @@
+[
+  {
+    "app": "nextcloud",
+    "id": "docker",
+    "name": "Single Docker image",
+    "description": "Start locally with an editable Nextcloud container. Add a dedicated or shared database when needed.",
+    "recipe": "nextcloud",
+    "blueprint": null,
+    "default": true
+  },
+  {
+    "app": "nextcloud",
+    "id": "aio",
+    "name": "Nextcloud AIO",
+    "description": "Let AIO manage the full Nextcloud stack, backups and updates. Requires Docker engine access and a domain for Nextcloud.",
+    "recipe": null,
+    "blueprint": "nextcloud-aio",
+    "default": false
+  }
+]

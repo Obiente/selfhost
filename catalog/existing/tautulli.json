@@ -1,0 +1,15 @@
+{
+  "id": "tautulli",
+  "name": "Tautulli",
+  "description": "Discover an existing Tautulli container without taking ownership of its deployment or storage.",
+  "image_repositories": ["ghcr.io/tautulli/tautulli"],
+  "container_hint": "tautulli",
+  "actions": [
+    {
+      "id": "check-health",
+      "label": "Check health",
+      "description": "Check the local Tautulli status endpoint.",
+      "argv": ["curl", "--fail", "--silent", "--show-error", "http://localhost:8181/status"]
+    }
+  ]
+}

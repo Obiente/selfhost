@@ -1,0 +1,13 @@
+{
+  "setup": [
+    "Set the initial administrator email and password before first start, or create the first account in Beszel.",
+    "Add agents using keys from the hub; do not expose agent listeners to arbitrary networks."
+  ],
+  "integration_notes": [
+    "Native settings include heartbeat receivers, MFA policy and container-detail access.",
+    "Configure OAuth providers in PocketBase administration before disabling password login."
+  ],
+  "limitations": [
+    "Email OTP requires working SMTP. Selfhost does not yet register a PocketBase provider automatically."
+  ]
+}

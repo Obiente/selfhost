@@ -1,0 +1,28 @@
+{
+  "name": "selfhost",
+  "version": "0.1.1",
+  "private": true,
+  "description": "Launch the Selfhost dashboard and command line",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "bin": {
+    "selfhost": "bin/selfhost.mjs"
+  },
+  "files": [
+    "bin/",
+    "native/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/obiente/selfhost.git",
+    "directory": "packages/selfhost"
+  },
+  "scripts": {
+    "test": "node --test test/launcher.test.mjs"
+  }
+}

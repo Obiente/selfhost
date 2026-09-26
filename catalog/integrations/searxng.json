@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "name": "SearXNG",
+  "documentation": "https://docs.searxng.org/admin/settings/settings_server.html",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "public-url",
+      "label": "Public URL",
+      "kind": "string",
+      "path": ["SEARXNG_BASE_URL"]
+    },
+    {
+      "id": "image-proxy",
+      "label": "Proxy image results",
+      "kind": "string",
+      "path": ["SEARXNG_IMAGE_PROXY"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "limiter",
+      "label": "Enable request limiter",
+      "kind": "string",
+      "path": ["SEARXNG_LIMITER"],
+      "choices": ["true", "false"],
+      "description": "Requires a separately configured Valkey service."
+    },
+    {
+      "id": "valkey-url",
+      "label": "Valkey URL",
+      "kind": "secret",
+      "path": ["SEARXNG_VALKEY_URL"],
+      "advanced": true
+    },
+    {
+      "id": "public-instance",
+      "label": "Public instance mode",
+      "kind": "string",
+      "path": ["SEARXNG_PUBLIC_INSTANCE"],
+      "choices": ["true", "false"],
+      "advanced": true
+    }
+  ],
+  "actions": []
+}

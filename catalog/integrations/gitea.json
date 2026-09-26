@@ -1,0 +1,189 @@
+{
+  "schema": 1,
+  "name": "Gitea",
+  "documentation": "https://docs.gitea.com/administration/command-line/",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "public-url",
+      "label": "Public URL",
+      "kind": "string",
+      "path": ["GITEA__server__ROOT_URL"]
+    },
+    {
+      "id": "registration",
+      "label": "Disable registration",
+      "kind": "string",
+      "path": ["GITEA__service__DISABLE_REGISTRATION"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "require-login",
+      "label": "Require login to view content",
+      "kind": "string",
+      "path": ["GITEA__service__REQUIRE_SIGNIN_VIEW"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "install-lock",
+      "label": "Disable web installation wizard",
+      "kind": "string",
+      "path": ["GITEA__security__INSTALL_LOCK"],
+      "choices": ["true", "false"],
+      "description": "Set true and restart before creating an administrator with the reviewed action."
+    }
+  ],
+  "actions": [
+    {
+      "id": "create-admin",
+      "label": "Create administrator",
+      "description": "Create an explicitly selected administrator. Existing users are never changed. Restart after enabling installation lock first.",
+      "inputs": [
+        {
+          "id": "username",
+          "label": "Username",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 255
+        },
+        {
+          "id": "password",
+          "label": "Password",
+          "kind": "secret",
+          "minimum_length": 12,
+          "maximum_length": 255
+        },
+        {
+          "id": "email",
+          "label": "Email",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 255
+        }
+      ],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Create administrator",
+          "command": {
+            "argv": [
+              "gitea",
+              "--config",
+              "/data/gitea/conf/app.ini",
+              "admin",
+              "user",
+              "create",
+              "--username",
+              "{{username}}",
+              "--password",
+              "{{password}}",
+              "--email",
+              "{{email}}",
+              "--admin",
+              "--must-change-password=false"
+            ],
+            "user": "git"
+          }
+        }
+      ]
+    },
+    {
+      "id": "list-users",
+      "label": "List users",
+      "description": "Show local users and administrator status.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "List users",
+          "command": {
+            "argv": ["gitea", "--config", "/data/gitea/conf/app.ini", "admin", "user", "list"],
+            "user": "git"
+          }
+        }
+      ]
+    },
+    {
+      "id": "list-auth",
+      "label": "List identity providers",
+      "description": "Show configured authentication sources.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "List identity providers",
+          "command": {
+            "argv": ["gitea", "--config", "/data/gitea/conf/app.ini", "admin", "auth", "list"],
+            "user": "git"
+          }
+        }
+      ]
+    },
+    {
+      "id": "connect-oidc",
+      "label": "Connect OpenID provider",
+      "description": "Create a login source called selfhost. An existing source with that name causes an error; it is never replaced.",
+      "inputs": [
+        {
+          "id": "client-id",
+          "label": "Client ID",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 255
+        },
+        {
+          "id": "client-secret",
+          "label": "Client secret",
+          "kind": "secret",
+          "minimum_length": 12,
+          "maximum_length": 255
+        },
+        {
+          "id": "discovery-url",
+          "label": "Discovery URL",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 255
+        }
+      ],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Connect OpenID provider",
+          "command": {
+            "argv": [
+              "gitea",
+              "--config",
+              "/data/gitea/conf/app.ini",
+              "admin",
+              "auth",
+              "add-oauth",
+              "--name",
+              "selfhost",
+              "--provider",
+              "openidConnect",
+              "--key",
+              "{{client-id}}",
+              "--secret",
+              "{{client-secret}}",
+              "--auto-discover-url",
+              "{{discovery-url}}"
+            ],
+            "user": "git"
+          }
+        }
+      ]
+    }
+  ],
+  "oidc_client": {
+    "callback_path": "/user/oauth2/selfhost/callback",
+    "action": "connect-oidc",
+    "inputs": {
+      "client-id": "{{client-id}}",
+      "client-secret": "{{client-secret}}",
+      "discovery-url": "{{discovery-url}}"
+    }
+  }
+}

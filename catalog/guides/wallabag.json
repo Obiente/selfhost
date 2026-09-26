@@ -1,0 +1,15 @@
+{
+  "setup": [
+    "Choose the SQLite deployment, which preserves both the database directory and downloaded article images. Acknowledge the initial account requirement before starting.",
+    "Before exposing the app, use Change account password with username wallabag and a strong password. The upstream image creates that initial account during installation."
+  ],
+  "integration_notes": [
+    "Create user and Promote administrator operate through the native Symfony console. Password fields are secret action inputs.",
+    "Native settings include the canonical domain, registration, SMTP, database and cache connections. Recreate the container after applying environment changes.",
+    "Migrate database schema is an advanced maintenance action. Back up both named volumes first."
+  ],
+  "limitations": [
+    "This version does not offer a native OpenID Connect login integration. Selfhost does not substitute a trusted-header bypass.",
+    "Changing the database driver does not migrate the SQLite database. Configure and migrate an external database using Wallabag procedures before switching."
+  ]
+}

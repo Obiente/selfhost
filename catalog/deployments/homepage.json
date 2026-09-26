@@ -1,0 +1,10 @@
+[
+  {
+    "app": "homepage",
+    "id": "native",
+    "name": "Native configuration",
+    "description": "Build a private dashboard of services, bookmarks and application widgets.",
+    "blueprint": "homepage",
+    "default": true
+  }
+]

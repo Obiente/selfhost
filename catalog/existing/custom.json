@@ -1,0 +1,7 @@
+{
+  "id": "custom",
+  "name": "Other app or website",
+  "description": "Keep a link to any service you already run. Add a contributor profile with exact image repositories to support container inspection and actions.",
+  "image_repositories": [],
+  "actions": []
+}

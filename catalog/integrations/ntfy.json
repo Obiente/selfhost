@@ -1,0 +1,201 @@
+{
+  "schema": 1,
+  "name": "ntfy",
+  "documentation": "https://docs.ntfy.sh/config/",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "base-url",
+      "label": "Public URL",
+      "kind": "string",
+      "path": ["NTFY_BASE_URL"]
+    },
+    {
+      "id": "default-access",
+      "label": "Default topic access",
+      "kind": "string",
+      "path": ["NTFY_AUTH_DEFAULT_ACCESS"],
+      "description": "Use deny-all for private notifications. Explicit access rules can permit selected topics.",
+      "choices": ["deny-all", "read-only", "write-only", "read-write"]
+    },
+    {
+      "id": "login",
+      "label": "Enable login",
+      "kind": "string",
+      "path": ["NTFY_ENABLE_LOGIN"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "require-login",
+      "label": "Require web login",
+      "kind": "string",
+      "path": ["NTFY_REQUIRE_LOGIN"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "signup",
+      "label": "Allow registration",
+      "kind": "string",
+      "path": ["NTFY_ENABLE_SIGNUP"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "cache-duration",
+      "label": "Message retention",
+      "kind": "string",
+      "path": ["NTFY_CACHE_DURATION"],
+      "description": "Duration such as 12h or 7d."
+    },
+    {
+      "id": "attachment-duration",
+      "label": "Attachment retention",
+      "kind": "string",
+      "path": ["NTFY_ATTACHMENT_EXPIRY_DURATION"],
+      "description": "Duration such as 3h or 24h."
+    },
+    {
+      "id": "behind-proxy",
+      "label": "Use proxy forwarding headers",
+      "kind": "string",
+      "path": ["NTFY_BEHIND_PROXY"],
+      "description": "Only enable when the trusted proxy replaces incoming forwarding headers.",
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "trusted-proxies",
+      "label": "Trusted proxy addresses",
+      "kind": "string",
+      "path": ["NTFY_PROXY_TRUSTED_HOSTS"],
+      "description": "Comma-separated addresses or CIDRs. Avoid trusting arbitrary clients."
+    },
+    {
+      "id": "upstream-url",
+      "label": "iOS notification relay",
+      "kind": "string",
+      "path": ["NTFY_UPSTREAM_BASE_URL"],
+      "description": "Optional relay, such as https://ntfy.sh. Enables wake-up requests via that service."
+    },
+    {
+      "id": "attachment-directory",
+      "label": "Attachment cache directory",
+      "kind": "string",
+      "path": ["NTFY_ATTACHMENT_CACHE_DIR"],
+      "description": "Set the public base URL first. Use /var/cache/ntfy/attachments to keep attachments in the persistent volume."
+    }
+  ],
+  "actions": [
+    {
+      "id": "list-users",
+      "label": "List users",
+      "description": "Read users and assigned roles.",
+      "inputs": [],
+      "schedulable": true,
+      "steps": [
+        {
+          "label": "List users",
+          "command": {
+            "argv": ["ntfy", "user", "list"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "list-access",
+      "label": "List topic permissions",
+      "description": "Read configured topic permissions.",
+      "inputs": [],
+      "schedulable": true,
+      "steps": [
+        {
+          "label": "List topic permissions",
+          "command": {
+            "argv": ["ntfy", "access"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "create-user",
+      "label": "Create user",
+      "description": "Add a user without changing an existing account. Select admin only for a trusted administrator.",
+      "inputs": [
+        {
+          "id": "username",
+          "label": "Username",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 64
+        },
+        {
+          "id": "password",
+          "label": "Password",
+          "kind": "secret",
+          "minimum_length": 12
+        },
+        {
+          "id": "role",
+          "label": "Role",
+          "kind": "string",
+          "choices": ["user", "admin"],
+          "default": "user"
+        }
+      ],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Create user",
+          "command": {
+            "argv": [
+              "ntfy",
+              "user",
+              "add",
+              "--ignore-exists",
+              "--role={{role}}",
+              "--",
+              "{{username}}"
+            ],
+            "environment": {
+              "NTFY_PASSWORD": "{{password}}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "topic-access",
+      "label": "Set topic permission",
+      "description": "Apply an explicit permission for one user and topic pattern. Review wildcards carefully.",
+      "inputs": [
+        {
+          "id": "username",
+          "label": "Username",
+          "kind": "string",
+          "minimum_length": 1
+        },
+        {
+          "id": "topic",
+          "label": "Topic or pattern",
+          "kind": "string",
+          "minimum_length": 1
+        },
+        {
+          "id": "permission",
+          "label": "Permission",
+          "kind": "string",
+          "choices": ["read-write", "read-only", "write-only", "deny-all"]
+        }
+      ],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Set topic permission",
+          "command": {
+            "argv": ["ntfy", "access", "--", "{{username}}", "{{topic}}", "{{permission}}"]
+          }
+        }
+      ]
+    }
+  ]
+}

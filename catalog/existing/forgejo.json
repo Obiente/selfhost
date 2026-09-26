@@ -1,0 +1,8 @@
+{
+  "id": "forgejo",
+  "name": "Forgejo",
+  "description": "Discover an existing Forgejo container without taking ownership of its deployment or storage.",
+  "image_repositories": ["codeberg.org/forgejo/forgejo"],
+  "container_hint": "forgejo",
+  "actions": []
+}

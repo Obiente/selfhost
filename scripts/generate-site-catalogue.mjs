@@ -1,0 +1,10 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { buildCatalogue } from './catalogue-data.mjs';
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const directory = resolve(root, 'site/.vitepress/generated');
+mkdirSync(directory, { recursive: true });
+const data = buildCatalogue(root);
+writeFileSync(resolve(directory, 'catalogue.json'), JSON.stringify(data, null, 2) + '\n');
+console.log(`Generated website catalogue: ${data.apps.length} apps and stacks.`);

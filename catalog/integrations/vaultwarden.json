@@ -1,0 +1,146 @@
+{
+  "schema": 1,
+  "name": "Vaultwarden",
+  "documentation": "https://github.com/dani-garcia/vaultwarden/blob/1.37.3/.env.template",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "domain",
+      "label": "Public vault URL",
+      "kind": "string",
+      "path": ["DOMAIN"],
+      "description": "Set the externally reachable URL. Existing admin-page config.json overrides environment settings."
+    },
+    {
+      "id": "signups",
+      "label": "Allow new registrations",
+      "kind": "string",
+      "path": ["SIGNUPS_ALLOWED"],
+      "description": "Disable after creating your accounts; invitations remain available.",
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "signup-domains",
+      "label": "Registration email domains",
+      "kind": "string",
+      "path": ["SIGNUPS_DOMAINS_WHITELIST"],
+      "description": "Comma-separated domains allowed to register even when general registration is disabled."
+    },
+    {
+      "id": "verify-email",
+      "label": "Require verified registration email",
+      "kind": "string",
+      "path": ["SIGNUPS_VERIFY"],
+      "description": "Configure SMTP before enabling.",
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "admin-token",
+      "label": "Administration token or Argon2 hash",
+      "kind": "secret",
+      "path": ["ADMIN_TOKEN"],
+      "description": "Protects /admin. An Argon2 PHC hash is recommended. Keep a separate backup of this credential."
+    },
+    {
+      "id": "smtp-host",
+      "label": "SMTP host",
+      "kind": "string",
+      "path": ["SMTP_HOST"]
+    },
+    {
+      "id": "smtp-from",
+      "label": "Sender email",
+      "kind": "string",
+      "path": ["SMTP_FROM"]
+    },
+    {
+      "id": "smtp-user",
+      "label": "SMTP username",
+      "kind": "string",
+      "path": ["SMTP_USERNAME"]
+    },
+    {
+      "id": "smtp-password",
+      "label": "SMTP password",
+      "kind": "secret",
+      "path": ["SMTP_PASSWORD"]
+    },
+    {
+      "id": "smtp-security",
+      "label": "SMTP transport",
+      "kind": "string",
+      "path": ["SMTP_SECURITY"],
+      "choices": ["starttls", "force_tls", "off"]
+    },
+    {
+      "id": "sso-enabled",
+      "label": "Enable OpenID Connect",
+      "kind": "string",
+      "path": ["SSO_ENABLED"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "sso-issuer",
+      "label": "OIDC issuer",
+      "kind": "string",
+      "path": ["SSO_AUTHORITY"]
+    },
+    {
+      "id": "sso-client",
+      "label": "OIDC client ID",
+      "kind": "string",
+      "path": ["SSO_CLIENT_ID"]
+    },
+    {
+      "id": "sso-secret",
+      "label": "OIDC secret",
+      "kind": "secret",
+      "path": ["SSO_CLIENT_SECRET"]
+    },
+    {
+      "id": "sso-only",
+      "label": "Require SSO for sign-in",
+      "kind": "string",
+      "path": ["SSO_ONLY"],
+      "description": "Keep disabled until your OIDC login has been tested. A vault master password is still required.",
+      "choices": ["true", "false"]
+    }
+  ],
+  "actions": [
+    {
+      "id": "sqlite-backup",
+      "label": "Create SQLite snapshot",
+      "description": "Create a consistent database snapshot in /data. This does not include attachments, sends, configuration or encryption keys, and does not back up external SQL databases. Copy the snapshot and all remaining data to independent storage.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Create SQLite snapshot",
+          "command": {
+            "argv": ["/vaultwarden", "backup"]
+          }
+        }
+      ]
+    }
+  ],
+  "oidc_client": {
+    "callback_path": "/identity/connect/oidc-signin",
+    "environment": {
+      "DOMAIN": "{{app-url}}",
+      "SSO_ENABLED": "true",
+      "SSO_ONLY": "false",
+      "SSO_AUTHORITY": "{{issuer-url}}",
+      "SSO_CLIENT_ID": "{{client-id}}",
+      "SSO_CLIENT_SECRET": "{{client-secret}}",
+      "SSO_PKCE": "true",
+      "SSO_ALLOW_UNKNOWN_EMAIL_VERIFICATION": "false",
+      "SSO_DEBUG_TOKENS": "false"
+    }
+  },
+  "warnings": [
+    "Settings changed through Vaultwarden /admin are stored in /data/config.json and override these environment values. Reconcile those overrides in Vaultwarden before expecting a Selfhost edit or OIDC connection to take effect.",
+    "The SQLite snapshot action excludes attachments, sends, keys and configuration. Back up the complete data volume separately."
+  ]
+}

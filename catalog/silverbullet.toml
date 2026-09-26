@@ -1,0 +1,11 @@
+schema = 1
+id = "silverbullet"
+name = "SilverBullet"
+description = "Write linked notes and build a personal knowledge base."
+category = "Productivity"
+image = "ghcr.io/silverbulletmd/silverbullet:2.11.1"
+port = 3002
+container_port = 3000
+data_path = "/data"
+docs = "https://silverbullet.md/Install/Docker"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/silverbullet.png"

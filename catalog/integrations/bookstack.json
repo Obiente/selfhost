@@ -1,0 +1,415 @@
+{
+  "schema": 1,
+  "name": "BookStack",
+  "documentation": "https://www.bookstackapp.com/docs/admin/commands/",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "public-url",
+      "label": "Public URL",
+      "kind": "string",
+      "path": ["APP_URL"]
+    },
+    {
+      "id": "app-name",
+      "label": "Application name",
+      "kind": "string",
+      "path": ["APP_NAME"]
+    },
+    {
+      "id": "timezone",
+      "label": "Timezone",
+      "kind": "string",
+      "path": ["APP_TIMEZONE"]
+    },
+    {
+      "id": "locale",
+      "label": "Default language",
+      "kind": "string",
+      "path": ["APP_LANG"]
+    },
+    {
+      "id": "database-host",
+      "label": "MariaDB/MySQL host",
+      "kind": "string",
+      "path": ["DB_HOST"],
+      "advanced": true
+    },
+    {
+      "id": "database-port",
+      "label": "Database port",
+      "kind": "string",
+      "path": ["DB_PORT"],
+      "advanced": true
+    },
+    {
+      "id": "database-name",
+      "label": "Database name",
+      "kind": "string",
+      "path": ["DB_DATABASE"],
+      "advanced": true
+    },
+    {
+      "id": "database-user",
+      "label": "Database username",
+      "kind": "string",
+      "path": ["DB_USERNAME"],
+      "advanced": true
+    },
+    {
+      "id": "database-password",
+      "label": "Database password",
+      "kind": "secret",
+      "path": ["DB_PASSWORD"],
+      "advanced": true
+    },
+    {
+      "id": "mail-host",
+      "label": "SMTP host",
+      "kind": "string",
+      "path": ["MAIL_HOST"]
+    },
+    {
+      "id": "mail-port",
+      "label": "SMTP port",
+      "kind": "string",
+      "path": ["MAIL_PORT"]
+    },
+    {
+      "id": "mail-user",
+      "label": "SMTP username",
+      "kind": "string",
+      "path": ["MAIL_USERNAME"]
+    },
+    {
+      "id": "mail-password",
+      "label": "SMTP password",
+      "kind": "secret",
+      "path": ["MAIL_PASSWORD"]
+    },
+    {
+      "id": "mail-from",
+      "label": "Sender address",
+      "kind": "string",
+      "path": ["MAIL_FROM"]
+    },
+    {
+      "id": "auth-method",
+      "label": "Authentication method",
+      "kind": "string",
+      "path": ["AUTH_METHOD"],
+      "choices": ["standard", "oidc", "saml2", "ldap"],
+      "description": "OIDC replaces local password login. Configure the administrator external ID before switching."
+    },
+    {
+      "id": "oidc-name",
+      "label": "OIDC label",
+      "kind": "string",
+      "path": ["OIDC_NAME"]
+    },
+    {
+      "id": "oidc-client",
+      "label": "OIDC client ID",
+      "kind": "string",
+      "path": ["OIDC_CLIENT_ID"]
+    },
+    {
+      "id": "oidc-secret",
+      "label": "OIDC client secret",
+      "kind": "secret",
+      "path": ["OIDC_CLIENT_SECRET"]
+    },
+    {
+      "id": "oidc-issuer",
+      "label": "OIDC issuer",
+      "kind": "string",
+      "path": ["OIDC_ISSUER"]
+    },
+    {
+      "id": "oidc-discovery",
+      "label": "Discover OIDC endpoints",
+      "kind": "string",
+      "path": ["OIDC_ISSUER_DISCOVER"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "oidc-groups",
+      "label": "Sync IdP groups",
+      "kind": "string",
+      "path": ["OIDC_USER_TO_GROUPS"],
+      "choices": ["true", "false"],
+      "advanced": true
+    },
+    {
+      "id": "oidc-group-claim",
+      "label": "Groups claim",
+      "kind": "string",
+      "path": ["OIDC_GROUPS_CLAIM"],
+      "advanced": true
+    },
+    {
+      "id": "oidc-remove-groups",
+      "label": "Remove groups absent from IdP",
+      "kind": "string",
+      "path": ["OIDC_REMOVE_FROM_GROUPS"],
+      "choices": ["true", "false"],
+      "advanced": true
+    },
+    {
+      "id": "auto-login",
+      "label": "Automatically redirect to IdP",
+      "kind": "string",
+      "path": ["AUTH_AUTO_INITIATE"],
+      "choices": ["true", "false"],
+      "advanced": true
+    }
+  ],
+  "actions": [
+    {
+      "id": "initialize-admin",
+      "label": "Initialize administrator",
+      "description": "Replace only the untouched initial account, or create the first administrator when none exists. Existing administrator accounts cause a safe refusal.",
+      "inputs": [
+        {
+          "id": "email",
+          "label": "Email",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "password",
+          "label": "Password",
+          "kind": "secret",
+          "minimum_length": 12,
+          "maximum_length": 4096
+        }
+      ],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Initialize administrator",
+          "command": {
+            "argv": [
+              "php",
+              "/app/www/artisan",
+              "bookstack:create-admin",
+              "--initial",
+              "--email={{email}}",
+              "--name={{name}}",
+              "--password={{password}}",
+              "--no-interaction"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "create-admin",
+      "label": "Create administrator",
+      "description": "Create a separate administrator account with local credentials.",
+      "inputs": [
+        {
+          "id": "email",
+          "label": "Email",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "password",
+          "label": "Password",
+          "kind": "secret",
+          "minimum_length": 12,
+          "maximum_length": 4096
+        }
+      ],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Create administrator",
+          "command": {
+            "argv": [
+              "php",
+              "/app/www/artisan",
+              "bookstack:create-admin",
+              "--email={{email}}",
+              "--name={{name}}",
+              "--password={{password}}",
+              "--no-interaction"
+            ]
+          }
+        }
+      ],
+      "advanced": true
+    },
+    {
+      "id": "create-external-admin",
+      "label": "Create IdP administrator",
+      "description": "Create an administrator with an exact external identity subject. Use an unused email and verify it before switching AUTH_METHOD.",
+      "inputs": [
+        {
+          "id": "email",
+          "label": "Email",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "subject",
+          "label": "External identity subject",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        }
+      ],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Create IdP administrator",
+          "command": {
+            "argv": [
+              "php",
+              "/app/www/artisan",
+              "bookstack:create-admin",
+              "--email={{email}}",
+              "--name={{name}}",
+              "--external-auth-id={{subject}}",
+              "--no-interaction"
+            ]
+          }
+        }
+      ],
+      "advanced": true
+    },
+    {
+      "id": "update-url",
+      "label": "Migrate stored content URLs",
+      "description": "Replace old public URLs in stored content. Back up the database first and separately update APP_URL.",
+      "inputs": [
+        {
+          "id": "old-url",
+          "label": "Old URL",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "new-url",
+          "label": "New URL",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        }
+      ],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Migrate stored content URLs",
+          "command": {
+            "argv": [
+              "php",
+              "/app/www/artisan",
+              "bookstack:update-url",
+              "{{old-url}}",
+              "{{new-url}}",
+              "--no-interaction"
+            ]
+          }
+        }
+      ],
+      "advanced": true
+    },
+    {
+      "id": "rebuild-search",
+      "label": "Rebuild search index",
+      "description": "Regenerate the application search index.",
+      "inputs": [],
+      "schedulable": true,
+      "steps": [
+        {
+          "label": "Rebuild search index",
+          "command": {
+            "argv": ["php", "/app/www/artisan", "bookstack:regenerate-search", "--no-interaction"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rebuild-permissions",
+      "label": "Rebuild access permissions",
+      "description": "Recalculate content permissions from current roles.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Rebuild access permissions",
+          "command": {
+            "argv": [
+              "php",
+              "/app/www/artisan",
+              "bookstack:regenerate-permissions",
+              "--no-interaction"
+            ]
+          }
+        }
+      ],
+      "advanced": true
+    },
+    {
+      "id": "rebuild-references",
+      "label": "Rebuild reference index",
+      "description": "Regenerate the cross-content reference index.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Rebuild reference index",
+          "command": {
+            "argv": [
+              "php",
+              "/app/www/artisan",
+              "bookstack:regenerate-references",
+              "--no-interaction"
+            ]
+          }
+        }
+      ],
+      "advanced": true
+    }
+  ],
+  "oidc_client": {
+    "callback_path": "/oidc/callback",
+    "environment": {
+      "OIDC_NAME": "{{name}}",
+      "OIDC_CLIENT_ID": "{{client-id}}",
+      "OIDC_CLIENT_SECRET": "{{client-secret}}",
+      "OIDC_ISSUER": "{{issuer-url}}",
+      "OIDC_ISSUER_DISCOVER": "true",
+      "AUTH_AUTO_INITIATE": "false"
+    }
+  }
+}

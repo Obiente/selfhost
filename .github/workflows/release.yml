@@ -1,0 +1,193 @@
+name: Release packages
+on:
+  workflow_dispatch:
+    inputs:
+      publish_npm:
+        description: Publish the verified npm tarball (matching release tag required)
+        type: boolean
+        default: false
+      publish_cargo:
+        description: Publish the verified Cargo source (matching release tag required)
+        type: boolean
+        default: false
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN: 1.98.1
+
+jobs:
+  source:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
+    env:
+      SELFHOST_PUBLISH: ${{ inputs.publish_npm || inputs.publish_cargo || false }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with: { node-version: '24' }
+      - run: rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --component rustfmt --component clippy
+      - run: rustup default "$RUST_TOOLCHAIN"
+      - run: npm ci --ignore-scripts && npm run format:check
+      - run: npm ci --prefix ui && npm run build --prefix ui
+      - run: node scripts/check-release.mjs
+      - run: node --test packages/selfhost/test/*.test.mjs scripts/release.test.mjs scripts/catalogue-data.test.mjs scripts/catalog-maintenance.test.mjs site/.vitepress/cli-markdown.test.mjs
+      - run: cargo fmt --all --check && cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo test --locked
+      - run: cargo package --locked
+      - name: Install and test the packaged Cargo source
+        run: |
+          version=$(node -p "require('./packages/selfhost/package.json').version")
+          cargo install --path "target/package/selfhost-$version" --root .local/cargo-installed --locked
+          node scripts/smoke-release.mjs .local/cargo-installed/bin/selfhost
+      - run: npm ci --prefix site && npm run build --prefix site
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with: { name: dashboard, path: ui/dist, if-no-files-found: error }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with: { name: crate, path: 'target/package/*.crate', if-no-files-found: error }
+
+  native:
+    needs: source
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-22.04, target: x86_64-unknown-linux-musl, host: linux-x64, exe: selfhost }
+          - {
+              os: ubuntu-24.04-arm,
+              target: aarch64-unknown-linux-musl,
+              host: linux-arm64,
+              exe: selfhost,
+            }
+          - { os: macos-15-intel, target: x86_64-apple-darwin, host: darwin-x64, exe: selfhost }
+          - { os: macos-14, target: aarch64-apple-darwin, host: darwin-arm64, exe: selfhost }
+          - { os: windows-2022, target: x86_64-pc-windows-msvc, host: win32-x64, exe: selfhost.exe }
+          - {
+              os: windows-11-arm,
+              target: aarch64-pc-windows-msvc,
+              host: win32-arm64,
+              exe: selfhost.exe,
+            }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run: { shell: bash }
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: '24' }
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with: { name: dashboard, path: ui/dist }
+      - run: rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --target '${{ matrix.target }}'
+      - run: rustup default "$RUST_TOOLCHAIN"
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Build embedded release
+        env:
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then export RUSTFLAGS='-C target-feature=+crt-static'; fi
+          cargo build --release --locked --target '${{ matrix.target }}'
+      - run: cargo test --locked
+      - run: node scripts/smoke-release.mjs 'target/${{ matrix.target }}/release/${{ matrix.exe }}'
+      - run: node packages/selfhost/scripts/prepare-platform.mjs --binary 'target/${{ matrix.target }}/release/${{ matrix.exe }}' --output .local/platform
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with: { name: '${{ matrix.host }}', path: .local/platform, if-no-files-found: error }
+
+  npm-package:
+    needs: native
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: '24' }
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with: { path: .local/inputs, pattern: '*-*' }
+      - run: node scripts/assemble-npm.mjs .local/inputs .local/npm
+      - run: mkdir -p .local/release && npm pack ./.local/npm --pack-destination .local/release
+      - run: cd .local/release && sha256sum *.tgz > SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with: { name: npm-release, path: .local/release, if-no-files-found: error }
+
+  install-test:
+    needs: npm-package
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04-arm, macos-15-intel, macos-14, windows-2022, windows-11-arm]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run: { shell: bash }
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: '24' }
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with: { name: npm-release, path: .local/release }
+      - name: Install with lifecycle scripts disabled
+        run: |
+          package=$(find "$PWD/.local/release" -name '*.tgz' -type f)
+          npm install --ignore-scripts --prefix .local/installed "$package"
+          node .local/installed/node_modules/selfhost/bin/selfhost.mjs --version
+          npx --yes --package="$package" selfhost --version
+          npm install --global pnpm@10.34.5
+          pnpm --config.manage-package-manager-versions=false dlx "$package" --version
+          pnpx "$package" --version
+      - name: Verify installed embedded app
+        run: |
+          binary=$(node -e 'const p=process.platform,a=process.arch;console.log(`.local/installed/node_modules/selfhost/native/selfhost-${p}-${a}${p==="win32"?".exe":""}`)')
+          node scripts/smoke-release.mjs "$binary"
+
+  publish-npm:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_npm
+    needs: install-test
+    environment: npm-release
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: '24', registry-url: 'https://registry.npmjs.org' }
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with: { name: npm-release, path: release }
+      - run: cd release && sha256sum --check SHA256SUMS
+      - run: npm publish release/*.tgz --access public --provenance
+
+  publish-cargo:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_cargo
+    needs: install-test
+    environment: crates-release
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: { persist-credentials: false }
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with: { name: dashboard, path: ui/dist }
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with: { name: crate, path: verified-crate }
+      - run: rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal && rustup default "$RUST_TOOLCHAIN"
+      - name: Reproduce the verified source archive before exposing credentials
+        run: |
+          cargo package --locked --no-verify
+          cmp target/package/*.crate verified-crate/*.crate
+      - name: Publish with scoped crates.io credential
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        # Already compiled, installed and tested without the publishing secret.
+        run: cargo publish --locked --no-verify

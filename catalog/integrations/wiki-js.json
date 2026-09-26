@@ -1,0 +1,243 @@
+{
+  "schema": 1,
+  "name": "Wiki.js",
+  "documentation": "https://docs.requarks.io/install/config",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "database-type",
+      "label": "Database type",
+      "kind": "string",
+      "path": ["DB_TYPE"],
+      "choices": ["postgres", "mysql", "mariadb", "mssql", "sqlite"],
+      "advanced": true
+    },
+    {
+      "id": "database-host",
+      "label": "Database host",
+      "kind": "string",
+      "path": ["DB_HOST"],
+      "advanced": true
+    },
+    {
+      "id": "database-port",
+      "label": "Database port",
+      "kind": "string",
+      "path": ["DB_PORT"],
+      "advanced": true
+    },
+    {
+      "id": "database-user",
+      "label": "Database username",
+      "kind": "string",
+      "path": ["DB_USER"],
+      "advanced": true
+    },
+    {
+      "id": "database-password",
+      "label": "Database password",
+      "kind": "secret",
+      "path": ["DB_PASS"],
+      "advanced": true
+    },
+    {
+      "id": "database-name",
+      "label": "Database name",
+      "kind": "string",
+      "path": ["DB_NAME"],
+      "advanced": true
+    },
+    {
+      "id": "database-tls",
+      "label": "Database TLS",
+      "kind": "string",
+      "path": ["DB_SSL"],
+      "choices": ["true", "false"],
+      "advanced": true
+    },
+    {
+      "id": "high-availability",
+      "label": "High availability mode",
+      "kind": "string",
+      "path": ["HA_ACTIVE"],
+      "choices": ["true", "false"],
+      "advanced": true
+    },
+    {
+      "id": "database-ca",
+      "label": "Database CA certificate body",
+      "kind": "string",
+      "path": ["DB_SSL_CA"],
+      "advanced": true,
+      "description": "Base64 certificate body without PEM delimiters. Wiki.js verifies the database certificate when TLS is enabled."
+    },
+    {
+      "id": "log-level",
+      "label": "Log level",
+      "kind": "string",
+      "path": ["LOG_LEVEL"],
+      "choices": ["error", "warn", "info", "verbose", "debug"],
+      "advanced": true
+    }
+  ],
+  "actions": [
+    {
+      "id": "version",
+      "label": "Show version",
+      "description": "Read the installed Wiki.js package version.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Show version",
+          "command": {
+            "argv": ["node", "-p", "require(\"/wiki/package.json\").version"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "list-identities",
+      "label": "Inspect identity providers",
+      "description": "List configured providers and produce a revision for adding a provider. No secrets are returned.",
+      "inputs": [
+        {
+          "id": "admin-email",
+          "label": "Local administrator email",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "admin-password",
+          "label": "Local administrator password",
+          "kind": "secret",
+          "minimum_length": 12,
+          "maximum_length": 4096
+        }
+      ],
+      "steps": [
+        {
+          "label": "Inspect identity providers",
+          "command": {
+            "argv": ["node", "/selfhost/wiki-manage.cjs"],
+            "environment": {
+              "SELFHOST_OPERATION": "inspect",
+              "SELFHOST_ADMIN_EMAIL": "{{admin-email}}",
+              "SELFHOST_ADMIN_PASSWORD": "{{admin-password}}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "connect-oidc",
+      "label": "Connect an existing OIDC client",
+      "description": "Add a new provider while preserving current providers and local login. First inspect providers and supply that revision. New-user registration and group-based administrator grants stay disabled. Do not edit authentication simultaneously in Wiki.js.",
+      "advanced": true,
+      "inputs": [
+        {
+          "id": "admin-email",
+          "label": "Local administrator email",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "admin-password",
+          "label": "Local administrator password",
+          "kind": "secret",
+          "minimum_length": 12,
+          "maximum_length": 4096
+        },
+        {
+          "id": "revision",
+          "label": "Reviewed provider revision",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "provider",
+          "label": "New provider ID",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "label",
+          "label": "Login label",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "issuer",
+          "label": "Issuer URL",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "authorization-url",
+          "label": "Authorization endpoint",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "token-url",
+          "label": "Token endpoint",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "userinfo-url",
+          "label": "User information endpoint",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "client-id",
+          "label": "Client ID",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "client-secret",
+          "label": "Client secret",
+          "kind": "secret",
+          "minimum_length": 12,
+          "maximum_length": 4096
+        }
+      ],
+      "steps": [
+        {
+          "label": "Add reviewed OIDC provider",
+          "command": {
+            "argv": ["node", "/selfhost/wiki-manage.cjs"],
+            "environment": {
+              "SELFHOST_OPERATION": "oidc",
+              "SELFHOST_ADMIN_EMAIL": "{{admin-email}}",
+              "SELFHOST_ADMIN_PASSWORD": "{{admin-password}}",
+              "SELFHOST_REVISION": "{{revision}}",
+              "SELFHOST_PROVIDER": "{{provider}}",
+              "SELFHOST_LABEL": "{{label}}",
+              "SELFHOST_ISSUER": "{{issuer}}",
+              "SELFHOST_AUTHORIZE_URL": "{{authorization-url}}",
+              "SELFHOST_TOKEN_URL": "{{token-url}}",
+              "SELFHOST_USERINFO_URL": "{{userinfo-url}}",
+              "SELFHOST_CLIENT_ID": "{{client-id}}",
+              "SELFHOST_CLIENT_SECRET": "{{client-secret}}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "id": "keycloak",
+  "icon": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/keycloak.svg",
+  "name": "Keycloak",
+  "category": "Identity",
+  "description": "Run your own identity provider with a private PostgreSQL database.",
+  "inputs": {
+    "domain": {
+      "label": "Public identity hostname",
+      "kind": "hostname",
+      "default": "identity.example.com"
+    },
+    "port": {
+      "label": "Local HTTP port behind your TLS proxy",
+      "kind": "port",
+      "default": 18080
+    },
+    "admin-email": {
+      "label": "Administrator email",
+      "kind": "email",
+      "default": "admin@example.com"
+    }
+  },
+  "secrets": {
+    "DATABASE_PASSWORD": {
+      "bytes": 24
+    },
+    "ADMIN_PASSWORD": {
+      "bytes": 24,
+      "prefix": "Sh1!"
+    }
+  },
+  "compose": {
+    "services": {
+      "database": {
+        "image": "postgres:17-alpine",
+        "restart": "unless-stopped",
+        "environment": {
+          "POSTGRES_USER": "keycloak",
+          "POSTGRES_DB": "keycloak",
+          "POSTGRES_PASSWORD": "${DATABASE_PASSWORD}"
+        },
+        "volumes": ["database:/var/lib/postgresql/data"],
+        "healthcheck": {
+          "test": ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"],
+          "interval": "5s",
+          "timeout": "5s",
+          "retries": 30
+        }
+      },
+      "identity": {
+        "image": "quay.io/keycloak/keycloak:26.7.4",
+        "restart": "unless-stopped",
+        "command": ["start"],
+        "depends_on": {
+          "database": {
+            "condition": "service_healthy"
+          }
+        },
+        "ports": ["127.0.0.1:{{port}}:8080"],
+        "environment": {
+          "KC_DB": "postgres",
+          "KC_DB_URL": "jdbc:postgresql://database:5432/keycloak",
+          "KC_DB_USERNAME": "keycloak",
+          "KC_DB_PASSWORD": "${DATABASE_PASSWORD}",
+          "KC_HOSTNAME": "https://{{domain}}",
+          "KC_HTTP_ENABLED": "true",
+          "KC_PROXY_HEADERS": "xforwarded",
+          "KC_BOOTSTRAP_ADMIN_USERNAME": "{{admin-email}}",
+          "KC_BOOTSTRAP_ADMIN_PASSWORD": "${ADMIN_PASSWORD}",
+          "KC_HEALTH_ENABLED": "true"
+        },
+        "healthcheck": {
+          "test": [
+            "CMD",
+            "/bin/bash",
+            "-c",
+            "exec 3<>/dev/tcp/127.0.0.1/9000; printf 'GET /health/ready HTTP/1.0\\r\\n\\r\\n' >&3; IFS= read -r response <&3; [[ \"$${response}\" == *\"200\"* ]]"
+          ],
+          "interval": "10s",
+          "timeout": "5s",
+          "retries": 30,
+          "start_period": "30s"
+        }
+      }
+    },
+    "volumes": {
+      "database": {}
+    },
+    "x-selfhost": {
+      "wait_seconds": 300
+    }
+  },
+  "instructions": [
+    "Review the generated Compose and environment, then start the project.",
+    "Connect the loopback HTTP port to a local TLS proxy or a restricted SSH tunnel. The proxy must replace incoming forwarding headers. Use verified HTTPS for cross-server hops.",
+    "Sign in using the administrator email and ADMIN_PASSWORD from the project environment, then replace the bootstrap account with your own administrator.",
+    "Create an OIDC client with Authorization Code and PKCE. Register Selfhost's HTTPS /auth/callback URL, then add its realm issuer, client and your exact subject ID in Selfhost login settings."
+  ]
+}

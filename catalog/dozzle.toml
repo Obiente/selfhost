@@ -1,0 +1,20 @@
+schema = 1
+id = "dozzle"
+name = "Dozzle"
+description = "Browse container logs with optional scoped users and identity-provider login."
+category = "Monitoring"
+image = "amir20/dozzle:v11.1.1"
+port = 18083
+container_port = 8080
+data_path = "/data"
+docs = "https://dozzle.dev/guide/getting-started"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/dozzle.svg"
+deployment_only = true
+
+[[actions]]
+id = "check-health"
+label = "Check Dozzle health"
+description = "Check the local Dozzle server without changing containers."
+command = ["/dozzle", "healthcheck"]
+timeout_seconds = 60
+confirm = false

@@ -1,0 +1,37 @@
+{
+  "id": "dashy",
+  "name": "Dashy",
+  "category": "Dashboards",
+  "description": "Build a configurable dashboard with sections, widgets, status checks and themes.",
+  "inputs": {
+    "port": {
+      "label": "Local HTTP port",
+      "kind": "port",
+      "default": 18084
+    }
+  },
+  "secrets": {},
+  "compose": {
+    "services": {
+      "dashy": {
+        "image": "lissy93/dashy:4.7.0",
+        "x-selfhost-app": "dashy",
+        "restart": "unless-stopped",
+        "ports": ["127.0.0.1:{{port}}:8080"],
+        "volumes": ["data:/app/user-data", "./files/dashy.yaml:/app/user-data/conf.yml:ro"]
+      }
+    },
+    "volumes": {
+      "data": {}
+    }
+  },
+  "files": {
+    "dashy.yaml": "pageInfo:\n  title: My services\n  description: Private services dashboard\nappConfig:\n  theme: colorful\n  layout: auto\n  iconSize: medium\n  disableConfiguration: true\nsections: []\n"
+  },
+  "instructions": [
+    "Review the portable Compose and native configuration before starting.",
+    "The default listener is local-only. Add an authenticated HTTPS proxy before exposing private data.",
+    "Manage the native YAML through Selfhost or your editor; in-browser file saving is disabled for this read-only mount.",
+    "Client-side Dashy login is not a substitute for an authenticated reverse proxy protecting its assets and API."
+  ]
+}

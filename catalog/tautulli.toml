@@ -1,0 +1,24 @@
+# https://github.com/Tautulli/Tautulli/wiki/Installation#docker
+schema = 1
+id = "tautulli"
+name = "Tautulli"
+description = "Track playback and statistics for an existing Plex Media Server."
+category = "Monitoring"
+image = "ghcr.io/tautulli/tautulli:v2.18.1"
+port = 8181
+container_port = 8181
+data_path = "/config"
+docs = "https://github.com/Tautulli/Tautulli/wiki/Installation#docker"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/tautulli.svg"
+
+[environment]
+PUID = "1000"
+PGID = "1000"
+TZ = "UTC"
+
+[[actions]]
+id = "check-health"
+label = "Check health"
+description = "Check the local Tautulli status endpoint."
+command = ["curl", "--fail", "--silent", "--show-error", "http://localhost:8181/status"]
+timeout_seconds = 15

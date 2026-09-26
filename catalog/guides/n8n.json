@@ -1,0 +1,16 @@
+{
+  "setup": [
+    "Choose a single SQLite container for a small instance or a PostgreSQL stack for a separate database. Preserve N8N_ENCRYPTION_KEY with the data and database backups.",
+    "Run Initial setup to create the owner email, first name, last name and password. The action is available only while n8n advertises its first-owner setup state."
+  ],
+  "integration_notes": [
+    "Native settings include editor and webhook URLs, proxy hops, cookies, SMTP, execution retention, metrics, database and community packages.",
+    "For HTTPS exposure, set the editor and webhook public URLs, secure cookies and the exact trusted proxy hop count. The initial loopback deployment permits HTTP cookies for local access.",
+    "List workflows and export workflows operate through the native CLI. Export credentials preserves encryption and needs the original encryption key to restore them. Exports stay in the persistent application directory."
+  ],
+  "limitations": [
+    "Native SSO options depend on the n8n edition and license. This profile does not advertise a free OIDC integration or bypass n8n licensing.",
+    "Workflow credentials and service permissions are configured inside n8n. Exporting workflow definitions does not by itself export all execution history or the database.",
+    "Changing SQLite to PostgreSQL is a data migration, not an environment-only switch. Export and migrate with the upstream procedure before selecting the new database."
+  ]
+}

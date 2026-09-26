@@ -1,0 +1,36 @@
+schema = 1
+id = "navidrome"
+name = "Navidrome"
+description = "Stream a private music library with Subsonic clients and native library management."
+category = "Media"
+image = "deluan/navidrome:0.64.2"
+port = 4533
+container_port = 4533
+data_path = "/data"
+docs = "https://www.navidrome.org/docs/installation/docker/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/navidrome.svg"
+deployment_only = true
+
+[[actions]]
+id = "check-version"
+label = "Show version"
+description = "Show the installed Navidrome version."
+command = ["/app/navidrome", "--version"]
+timeout_seconds = 60
+confirm = false
+
+[[actions]]
+id = "list-users"
+label = "List user accounts"
+description = "List local users without changing their accounts."
+command = ["/app/navidrome", "--configfile", "/config/navidrome.yaml", "user", "list", "--format", "json"]
+timeout_seconds = 60
+confirm = false
+
+[[actions]]
+id = "scan-library"
+label = "Scan music library"
+description = "Run an incremental scan of the configured libraries."
+command = ["/app/navidrome", "--configfile", "/config/navidrome.yaml", "scan"]
+timeout_seconds = 60
+confirm = true

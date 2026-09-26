@@ -1,0 +1,11 @@
+{
+  "setup": [
+    "Complete Tautulli setup to authorize the Plex server and enable authentication.",
+    "Keep /config persistent for history, application configuration and backups."
+  ],
+  "integration_notes": ["The declared health action checks the local server."],
+  "limitations": [
+    "Plex tokens, notification agents and scheduling are managed through Tautulli.",
+    "Changing container user/group settings can change ownership of existing files."
+  ]
+}

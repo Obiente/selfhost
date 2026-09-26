@@ -1,0 +1,41 @@
+{
+  "name": "ZITADEL",
+  "create_path": "/zitadel.application.v2.ApplicationService/CreateApplication",
+  "headers": {
+    "Connect-Protocol-Version": "1"
+  },
+  "body": {
+    "applicationId": "{{application-id}}",
+    "projectId": "{{project-id}}",
+    "name": "{{name}}",
+    "oidcConfiguration": {
+      "redirectUris": ["{{redirect-uri}}"],
+      "responseTypes": ["OIDC_RESPONSE_TYPE_CODE"],
+      "grantTypes": ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE"],
+      "applicationType": "OIDC_APP_TYPE_WEB",
+      "authMethodType": "OIDC_AUTH_METHOD_TYPE_BASIC",
+      "developmentMode": "{{loopback-development}}"
+    }
+  },
+  "client_id_pointer": "/oidcConfiguration/clientId",
+  "client_secret_pointer": "/oidcConfiguration/clientSecret",
+  "project_creation": {
+    "create_path": "/zitadel.project.v2.ProjectService/CreateProject",
+    "headers": {
+      "Connect-Protocol-Version": "1"
+    },
+    "body": {
+      "name": "{{project-name}}",
+      "projectId": "{{project-id}}",
+      "authorizationRequired": false,
+      "projectRoleAssertion": false,
+      "projectAccessRequired": false,
+      "organizationId": "{{organization-id}}"
+    },
+    "organization_lookup_path": "/auth/v1/users/me",
+    "project_id_pointer": "/projectId",
+    "organization_id_pointer": "/user/details/resourceOwner",
+    "human_pointer": "/user/human",
+    "subject_pointer": "/user/id"
+  }
+}

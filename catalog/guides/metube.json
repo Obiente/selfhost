@@ -1,0 +1,13 @@
+{
+  "setup": [
+    "Keep MeTube local or behind authenticated access.",
+    "Choose output templates and concurrency before submitting large playlists."
+  ],
+  "integration_notes": [
+    "Download queue state persists in /downloads/.metube. File deletion through the trash button is an explicit setting."
+  ],
+  "limitations": [
+    "There is no native login in this recipe.",
+    "Download folders and subscription configuration are separate from service restart or update operations."
+  ]
+}

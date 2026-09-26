@@ -1,0 +1,12 @@
+# Installation reference: https://actualbudget.org/docs/install/docker/
+schema = 1
+id = "actual-budget"
+name = "Actual Budget"
+description = "Plan your budget and track spending with local-first finances."
+category = "Finance"
+image = "actualbudget/actual-server:26.9.0"
+port = 5006
+container_port = 5006
+data_path = "/data"
+docs = "https://actualbudget.org/docs/install/docker/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/actual-budget.svg"

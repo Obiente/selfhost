@@ -1,0 +1,209 @@
+{
+  "schema": 1,
+  "name": "Homarr setup",
+  "state_path": "/api/trpc/onboard.currentStep",
+  "state_pointer": "/result/data/json/current",
+  "initial_state": "start",
+  "board_url": "{base}/boards/{board}",
+  "fields": [
+    {
+      "id": "username",
+      "label": "Administrator username",
+      "kind": "string",
+      "required": true,
+      "modes": ["bootstrap"],
+      "default": "admin",
+      "minimum_length": 3,
+      "maximum_length": 255
+    },
+    {
+      "id": "password",
+      "label": "Administrator password (8 or more characters)",
+      "kind": "secret",
+      "required": true,
+      "modes": ["bootstrap"],
+      "minimum_length": 8,
+      "maximum_length": 255
+    },
+    {
+      "id": "board",
+      "label": "Private board name (letters, digits, hyphens, underscores)",
+      "kind": "string",
+      "required": true,
+      "modes": ["bootstrap", "connect"],
+      "default": "Selfhost",
+      "characters": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_",
+      "maximum_length": 255
+    },
+    {
+      "id": "api_key",
+      "label": "Existing administrator API key",
+      "kind": "secret",
+      "required": true,
+      "modes": ["connect"],
+      "maximum_length": 4096
+    }
+  ],
+  "steps": [
+    {
+      "id": "begin",
+      "label": "Begin initial setup",
+      "path": "/api/trpc/onboard.nextStep",
+      "body": {
+        "json": {}
+      },
+      "method": "POST",
+      "modes": ["bootstrap"]
+    },
+    {
+      "id": "admin",
+      "label": "Create the selected administrator",
+      "path": "/api/trpc/user.initUser",
+      "body": {
+        "json": {
+          "username": "{username}",
+          "password": "{password}",
+          "confirmPassword": "{password}"
+        }
+      },
+      "method": "POST",
+      "modes": ["bootstrap"]
+    },
+    {
+      "id": "csrf",
+      "label": "Prepare administrator sign-in",
+      "path": "/api/auth/csrf",
+      "body": null,
+      "method": "GET",
+      "modes": ["bootstrap"],
+      "capture": {
+        "csrf": "/csrfToken"
+      }
+    },
+    {
+      "id": "login",
+      "label": "Sign in as the selected administrator",
+      "path": "/api/auth/callback/credentials",
+      "body": {
+        "name": "{username}",
+        "password": "{password}",
+        "csrfToken": "{csrf}",
+        "callbackUrl": "{base}"
+      },
+      "method": "POST",
+      "modes": ["bootstrap"],
+      "form": true,
+      "headers": {
+        "X-Auth-Return-Redirect": "1"
+      }
+    },
+    {
+      "id": "api-key",
+      "label": "Create and privately save a Selfhost API key",
+      "path": "/api/trpc/apiKeys.create",
+      "body": {
+        "json": null
+      },
+      "method": "POST",
+      "modes": ["bootstrap"],
+      "capture": {
+        "api_key": "/result/data/json/apiKey"
+      }
+    },
+    {
+      "id": "privacy",
+      "label": "Disable analytics and indexing",
+      "path": "/api/trpc/serverSettings.initSettings",
+      "body": {
+        "json": {
+          "analytics": {
+            "enableGeneral": false
+          },
+          "crawlingAndIndexing": {
+            "noIndex": true,
+            "noFollow": true,
+            "noTranslate": true,
+            "noSiteLinksSearchBox": true
+          }
+        }
+      },
+      "method": "POST",
+      "modes": ["bootstrap"]
+    },
+    {
+      "id": "finish",
+      "label": "Finish initial setup",
+      "path": "/api/trpc/onboard.nextStep",
+      "body": {
+        "json": {}
+      },
+      "method": "POST",
+      "modes": ["bootstrap"]
+    },
+    {
+      "id": "board",
+      "label": "Create a private board",
+      "path": "/api/boards",
+      "body": {
+        "name": "{board}",
+        "columnCount": 12,
+        "isPublic": false
+      },
+      "method": "POST",
+      "modes": ["bootstrap", "connect"],
+      "headers": {
+        "ApiKey": "{api_key}"
+      },
+      "capture": {
+        "board_id": "/boardId"
+      }
+    },
+    {
+      "id": "app",
+      "label": "Add each reviewed service link",
+      "path": "/api/apps",
+      "body": {
+        "name": "{name}",
+        "href": "{url}",
+        "iconUrl": "{icon}",
+        "description": "{description}",
+        "pingUrl": ""
+      },
+      "method": "POST",
+      "modes": ["bootstrap", "connect", "sync"],
+      "headers": {
+        "ApiKey": "{api_key}"
+      },
+      "capture": {
+        "app_id": "/appId"
+      },
+      "each_app": true
+    },
+    {
+      "id": "item",
+      "label": "Place each reviewed link on the board",
+      "path": "/api/boards/items",
+      "body": {
+        "boardId": "{board_id}",
+        "kind": "app",
+        "options": {
+          "appId": "{app_id}"
+        },
+        "integrationIds": []
+      },
+      "method": "POST",
+      "modes": ["bootstrap", "connect", "sync"],
+      "headers": {
+        "ApiKey": "{api_key}"
+      },
+      "each_app": true
+    }
+  ],
+  "default_icon": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/homarr.svg",
+  "app_name_max": 64,
+  "app_description_max": 512,
+  "warnings": [
+    "Creates a private dashboard with only the service links you review. App credentials stay on this computer.",
+    "An interrupted remote write requires inspection before another attempt."
+  ]
+}

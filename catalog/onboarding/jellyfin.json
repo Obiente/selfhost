@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "name": "Jellyfin initial setup",
+  "state_path": "/System/Info/Public",
+  "state_pointer": "/StartupWizardCompleted",
+  "initial_state": "false",
+  "board_url": "{base}/web/",
+  "default_icon": "",
+  "app_name_max": 255,
+  "app_description_max": 512,
+  "warnings": [
+    "Initializes a new server and its administrator. Existing installations are never changed. Media libraries and hardware transcoding remain configurable in Jellyfin.",
+    "Remote access stays enabled for Docker networking and proxies. No router configuration is performed. Keep the published port private until setup finishes."
+  ],
+  "fields": [
+    {
+      "id": "username",
+      "label": "Administrator username",
+      "kind": "string",
+      "required": true,
+      "modes": ["bootstrap"],
+      "default": "admin",
+      "minimum_length": 1,
+      "maximum_length": 128
+    },
+    {
+      "id": "password",
+      "label": "Administrator password",
+      "kind": "secret",
+      "required": true,
+      "modes": ["bootstrap"],
+      "minimum_length": 12,
+      "maximum_length": 255
+    },
+    {
+      "id": "server",
+      "label": "Server name",
+      "kind": "string",
+      "required": true,
+      "modes": ["bootstrap"],
+      "default": "Jellyfin",
+      "maximum_length": 128
+    }
+  ],
+  "steps": [
+    {
+      "id": "configuration",
+      "label": "Set server name and language",
+      "method": "POST",
+      "path": "/Startup/Configuration",
+      "modes": ["bootstrap"],
+      "body": {
+        "ServerName": "{server}",
+        "UICulture": "en-US",
+        "MetadataCountryCode": "US",
+        "PreferredMetadataLanguage": "en"
+      }
+    },
+    {
+      "id": "first-user",
+      "label": "Initialize first user record",
+      "method": "GET",
+      "path": "/Startup/User",
+      "modes": ["bootstrap"]
+    },
+    {
+      "id": "administrator",
+      "label": "Set administrator username and password",
+      "method": "POST",
+      "path": "/Startup/User",
+      "modes": ["bootstrap"],
+      "body": {
+        "Name": "{username}",
+        "Password": "{password}"
+      }
+    },
+    {
+      "id": "remote-access",
+      "label": "Allow access through Docker networking and your proxy",
+      "method": "POST",
+      "path": "/Startup/RemoteAccess",
+      "modes": ["bootstrap"],
+      "body": {
+        "EnableRemoteAccess": true
+      }
+    },
+    {
+      "id": "complete",
+      "label": "Complete initial setup",
+      "method": "POST",
+      "path": "/Startup/Complete",
+      "modes": ["bootstrap"]
+    }
+  ]
+}

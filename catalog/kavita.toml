@@ -1,0 +1,22 @@
+schema = 1
+id = "kavita"
+name = "Kavita"
+description = "Organize and read ebooks, comics and manga with personal reading progress."
+category = "Media"
+image = "jvmilazz0/kavita:0.9.1"
+port = 15000
+container_port = 5000
+data_path = "/kavita/config"
+docs = "https://wiki.kavitareader.com/installation/docker/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/kavita.svg"
+
+[environment]
+TZ = "UTC"
+
+[[actions]]
+id = "check-health"
+label = "Check Kavita health"
+description = "Check the local Kavita health endpoint without changing the library."
+command = ["curl", "-fsS", "http://127.0.0.1:5000/api/health"]
+timeout_seconds = 15
+confirm = false

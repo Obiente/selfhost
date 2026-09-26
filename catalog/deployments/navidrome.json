@@ -1,0 +1,10 @@
+[
+  {
+    "app": "navidrome",
+    "id": "native",
+    "name": "Native configuration",
+    "description": "Stream a private music library with Subsonic clients and native library management.",
+    "blueprint": "navidrome",
+    "default": true
+  }
+]

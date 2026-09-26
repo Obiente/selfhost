@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "name": "Linkding",
+  "documentation": "https://linkding.link/options/",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "trusted-origins",
+      "label": "Trusted public origins",
+      "kind": "string",
+      "path": ["LD_CSRF_TRUSTED_ORIGINS"],
+      "description": "Comma-separated exact http(s) origins. Do not use wildcards."
+    },
+    {
+      "id": "internal-hosts",
+      "label": "Allowed internal bookmark hosts",
+      "kind": "string",
+      "path": ["LD_ALLOWED_INTERNAL_HOSTS"],
+      "advanced": true,
+      "description": "Allow specific internal hostnames or CIDRs for metadata fetching. Avoid wildcard access."
+    },
+    {
+      "id": "oidc-enabled",
+      "label": "OpenID Connect",
+      "kind": "string",
+      "path": ["LD_ENABLE_OIDC"],
+      "choices": ["True", "False"]
+    },
+    {
+      "id": "local-login",
+      "label": "Hide local login form",
+      "kind": "string",
+      "path": ["LD_DISABLE_LOGIN_FORM"],
+      "choices": ["True", "False"],
+      "advanced": true
+    },
+    {
+      "id": "oidc-secret",
+      "label": "OIDC client secret",
+      "kind": "secret",
+      "path": ["OIDC_RP_CLIENT_SECRET"],
+      "advanced": true
+    }
+  ],
+  "actions": [
+    {
+      "id": "check",
+      "label": "Check application configuration",
+      "description": "Run Django system checks.",
+      "inputs": [],
+      "schedulable": true,
+      "steps": [
+        {
+          "label": "Check application configuration",
+          "command": {
+            "argv": ["python", "/etc/linkding/manage.py", "check"]
+          }
+        }
+      ]
+    }
+  ],
+  "oidc_client": {
+    "callback_path": "/oidc/callback/",
+    "environment": {
+      "LD_ENABLE_OIDC": "True",
+      "LD_DISABLE_LOGIN_FORM": "False",
+      "OIDC_OP_AUTHORIZATION_ENDPOINT": "{{authorization-url}}",
+      "OIDC_OP_TOKEN_ENDPOINT": "{{token-url}}",
+      "OIDC_OP_USER_ENDPOINT": "{{userinfo-url}}",
+      "OIDC_OP_JWKS_ENDPOINT": "{{jwks-url}}",
+      "OIDC_RP_CLIENT_ID": "{{client-id}}",
+      "OIDC_RP_CLIENT_SECRET": "{{client-secret}}",
+      "OIDC_RP_SIGN_ALGO": "RS256",
+      "OIDC_USE_PKCE": "True",
+      "OIDC_VERIFY_SSL": "True",
+      "OIDC_RP_SCOPES": "openid email profile"
+    }
+  }
+}

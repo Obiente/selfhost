@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "name": "Audiobookshelf",
+  "documentation": "https://audiobookshelf.org/docs/",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "tz",
+      "label": "TZ",
+      "kind": "string",
+      "path": ["TZ"],
+      "advanced": true
+    },
+    {
+      "id": "allow-iframe",
+      "label": "ALLOW_IFRAME",
+      "kind": "string",
+      "path": ["ALLOW_IFRAME"],
+      "advanced": true
+    },
+    {
+      "id": "backup-path",
+      "label": "BACKUP_PATH",
+      "kind": "string",
+      "path": ["BACKUP_PATH"],
+      "advanced": true
+    },
+    {
+      "id": "ffmpeg-path",
+      "label": "FFMPEG_PATH",
+      "kind": "string",
+      "path": ["FFMPEG_PATH"],
+      "advanced": true
+    },
+    {
+      "id": "ffprobe-path",
+      "label": "FFPROBE_PATH",
+      "kind": "string",
+      "path": ["FFPROBE_PATH"],
+      "advanced": true
+    },
+    {
+      "id": "router-base-path",
+      "label": "ROUTER_BASE_PATH",
+      "kind": "string",
+      "path": ["ROUTER_BASE_PATH"],
+      "advanced": true
+    },
+    {
+      "id": "host",
+      "label": "HOST",
+      "kind": "string",
+      "path": ["HOST"],
+      "advanced": true
+    },
+    {
+      "id": "port",
+      "label": "PORT",
+      "kind": "string",
+      "path": ["PORT"],
+      "advanced": true
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "setup": [
+    "Start the service and set its public URL when attaching a domain.",
+    "Configure a private Valkey connection before enabling the request limiter."
+  ],
+  "integration_notes": ["The persistent /etc/searxng volume keeps native settings."],
+  "limitations": [
+    "Search-engine selection remains in native settings.yml.",
+    "There is no built-in user OIDC login contract in this profile."
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "name": "Gotify",
+  "documentation": "https://gotify.net/docs/config",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "registration",
+      "label": "Allow registration",
+      "kind": "string",
+      "path": ["GOTIFY_REGISTRATION"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "secure-cookie",
+      "label": "HTTPS-only cookies",
+      "kind": "string",
+      "path": ["GOTIFY_SERVER_SECURECOOKIE"],
+      "choices": ["true", "false"],
+      "description": "Enable after the public URL uses HTTPS."
+    },
+    {
+      "id": "oidc-enabled",
+      "label": "OpenID Connect",
+      "kind": "string",
+      "path": ["GOTIFY_OIDC_ENABLED"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "oidc-issuer",
+      "label": "OIDC issuer URL",
+      "kind": "string",
+      "path": ["GOTIFY_OIDC_ISSUER"]
+    },
+    {
+      "id": "oidc-secret",
+      "label": "OIDC client secret",
+      "kind": "secret",
+      "path": ["GOTIFY_OIDC_CLIENTSECRET"],
+      "advanced": true
+    },
+    {
+      "id": "oidc-registration",
+      "label": "Create accounts on first OIDC login",
+      "kind": "string",
+      "path": ["GOTIFY_OIDC_AUTOREGISTER"],
+      "choices": ["true", "false"]
+    }
+  ],
+  "actions": [],
+  "oidc_client": {
+    "callback_path": "/auth/oidc/callback",
+    "environment": {
+      "GOTIFY_OIDC_ENABLED": "true",
+      "GOTIFY_OIDC_ISSUER": "{{issuer-url}}",
+      "GOTIFY_OIDC_CLIENTID": "{{client-id}}",
+      "GOTIFY_OIDC_CLIENTSECRET": "{{client-secret}}",
+      "GOTIFY_OIDC_REDIRECTURL": "{{callback-url}}",
+      "GOTIFY_OIDC_AUTOREGISTER": "true",
+      "GOTIFY_OIDC_USERNAMECLAIM": "preferred_username"
+    }
+  }
+}

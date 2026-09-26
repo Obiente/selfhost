@@ -1,0 +1,49 @@
+schema = 1
+id = "nextcloud"
+name = "Nextcloud"
+description = "Keep files, calendars, and contacts on your own server."
+category = "Productivity"
+image = "nextcloud:stable-apache"
+port = 8080
+container_port = 80
+data_path = "/var/www/html"
+docs = "https://hub.docker.com/_/nextcloud"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/nextcloud.svg"
+
+[database]
+engines = ["mysql", "mariadb"]
+engine = "postgres"
+unset_environment = ["SQLITE_DATABASE", "POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "PGSSLMODE", "MYSQL_HOST", "MYSQL_DATABASE", "MYSQL_USER", "MYSQL_PASSWORD"]
+
+[database.environment]
+POSTGRES_HOST = "${DATABASE_HOST}:${DATABASE_PORT}"
+POSTGRES_DB = "${DATABASE_NAME}"
+POSTGRES_USER = "${DATABASE_USER}"
+POSTGRES_PASSWORD = "${DATABASE_PASSWORD}"
+PGSSLMODE = "${DATABASE_SSL_MODE}"
+
+[environment]
+NEXTCLOUD_ADMIN_USER = "admin"
+SQLITE_DATABASE = "nextcloud"
+NEXTCLOUD_TRUSTED_DOMAINS = "localhost 127.0.0.1"
+
+[[secrets]]
+environment = "NEXTCLOUD_ADMIN_PASSWORD"
+bytes = 24
+
+[database.engine_environment.mysql]
+MYSQL_HOST = "${DATABASE_HOST}:${DATABASE_PORT}"
+MYSQL_DATABASE = "${DATABASE_NAME}"
+MYSQL_USER = "${DATABASE_USER}"
+MYSQL_PASSWORD = "${DATABASE_PASSWORD}"
+
+[database.engine_environment.mariadb]
+MYSQL_HOST = "${DATABASE_HOST}:${DATABASE_PORT}"
+MYSQL_DATABASE = "${DATABASE_NAME}"
+MYSQL_USER = "${DATABASE_USER}"
+MYSQL_PASSWORD = "${DATABASE_PASSWORD}"
+
+[database.engine_ssl_modes]
+postgres = ["disable","require","verify-full"]
+mysql = ["disable"]
+mariadb = ["disable"]

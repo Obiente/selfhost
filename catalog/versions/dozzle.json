@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "amir20/dozzle:v11.1.1",
+      "label": "v11.1.1",
+      "notes": "Local Docker HTTP startup, native configuration roundtrip, declared read-only actions and container recreation with persistent volumes passed. External provider login and version upgrades require separate validation."
+    }
+  ],
+  "source": {
+    "repository": "amir20/dozzle",
+    "tag_prefix": "v",
+    "image_prefix": "v",
+    "stream": "11.1",
+    "automatic": false,
+    "smoke_path": "/",
+    "smoke_status": 200
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "lissy93/dashy:4.7.0",
+      "label": "4.7.0",
+      "notes": "Local Docker HTTP startup, native configuration roundtrip, declared read-only actions and container recreation with persistent volumes passed. Native file bytes used a fixture volume because this host did not share bind directories; host file sharing remains unverified. External authentication and version upgrades require separate validation."
+    }
+  ],
+  "source": {
+    "repository": "Lissy93/dashy",
+    "tag_prefix": "",
+    "image_prefix": "",
+    "stream": "4.7",
+    "automatic": false,
+    "smoke_path": "/",
+    "smoke_status": 200
+  }
+}

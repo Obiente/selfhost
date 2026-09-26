@@ -1,0 +1,20 @@
+schema = 1
+id = "searxng"
+name = "SearXNG"
+description = "Search multiple providers through your own private metasearch instance."
+category = "Search"
+image = "searxng/searxng:2026.9.25-12f8b6515"
+port = 8085
+container_port = 8080
+data_path = "/etc/searxng"
+docs = "https://docs.searxng.org/admin/installation-docker.html"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/searxng.svg"
+
+[environment]
+SEARXNG_LIMITER = "false"
+SEARXNG_PUBLIC_INSTANCE = "false"
+SEARXNG_IMAGE_PROXY = "true"
+
+[[secrets]]
+environment = "SEARXNG_SECRET"
+bytes = 32

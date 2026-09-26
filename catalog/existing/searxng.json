@@ -1,0 +1,8 @@
+{
+  "id": "searxng",
+  "name": "SearXNG",
+  "description": "Discover an existing SearXNG container without taking ownership of its deployment or storage.",
+  "image_repositories": ["searxng/searxng", "docker.io/searxng/searxng"],
+  "container_hint": "searxng",
+  "actions": []
+}

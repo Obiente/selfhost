@@ -1,0 +1,1033 @@
+{
+  "schema": 1,
+  "name": "Navidrome",
+  "documentation": "https://www.navidrome.org/docs/usage/configuration/options/",
+  "driver": {
+    "kind": "yaml",
+    "file": "navidrome.yaml",
+    "mount": "/config/navidrome.yaml",
+    "argument": "--configfile"
+  },
+  "fields": [
+    {
+      "id": "address",
+      "label": "Address",
+      "kind": "string",
+      "path": ["Address"],
+      "advanced": true,
+      "environment": "ND_ADDRESS"
+    },
+    {
+      "id": "port",
+      "label": "Port",
+      "kind": "integer",
+      "path": ["Port"],
+      "advanced": true,
+      "environment": "ND_PORT"
+    },
+    {
+      "id": "unixsocketperm",
+      "label": "UnixSocketPerm",
+      "kind": "string",
+      "path": ["UnixSocketPerm"],
+      "advanced": true,
+      "environment": "ND_UNIXSOCKETPERM"
+    },
+    {
+      "id": "enforcenonrootuser",
+      "label": "EnforceNonRootUser",
+      "kind": "boolean",
+      "path": ["EnforceNonRootUser"],
+      "advanced": true,
+      "environment": "ND_ENFORCENONROOTUSER"
+    },
+    {
+      "id": "musicfolder",
+      "label": "MusicFolder",
+      "kind": "string",
+      "path": ["MusicFolder"],
+      "advanced": true,
+      "environment": "ND_MUSICFOLDER"
+    },
+    {
+      "id": "datafolder",
+      "label": "DataFolder",
+      "kind": "string",
+      "path": ["DataFolder"],
+      "advanced": true,
+      "environment": "ND_DATAFOLDER"
+    },
+    {
+      "id": "cachefolder",
+      "label": "CacheFolder",
+      "kind": "string",
+      "path": ["CacheFolder"],
+      "advanced": true,
+      "environment": "ND_CACHEFOLDER"
+    },
+    {
+      "id": "loglevel",
+      "label": "LogLevel",
+      "kind": "string",
+      "path": ["LogLevel"],
+      "advanced": true,
+      "environment": "ND_LOGLEVEL"
+    },
+    {
+      "id": "logfile",
+      "label": "LogFile",
+      "kind": "string",
+      "path": ["LogFile"],
+      "advanced": true,
+      "environment": "ND_LOGFILE"
+    },
+    {
+      "id": "sessiontimeout",
+      "label": "SessionTimeout",
+      "kind": "string",
+      "path": ["SessionTimeout"],
+      "advanced": true,
+      "environment": "ND_SESSIONTIMEOUT"
+    },
+    {
+      "id": "baseurl",
+      "label": "BaseURL",
+      "kind": "string",
+      "path": ["BaseURL"],
+      "advanced": true,
+      "environment": "ND_BASEURL"
+    },
+    {
+      "id": "basepath",
+      "label": "BasePath",
+      "kind": "string",
+      "path": ["BasePath"],
+      "advanced": true,
+      "environment": "ND_BASEPATH"
+    },
+    {
+      "id": "basehost",
+      "label": "BaseHost",
+      "kind": "string",
+      "path": ["BaseHost"],
+      "advanced": true,
+      "environment": "ND_BASEHOST"
+    },
+    {
+      "id": "basescheme",
+      "label": "BaseScheme",
+      "kind": "string",
+      "path": ["BaseScheme"],
+      "advanced": true,
+      "environment": "ND_BASESCHEME"
+    },
+    {
+      "id": "uiloginbackgroundurl",
+      "label": "UILoginBackgroundURL",
+      "kind": "string",
+      "path": ["UILoginBackgroundURL"],
+      "advanced": true,
+      "environment": "ND_UILOGINBACKGROUNDURL"
+    },
+    {
+      "id": "uiwelcomemessage",
+      "label": "UIWelcomeMessage",
+      "kind": "string",
+      "path": ["UIWelcomeMessage"],
+      "advanced": true,
+      "environment": "ND_UIWELCOMEMESSAGE"
+    },
+    {
+      "id": "maxsidebarplaylists",
+      "label": "MaxSidebarPlaylists",
+      "kind": "integer",
+      "path": ["MaxSidebarPlaylists"],
+      "advanced": true,
+      "environment": "ND_MAXSIDEBARPLAYLISTS"
+    },
+    {
+      "id": "enabletranscodingconfig",
+      "label": "EnableTranscodingConfig",
+      "kind": "boolean",
+      "path": ["EnableTranscodingConfig"],
+      "advanced": true,
+      "environment": "ND_ENABLETRANSCODINGCONFIG"
+    },
+    {
+      "id": "enabledownloads",
+      "label": "EnableDownloads",
+      "kind": "boolean",
+      "path": ["EnableDownloads"],
+      "advanced": true,
+      "environment": "ND_ENABLEDOWNLOADS"
+    },
+    {
+      "id": "enableexternalservices",
+      "label": "EnableExternalServices",
+      "kind": "boolean",
+      "path": ["EnableExternalServices"],
+      "advanced": true,
+      "environment": "ND_ENABLEEXTERNALSERVICES"
+    },
+    {
+      "id": "enablem3uexternalalbumart",
+      "label": "EnableM3UExternalAlbumArt",
+      "kind": "boolean",
+      "path": ["EnableM3UExternalAlbumArt"],
+      "advanced": true,
+      "environment": "ND_ENABLEM3UEXTERNALALBUMART"
+    },
+    {
+      "id": "enableinsightscollector",
+      "label": "EnableInsightsCollector",
+      "kind": "boolean",
+      "path": ["EnableInsightsCollector"],
+      "advanced": true,
+      "environment": "ND_ENABLEINSIGHTSCOLLECTOR"
+    },
+    {
+      "id": "enablescheduleddbanalyze",
+      "label": "EnableScheduledDBAnalyze",
+      "kind": "boolean",
+      "path": ["EnableScheduledDBAnalyze"],
+      "advanced": true,
+      "environment": "ND_ENABLESCHEDULEDDBANALYZE"
+    },
+    {
+      "id": "enablemediafilecoverart",
+      "label": "EnableMediaFileCoverArt",
+      "kind": "boolean",
+      "path": ["EnableMediaFileCoverArt"],
+      "advanced": true,
+      "environment": "ND_ENABLEMEDIAFILECOVERART"
+    },
+    {
+      "id": "transcodingcachesize",
+      "label": "TranscodingCacheSize",
+      "kind": "string",
+      "path": ["TranscodingCacheSize"],
+      "advanced": true,
+      "environment": "ND_TRANSCODINGCACHESIZE"
+    },
+    {
+      "id": "imagecachesize",
+      "label": "ImageCacheSize",
+      "kind": "string",
+      "path": ["ImageCacheSize"],
+      "advanced": true,
+      "environment": "ND_IMAGECACHESIZE"
+    },
+    {
+      "id": "albumplaycountmode",
+      "label": "AlbumPlayCountMode",
+      "kind": "string",
+      "path": ["AlbumPlayCountMode"],
+      "advanced": true,
+      "environment": "ND_ALBUMPLAYCOUNTMODE"
+    },
+    {
+      "id": "enableartworkprecache",
+      "label": "EnableArtworkPrecache",
+      "kind": "boolean",
+      "path": ["EnableArtworkPrecache"],
+      "advanced": true,
+      "environment": "ND_ENABLEARTWORKPRECACHE"
+    },
+    {
+      "id": "autoimportplaylists",
+      "label": "AutoImportPlaylists",
+      "kind": "boolean",
+      "path": ["AutoImportPlaylists"],
+      "advanced": true,
+      "environment": "ND_AUTOIMPORTPLAYLISTS"
+    },
+    {
+      "id": "defaultplaylistpublicvisibility",
+      "label": "DefaultPlaylistPublicVisibility",
+      "kind": "boolean",
+      "path": ["DefaultPlaylistPublicVisibility"],
+      "advanced": true,
+      "environment": "ND_DEFAULTPLAYLISTPUBLICVISIBILITY"
+    },
+    {
+      "id": "playlistspath",
+      "label": "PlaylistsPath",
+      "kind": "string",
+      "path": ["PlaylistsPath"],
+      "advanced": true,
+      "environment": "ND_PLAYLISTSPATH"
+    },
+    {
+      "id": "smartplaylistrefreshdelay",
+      "label": "SmartPlaylistRefreshDelay",
+      "kind": "string",
+      "path": ["SmartPlaylistRefreshDelay"],
+      "advanced": true,
+      "environment": "ND_SMARTPLAYLISTREFRESHDELAY"
+    },
+    {
+      "id": "autotranscodedownload",
+      "label": "AutoTranscodeDownload",
+      "kind": "boolean",
+      "path": ["AutoTranscodeDownload"],
+      "advanced": true,
+      "environment": "ND_AUTOTRANSCODEDOWNLOAD"
+    },
+    {
+      "id": "defaultdownsamplingformat",
+      "label": "DefaultDownsamplingFormat",
+      "kind": "string",
+      "path": ["DefaultDownsamplingFormat"],
+      "advanced": true,
+      "environment": "ND_DEFAULTDOWNSAMPLINGFORMAT"
+    },
+    {
+      "id": "recentlyaddedbymodtime",
+      "label": "RecentlyAddedByModTime",
+      "kind": "boolean",
+      "path": ["RecentlyAddedByModTime"],
+      "advanced": true,
+      "environment": "ND_RECENTLYADDEDBYMODTIME"
+    },
+    {
+      "id": "prefersorttags",
+      "label": "PreferSortTags",
+      "kind": "boolean",
+      "path": ["PreferSortTags"],
+      "advanced": true,
+      "environment": "ND_PREFERSORTTAGS"
+    },
+    {
+      "id": "enablenaturalsorting",
+      "label": "EnableNaturalSorting",
+      "kind": "boolean",
+      "path": ["EnableNaturalSorting"],
+      "advanced": true,
+      "environment": "ND_ENABLENATURALSORTING"
+    },
+    {
+      "id": "ignoredarticles",
+      "label": "IgnoredArticles",
+      "kind": "string",
+      "path": ["IgnoredArticles"],
+      "advanced": true,
+      "environment": "ND_IGNOREDARTICLES"
+    },
+    {
+      "id": "indexgroups",
+      "label": "IndexGroups",
+      "kind": "string",
+      "path": ["IndexGroups"],
+      "advanced": true,
+      "environment": "ND_INDEXGROUPS"
+    },
+    {
+      "id": "ffmpegpath",
+      "label": "FFmpegPath",
+      "kind": "string",
+      "path": ["FFmpegPath"],
+      "advanced": true,
+      "environment": "ND_FFMPEGPATH"
+    },
+    {
+      "id": "mpvpath",
+      "label": "MPVPath",
+      "kind": "string",
+      "path": ["MPVPath"],
+      "advanced": true,
+      "environment": "ND_MPVPATH"
+    },
+    {
+      "id": "coverartpriority",
+      "label": "CoverArtPriority",
+      "kind": "string",
+      "path": ["CoverArtPriority"],
+      "advanced": true,
+      "environment": "ND_COVERARTPRIORITY"
+    },
+    {
+      "id": "coverartquality",
+      "label": "CoverArtQuality",
+      "kind": "integer",
+      "path": ["CoverArtQuality"],
+      "advanced": true,
+      "environment": "ND_COVERARTQUALITY"
+    },
+    {
+      "id": "enablewebpencoding",
+      "label": "EnableWebPEncoding",
+      "kind": "boolean",
+      "path": ["EnableWebPEncoding"],
+      "advanced": true,
+      "environment": "ND_ENABLEWEBPENCODING"
+    },
+    {
+      "id": "artistartpriority",
+      "label": "ArtistArtPriority",
+      "kind": "string",
+      "path": ["ArtistArtPriority"],
+      "advanced": true,
+      "environment": "ND_ARTISTARTPRIORITY"
+    },
+    {
+      "id": "artistimagefolder",
+      "label": "ArtistImageFolder",
+      "kind": "string",
+      "path": ["ArtistImageFolder"],
+      "advanced": true,
+      "environment": "ND_ARTISTIMAGEFOLDER"
+    },
+    {
+      "id": "discartpriority",
+      "label": "DiscArtPriority",
+      "kind": "string",
+      "path": ["DiscArtPriority"],
+      "advanced": true,
+      "environment": "ND_DISCARTPRIORITY"
+    },
+    {
+      "id": "lyricspriority",
+      "label": "LyricsPriority",
+      "kind": "string",
+      "path": ["LyricsPriority"],
+      "advanced": true,
+      "environment": "ND_LYRICSPRIORITY"
+    },
+    {
+      "id": "enablegravatar",
+      "label": "EnableGravatar",
+      "kind": "boolean",
+      "path": ["EnableGravatar"],
+      "advanced": true,
+      "environment": "ND_ENABLEGRAVATAR"
+    },
+    {
+      "id": "enablefavourites",
+      "label": "EnableFavourites",
+      "kind": "boolean",
+      "path": ["EnableFavourites"],
+      "advanced": true,
+      "environment": "ND_ENABLEFAVOURITES"
+    },
+    {
+      "id": "enablestarrating",
+      "label": "EnableStarRating",
+      "kind": "boolean",
+      "path": ["EnableStarRating"],
+      "advanced": true,
+      "environment": "ND_ENABLESTARRATING"
+    },
+    {
+      "id": "enableuserediting",
+      "label": "EnableUserEditing",
+      "kind": "boolean",
+      "path": ["EnableUserEditing"],
+      "advanced": true,
+      "environment": "ND_ENABLEUSEREDITING"
+    },
+    {
+      "id": "enableartworkupload",
+      "label": "EnableArtworkUpload",
+      "kind": "boolean",
+      "path": ["EnableArtworkUpload"],
+      "advanced": true,
+      "environment": "ND_ENABLEARTWORKUPLOAD"
+    },
+    {
+      "id": "maximageuploadsize",
+      "label": "MaxImageUploadSize",
+      "kind": "string",
+      "path": ["MaxImageUploadSize"],
+      "advanced": true,
+      "environment": "ND_MAXIMAGEUPLOADSIZE"
+    },
+    {
+      "id": "maximagesize",
+      "label": "MaxImageSize",
+      "kind": "string",
+      "path": ["MaxImageSize"],
+      "advanced": true,
+      "environment": "ND_MAXIMAGESIZE"
+    },
+    {
+      "id": "enablesharing",
+      "label": "EnableSharing",
+      "kind": "boolean",
+      "path": ["EnableSharing"],
+      "advanced": true,
+      "environment": "ND_ENABLESHARING"
+    },
+    {
+      "id": "shareurl",
+      "label": "ShareURL",
+      "kind": "string",
+      "path": ["ShareURL"],
+      "advanced": true,
+      "environment": "ND_SHAREURL"
+    },
+    {
+      "id": "defaultshareexpiration",
+      "label": "DefaultShareExpiration",
+      "kind": "string",
+      "path": ["DefaultShareExpiration"],
+      "advanced": true,
+      "environment": "ND_DEFAULTSHAREEXPIRATION"
+    },
+    {
+      "id": "defaultdownloadableshare",
+      "label": "DefaultDownloadableShare",
+      "kind": "boolean",
+      "path": ["DefaultDownloadableShare"],
+      "advanced": true,
+      "environment": "ND_DEFAULTDOWNLOADABLESHARE"
+    },
+    {
+      "id": "defaulttheme",
+      "label": "DefaultTheme",
+      "kind": "string",
+      "path": ["DefaultTheme"],
+      "advanced": true,
+      "environment": "ND_DEFAULTTHEME"
+    },
+    {
+      "id": "defaultlanguage",
+      "label": "DefaultLanguage",
+      "kind": "string",
+      "path": ["DefaultLanguage"],
+      "advanced": true,
+      "environment": "ND_DEFAULTLANGUAGE"
+    },
+    {
+      "id": "defaultuivolume",
+      "label": "DefaultUIVolume",
+      "kind": "integer",
+      "path": ["DefaultUIVolume"],
+      "advanced": true,
+      "environment": "ND_DEFAULTUIVOLUME"
+    },
+    {
+      "id": "uisearchdebouncems",
+      "label": "UISearchDebounceMs",
+      "kind": "integer",
+      "path": ["UISearchDebounceMs"],
+      "advanced": true,
+      "environment": "ND_UISEARCHDEBOUNCEMS"
+    },
+    {
+      "id": "uicoverartsize",
+      "label": "UICoverArtSize",
+      "kind": "integer",
+      "path": ["UICoverArtSize"],
+      "advanced": true,
+      "environment": "ND_UICOVERARTSIZE"
+    },
+    {
+      "id": "enablereplaygain",
+      "label": "EnableReplayGain",
+      "kind": "boolean",
+      "path": ["EnableReplayGain"],
+      "advanced": true,
+      "environment": "ND_ENABLEREPLAYGAIN"
+    },
+    {
+      "id": "enablecoveranimation",
+      "label": "EnableCoverAnimation",
+      "kind": "boolean",
+      "path": ["EnableCoverAnimation"],
+      "advanced": true,
+      "environment": "ND_ENABLECOVERANIMATION"
+    },
+    {
+      "id": "enablenowplaying",
+      "label": "EnableNowPlaying",
+      "kind": "boolean",
+      "path": ["EnableNowPlaying"],
+      "advanced": true,
+      "environment": "ND_ENABLENOWPLAYING"
+    },
+    {
+      "id": "uiplaybackreportinterval",
+      "label": "UIPlaybackReportInterval",
+      "kind": "string",
+      "path": ["UIPlaybackReportInterval"],
+      "advanced": true,
+      "environment": "ND_UIPLAYBACKREPORTINTERVAL"
+    },
+    {
+      "id": "gatrackingid",
+      "label": "GATrackingID",
+      "kind": "string",
+      "path": ["GATrackingID"],
+      "advanced": true,
+      "environment": "ND_GATRACKINGID"
+    },
+    {
+      "id": "enablelogredacting",
+      "label": "EnableLogRedacting",
+      "kind": "boolean",
+      "path": ["EnableLogRedacting"],
+      "advanced": true,
+      "environment": "ND_ENABLELOGREDACTING"
+    },
+    {
+      "id": "authrequestlimit",
+      "label": "AuthRequestLimit",
+      "kind": "integer",
+      "path": ["AuthRequestLimit"],
+      "advanced": true,
+      "environment": "ND_AUTHREQUESTLIMIT"
+    },
+    {
+      "id": "authwindowlength",
+      "label": "AuthWindowLength",
+      "kind": "string",
+      "path": ["AuthWindowLength"],
+      "advanced": true,
+      "environment": "ND_AUTHWINDOWLENGTH"
+    },
+    {
+      "id": "enablescrobblehistory",
+      "label": "EnableScrobbleHistory",
+      "kind": "boolean",
+      "path": ["EnableScrobbleHistory"],
+      "advanced": true,
+      "environment": "ND_ENABLESCROBBLEHISTORY"
+    },
+    {
+      "id": "agents",
+      "label": "Agents",
+      "kind": "string",
+      "path": ["Agents"],
+      "advanced": true,
+      "environment": "ND_AGENTS"
+    },
+    {
+      "id": "scanner-enabled",
+      "label": "Scanner / Enabled",
+      "kind": "boolean",
+      "path": ["Scanner", "Enabled"],
+      "advanced": true,
+      "environment": "ND_SCANNER_ENABLED"
+    },
+    {
+      "id": "scanner-schedule",
+      "label": "Scanner / Schedule",
+      "kind": "string",
+      "path": ["Scanner", "Schedule"],
+      "advanced": true,
+      "environment": "ND_SCANNER_SCHEDULE"
+    },
+    {
+      "id": "scanner-watcherwait",
+      "label": "Scanner / WatcherWait",
+      "kind": "string",
+      "path": ["Scanner", "WatcherWait"],
+      "advanced": true,
+      "environment": "ND_SCANNER_WATCHERWAIT"
+    },
+    {
+      "id": "scanner-scanonstartup",
+      "label": "Scanner / ScanOnStartup",
+      "kind": "boolean",
+      "path": ["Scanner", "ScanOnStartup"],
+      "advanced": true,
+      "environment": "ND_SCANNER_SCANONSTARTUP"
+    },
+    {
+      "id": "scanner-extractor",
+      "label": "Scanner / Extractor",
+      "kind": "string",
+      "path": ["Scanner", "Extractor"],
+      "advanced": true,
+      "environment": "ND_SCANNER_EXTRACTOR"
+    },
+    {
+      "id": "scanner-artistjoiner",
+      "label": "Scanner / ArtistJoiner",
+      "kind": "string",
+      "path": ["Scanner", "ArtistJoiner"],
+      "advanced": true,
+      "environment": "ND_SCANNER_ARTISTJOINER"
+    },
+    {
+      "id": "scanner-artistsplitexceptions",
+      "label": "Scanner / ArtistSplitExceptions",
+      "kind": "string_list",
+      "path": ["Scanner", "ArtistSplitExceptions"],
+      "advanced": true,
+      "environment": "ND_SCANNER_ARTISTSPLITEXCEPTIONS"
+    },
+    {
+      "id": "scanner-genreseparators",
+      "label": "Scanner / GenreSeparators",
+      "kind": "string",
+      "path": ["Scanner", "GenreSeparators"],
+      "advanced": true,
+      "environment": "ND_SCANNER_GENRESEPARATORS"
+    },
+    {
+      "id": "scanner-groupalbumreleases",
+      "label": "Scanner / GroupAlbumReleases",
+      "kind": "boolean",
+      "path": ["Scanner", "GroupAlbumReleases"],
+      "advanced": true,
+      "environment": "ND_SCANNER_GROUPALBUMRELEASES"
+    },
+    {
+      "id": "scanner-followsymlinks",
+      "label": "Scanner / FollowSymlinks",
+      "kind": "boolean",
+      "path": ["Scanner", "FollowSymlinks"],
+      "advanced": true,
+      "environment": "ND_SCANNER_FOLLOWSYMLINKS"
+    },
+    {
+      "id": "scanner-ignoredotfolders",
+      "label": "Scanner / IgnoreDotFolders",
+      "kind": "boolean",
+      "path": ["Scanner", "IgnoreDotFolders"],
+      "advanced": true,
+      "environment": "ND_SCANNER_IGNOREDOTFOLDERS"
+    },
+    {
+      "id": "scanner-purgemissing",
+      "label": "Scanner / PurgeMissing",
+      "kind": "string",
+      "path": ["Scanner", "PurgeMissing"],
+      "advanced": true,
+      "environment": "ND_SCANNER_PURGEMISSING"
+    },
+    {
+      "id": "transcoding-maxconcurrent",
+      "label": "Transcoding / MaxConcurrent",
+      "kind": "integer",
+      "path": ["Transcoding", "MaxConcurrent"],
+      "advanced": true,
+      "environment": "ND_TRANSCODING_MAXCONCURRENT"
+    },
+    {
+      "id": "transcoding-maxconcurrentperuser",
+      "label": "Transcoding / MaxConcurrentPerUser",
+      "kind": "integer",
+      "path": ["Transcoding", "MaxConcurrentPerUser"],
+      "advanced": true,
+      "environment": "ND_TRANSCODING_MAXCONCURRENTPERUSER"
+    },
+    {
+      "id": "transcoding-enablecancellation",
+      "label": "Transcoding / EnableCancellation",
+      "kind": "boolean",
+      "path": ["Transcoding", "EnableCancellation"],
+      "advanced": true,
+      "environment": "ND_TRANSCODING_ENABLECANCELLATION"
+    },
+    {
+      "id": "subsonic-appendsubtitle",
+      "label": "Subsonic / AppendSubtitle",
+      "kind": "boolean",
+      "path": ["Subsonic", "AppendSubtitle"],
+      "advanced": true,
+      "environment": "ND_SUBSONIC_APPENDSUBTITLE"
+    },
+    {
+      "id": "subsonic-appendalbumversion",
+      "label": "Subsonic / AppendAlbumVersion",
+      "kind": "boolean",
+      "path": ["Subsonic", "AppendAlbumVersion"],
+      "advanced": true,
+      "environment": "ND_SUBSONIC_APPENDALBUMVERSION"
+    },
+    {
+      "id": "subsonic-artistparticipations",
+      "label": "Subsonic / ArtistParticipations",
+      "kind": "boolean",
+      "path": ["Subsonic", "ArtistParticipations"],
+      "advanced": true,
+      "environment": "ND_SUBSONIC_ARTISTPARTICIPATIONS"
+    },
+    {
+      "id": "subsonic-defaultreportrealpath",
+      "label": "Subsonic / DefaultReportRealPath",
+      "kind": "boolean",
+      "path": ["Subsonic", "DefaultReportRealPath"],
+      "advanced": true,
+      "environment": "ND_SUBSONIC_DEFAULTREPORTREALPATH"
+    },
+    {
+      "id": "subsonic-enableaveragerating",
+      "label": "Subsonic / EnableAverageRating",
+      "kind": "boolean",
+      "path": ["Subsonic", "EnableAverageRating"],
+      "advanced": true,
+      "environment": "ND_SUBSONIC_ENABLEAVERAGERATING"
+    },
+    {
+      "id": "subsonic-legacyclients",
+      "label": "Subsonic / LegacyClients",
+      "kind": "string",
+      "path": ["Subsonic", "LegacyClients"],
+      "advanced": true,
+      "environment": "ND_SUBSONIC_LEGACYCLIENTS"
+    },
+    {
+      "id": "subsonic-minimalclients",
+      "label": "Subsonic / MinimalClients",
+      "kind": "string",
+      "path": ["Subsonic", "MinimalClients"],
+      "advanced": true,
+      "environment": "ND_SUBSONIC_MINIMALCLIENTS"
+    },
+    {
+      "id": "lastfm-enabled",
+      "label": "LastFM / Enabled",
+      "kind": "boolean",
+      "path": ["LastFM", "Enabled"],
+      "advanced": true,
+      "environment": "ND_LASTFM_ENABLED"
+    },
+    {
+      "id": "lastfm-apikey",
+      "label": "LastFM / ApiKey",
+      "kind": "secret",
+      "path": ["LastFM", "ApiKey"],
+      "advanced": true,
+      "environment": "ND_LASTFM_APIKEY"
+    },
+    {
+      "id": "lastfm-secret",
+      "label": "LastFM / Secret",
+      "kind": "secret",
+      "path": ["LastFM", "Secret"],
+      "advanced": true,
+      "environment": "ND_LASTFM_SECRET"
+    },
+    {
+      "id": "lastfm-language",
+      "label": "LastFM / Language",
+      "kind": "string",
+      "path": ["LastFM", "Language"],
+      "advanced": true,
+      "environment": "ND_LASTFM_LANGUAGE"
+    },
+    {
+      "id": "lastfm-scrobblefirstartistonly",
+      "label": "LastFM / ScrobbleFirstArtistOnly",
+      "kind": "boolean",
+      "path": ["LastFM", "ScrobbleFirstArtistOnly"],
+      "advanced": true,
+      "environment": "ND_LASTFM_SCROBBLEFIRSTARTISTONLY"
+    },
+    {
+      "id": "deezer-enabled",
+      "label": "Deezer / Enabled",
+      "kind": "boolean",
+      "path": ["Deezer", "Enabled"],
+      "advanced": true,
+      "environment": "ND_DEEZER_ENABLED"
+    },
+    {
+      "id": "deezer-language",
+      "label": "Deezer / Language",
+      "kind": "string",
+      "path": ["Deezer", "Language"],
+      "advanced": true,
+      "environment": "ND_DEEZER_LANGUAGE"
+    },
+    {
+      "id": "listenbrainz-enabled",
+      "label": "ListenBrainz / Enabled",
+      "kind": "boolean",
+      "path": ["ListenBrainz", "Enabled"],
+      "advanced": true,
+      "environment": "ND_LISTENBRAINZ_ENABLED"
+    },
+    {
+      "id": "listenbrainz-baseurl",
+      "label": "ListenBrainz / BaseURL",
+      "kind": "string",
+      "path": ["ListenBrainz", "BaseURL"],
+      "advanced": true,
+      "environment": "ND_LISTENBRAINZ_BASEURL"
+    },
+    {
+      "id": "listenbrainz-artistalgorithm",
+      "label": "ListenBrainz / ArtistAlgorithm",
+      "kind": "string",
+      "path": ["ListenBrainz", "ArtistAlgorithm"],
+      "advanced": true,
+      "environment": "ND_LISTENBRAINZ_ARTISTALGORITHM"
+    },
+    {
+      "id": "listenbrainz-trackalgorithm",
+      "label": "ListenBrainz / TrackAlgorithm",
+      "kind": "string",
+      "path": ["ListenBrainz", "TrackAlgorithm"],
+      "advanced": true,
+      "environment": "ND_LISTENBRAINZ_TRACKALGORITHM"
+    },
+    {
+      "id": "jellyfin-enabled",
+      "label": "Jellyfin / Enabled",
+      "kind": "boolean",
+      "path": ["Jellyfin", "Enabled"],
+      "advanced": true,
+      "environment": "ND_JELLYFIN_ENABLED"
+    },
+    {
+      "id": "jellyfin-servername",
+      "label": "Jellyfin / ServerName",
+      "kind": "string",
+      "path": ["Jellyfin", "ServerName"],
+      "advanced": true,
+      "environment": "ND_JELLYFIN_SERVERNAME"
+    },
+    {
+      "id": "jellyfin-exposedpublicusers",
+      "label": "Jellyfin / ExposedPublicUsers",
+      "kind": "string",
+      "path": ["Jellyfin", "ExposedPublicUsers"],
+      "advanced": true,
+      "environment": "ND_JELLYFIN_EXPOSEDPUBLICUSERS"
+    },
+    {
+      "id": "jellyfin-autodiscovery",
+      "label": "Jellyfin / AutoDiscovery",
+      "kind": "boolean",
+      "path": ["Jellyfin", "AutoDiscovery"],
+      "advanced": true,
+      "environment": "ND_JELLYFIN_AUTODISCOVERY"
+    },
+    {
+      "id": "jellyfin-quickconnect",
+      "label": "Jellyfin / QuickConnect",
+      "kind": "boolean",
+      "path": ["Jellyfin", "QuickConnect"],
+      "advanced": true,
+      "environment": "ND_JELLYFIN_QUICKCONNECT"
+    },
+    {
+      "id": "jellyfin-maxconcurrentstreams",
+      "label": "Jellyfin / MaxConcurrentStreams",
+      "kind": "integer",
+      "path": ["Jellyfin", "MaxConcurrentStreams"],
+      "advanced": true,
+      "environment": "ND_JELLYFIN_MAXCONCURRENTSTREAMS"
+    },
+    {
+      "id": "prometheus-enabled",
+      "label": "Prometheus / Enabled",
+      "kind": "boolean",
+      "path": ["Prometheus", "Enabled"],
+      "advanced": true,
+      "environment": "ND_PROMETHEUS_ENABLED"
+    },
+    {
+      "id": "prometheus-metricspath",
+      "label": "Prometheus / MetricsPath",
+      "kind": "string",
+      "path": ["Prometheus", "MetricsPath"],
+      "advanced": true,
+      "environment": "ND_PROMETHEUS_METRICSPATH"
+    },
+    {
+      "id": "prometheus-password",
+      "label": "Prometheus / Password",
+      "kind": "secret",
+      "path": ["Prometheus", "Password"],
+      "advanced": true,
+      "environment": "ND_PROMETHEUS_PASSWORD"
+    },
+    {
+      "id": "backup-count",
+      "label": "Backup / Count",
+      "kind": "integer",
+      "path": ["Backup", "Count"],
+      "advanced": true,
+      "environment": "ND_BACKUP_COUNT"
+    },
+    {
+      "id": "backup-path",
+      "label": "Backup / Path",
+      "kind": "string",
+      "path": ["Backup", "Path"],
+      "advanced": true,
+      "environment": "ND_BACKUP_PATH"
+    },
+    {
+      "id": "backup-schedule",
+      "label": "Backup / Schedule",
+      "kind": "string",
+      "path": ["Backup", "Schedule"],
+      "advanced": true,
+      "environment": "ND_BACKUP_SCHEDULE"
+    },
+    {
+      "id": "plugins-enabled",
+      "label": "Plugins / Enabled",
+      "kind": "boolean",
+      "path": ["Plugins", "Enabled"],
+      "advanced": true,
+      "environment": "ND_PLUGINS_ENABLED"
+    },
+    {
+      "id": "plugins-folder",
+      "label": "Plugins / Folder",
+      "kind": "string",
+      "path": ["Plugins", "Folder"],
+      "advanced": true,
+      "environment": "ND_PLUGINS_FOLDER"
+    },
+    {
+      "id": "plugins-cachesize",
+      "label": "Plugins / CacheSize",
+      "kind": "string",
+      "path": ["Plugins", "CacheSize"],
+      "advanced": true,
+      "environment": "ND_PLUGINS_CACHESIZE"
+    },
+    {
+      "id": "plugins-autoreload",
+      "label": "Plugins / AutoReload",
+      "kind": "boolean",
+      "path": ["Plugins", "AutoReload"],
+      "advanced": true,
+      "environment": "ND_PLUGINS_AUTORELOAD"
+    },
+    {
+      "id": "plugins-loglevel",
+      "label": "Plugins / LogLevel",
+      "kind": "string",
+      "path": ["Plugins", "LogLevel"],
+      "advanced": true,
+      "environment": "ND_PLUGINS_LOGLEVEL"
+    },
+    {
+      "id": "extauth-trustedsources",
+      "label": "ExtAuth / TrustedSources",
+      "kind": "string",
+      "path": ["ExtAuth", "TrustedSources"],
+      "advanced": true,
+      "environment": "ND_EXTAUTH_TRUSTEDSOURCES"
+    },
+    {
+      "id": "extauth-userheader",
+      "label": "ExtAuth / UserHeader",
+      "kind": "string",
+      "path": ["ExtAuth", "UserHeader"],
+      "advanced": true,
+      "environment": "ND_EXTAUTH_USERHEADER"
+    },
+    {
+      "id": "extauth-logouturl",
+      "label": "ExtAuth / LogoutURL",
+      "kind": "string",
+      "path": ["ExtAuth", "LogoutURL"],
+      "advanced": true,
+      "environment": "ND_EXTAUTH_LOGOUTURL"
+    }
+  ],
+  "warnings": [
+    "External header authentication requires a trusted proxy that removes spoofed headers. Restrict ExtAuth.TrustedSources before enabling it.",
+    "Database backups do not include your music library. Keep media backups separately."
+  ]
+}

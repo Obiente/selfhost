@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "name": "Navidrome administrator setup",
+  "state_path": "/app/",
+  "state_pointer": "",
+  "initial_state": "fresh",
+  "board_url": "{base}",
+  "default_icon": "",
+  "app_name_max": 255,
+  "app_description_max": 512,
+  "warnings": [
+    "Creates the first administrator only. Existing installations are never reset. Library paths and media access remain under your control."
+  ],
+  "fields": [
+    {
+      "id": "username",
+      "label": "Administrator username",
+      "kind": "string",
+      "required": true,
+      "modes": ["bootstrap"],
+      "minimum_length": 1,
+      "maximum_length": 64,
+      "default": "admin"
+    },
+    {
+      "id": "password",
+      "label": "Administrator password",
+      "kind": "secret",
+      "required": true,
+      "modes": ["bootstrap"],
+      "minimum_length": 12,
+      "maximum_length": 128
+    }
+  ],
+  "steps": [
+    {
+      "id": "administrator",
+      "label": "Create the first administrator",
+      "method": "POST",
+      "path": "/auth/createAdmin",
+      "body": {
+        "username": "{username}",
+        "password": "{password}"
+      },
+      "modes": ["bootstrap"]
+    }
+  ],
+  "state_text_contains": "\\\"firstTime\\\":true"
+}

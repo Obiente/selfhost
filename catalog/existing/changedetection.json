@@ -1,0 +1,8 @@
+{
+  "id": "changedetection",
+  "name": "Change Detection",
+  "description": "Discover an existing Change Detection container without taking ownership of its deployment or storage.",
+  "image_repositories": ["ghcr.io/dgtlmoon/changedetection.io"],
+  "container_hint": "changedetection",
+  "actions": []
+}

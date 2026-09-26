@@ -1,0 +1,8 @@
+{
+  "id": "trilium",
+  "name": "Trilium Notes",
+  "description": "Discover an existing Trilium Notes container without taking ownership of its deployment or storage.",
+  "image_repositories": ["triliumnext/trilium", "docker.io/triliumnext/trilium"],
+  "container_hint": "trilium",
+  "actions": []
+}

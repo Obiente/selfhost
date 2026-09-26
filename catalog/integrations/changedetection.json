@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "name": "Change Detection",
+  "documentation": "https://github.com/dgtlmoon/changedetection.io/blob/master/docker-compose.yml",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "public-url",
+      "label": "Public URL",
+      "kind": "string",
+      "path": ["BASE_URL"]
+    },
+    {
+      "id": "browser",
+      "label": "Browser WebSocket URL",
+      "kind": "string",
+      "path": ["PLAYWRIGHT_DRIVER_URL"],
+      "description": "Connect a trusted Playwright-compatible browser. Use a protected network for remote access."
+    },
+    {
+      "id": "workers",
+      "label": "Parallel fetchers",
+      "kind": "string",
+      "path": ["FETCH_WORKERS"]
+    },
+    {
+      "id": "minimum-interval",
+      "label": "Minimum recheck interval",
+      "kind": "string",
+      "path": ["MINIMUM_SECONDS_RECHECK_TIME"],
+      "description": "Seconds; 0 disables the lower limit."
+    },
+    {
+      "id": "hide-referrer",
+      "label": "Hide referrer from watched websites",
+      "kind": "string",
+      "path": ["HIDE_REFERER"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "version-check",
+      "label": "Disable upstream version checks",
+      "kind": "string",
+      "path": ["DISABLE_VERSION_CHECK"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "watch-limit",
+      "label": "Maximum watches",
+      "kind": "string",
+      "path": ["PAGE_WATCH_LIMIT"]
+    },
+    {
+      "id": "timezone",
+      "label": "Time zone",
+      "kind": "string",
+      "path": ["TZ"]
+    }
+  ],
+  "actions": [],
+  "warnings": [
+    "Configure the application password before exposing this instance. Browser services can reach networks available to their host."
+  ]
+}

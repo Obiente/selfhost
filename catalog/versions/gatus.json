@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "twinproduction/gatus:v5.37.0",
+      "label": "v5.37.0",
+      "notes": "Local Docker HTTP startup, native configuration roundtrip, declared read-only actions and container recreation with persistent volumes passed. Native file bytes used a fixture volume because this host did not share bind directories; host file sharing remains unverified. External provider login and version upgrades require separate validation."
+    }
+  ],
+  "source": {
+    "repository": "TwiN/gatus",
+    "tag_prefix": "v",
+    "image_prefix": "v",
+    "stream": "5.37",
+    "automatic": false,
+    "smoke_path": "/",
+    "smoke_status": 200
+  }
+}

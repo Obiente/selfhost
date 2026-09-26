@@ -1,0 +1,28 @@
+# https://prometheus.io/docs/prometheus/latest/installation/
+# Starts with the image's sample self-scrape configuration. Add custom scrape
+# targets using a portable Compose setup with a mounted prometheus.yml.
+schema = 1
+id = "prometheus"
+name = "Prometheus"
+description = "Collect and query time-series metrics from configured scrape targets."
+category = "Monitoring"
+image = "prom/prometheus:v3.15.0"
+port = 9090
+container_port = 9090
+data_path = "/prometheus"
+docs = "https://prometheus.io/docs/prometheus/latest/installation/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/prometheus.svg"
+
+[[actions]]
+id = "check-config"
+label = "Validate configuration"
+description = "Validate the active configuration and referenced rules without changing them."
+command = ["/bin/promtool", "check", "config", "/etc/prometheus/prometheus.yml"]
+timeout_seconds = 30
+
+[[actions]]
+id = "check-ready"
+label = "Check readiness"
+description = "Check whether Prometheus is ready to serve queries."
+command = ["/bin/promtool", "check", "ready", "--url=http://localhost:9090"]
+timeout_seconds = 15

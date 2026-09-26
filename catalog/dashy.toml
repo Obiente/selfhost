@@ -1,0 +1,20 @@
+schema = 1
+id = "dashy"
+name = "Dashy"
+description = "Build a configurable dashboard with sections, widgets, status checks and themes."
+category = "Dashboards"
+image = "lissy93/dashy:4.7.0"
+port = 18084
+container_port = 8080
+data_path = "/app/user-data"
+docs = "https://dashy.to/docs/deployment/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/dashy.png"
+deployment_only = true
+
+[[actions]]
+id = "check-health"
+label = "Check Dashy health"
+description = "Run the dashboard image health check."
+command = ["node", "/app/services/healthcheck.js"]
+timeout_seconds = 60
+confirm = false

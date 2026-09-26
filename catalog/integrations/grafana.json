@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "name": "Grafana",
+  "documentation": "https://grafana.com/docs/grafana/latest/setup-grafana/configure-access/configure-authentication/generic-oauth/",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "public-url",
+      "label": "Public URL",
+      "kind": "string",
+      "path": ["GF_SERVER_ROOT_URL"]
+    },
+    {
+      "id": "oauth-enabled",
+      "label": "OpenID Connect enabled",
+      "kind": "string",
+      "choices": ["true", "false"],
+      "path": ["GF_AUTH_GENERIC_OAUTH_ENABLED"]
+    },
+    {
+      "id": "oauth-client-secret",
+      "label": "OIDC client secret",
+      "kind": "secret",
+      "advanced": true,
+      "path": ["GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET"]
+    }
+  ],
+  "actions": [],
+  "oidc_client": {
+    "callback_path": "/login/generic_oauth",
+    "environment": {
+      "GF_SERVER_ROOT_URL": "{{app-url}}",
+      "GF_AUTH_GENERIC_OAUTH_ENABLED": "true",
+      "GF_AUTH_GENERIC_OAUTH_NAME": "{{name}}",
+      "GF_AUTH_GENERIC_OAUTH_CLIENT_ID": "{{client-id}}",
+      "GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET": "{{client-secret}}",
+      "GF_AUTH_GENERIC_OAUTH_SCOPES": "openid profile email",
+      "GF_AUTH_GENERIC_OAUTH_AUTH_URL": "{{authorization-url}}",
+      "GF_AUTH_GENERIC_OAUTH_TOKEN_URL": "{{token-url}}",
+      "GF_AUTH_GENERIC_OAUTH_API_URL": "{{userinfo-url}}",
+      "GF_AUTH_GENERIC_OAUTH_USE_PKCE": "true",
+      "GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP": "true",
+      "GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH": "'Viewer'",
+      "GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_STRICT": "true",
+      "GF_AUTH_GENERIC_OAUTH_ALLOW_ASSIGN_GRAFANA_ADMIN": "false",
+      "GF_AUTH_GENERIC_OAUTH_SKIP_ORG_ROLE_SYNC": "false",
+      "GF_AUTH_GENERIC_OAUTH_AUTO_LOGIN": "false",
+      "GF_AUTH_DISABLE_LOGIN_FORM": "false",
+      "GF_AUTH_BASIC_ENABLED": "true"
+    },
+    "administrator_role": "Grafana organization administrator",
+    "administrator_environment": {
+      "GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH": "sub == '{{administrator-subject}}' && 'Admin' || 'Viewer'"
+    }
+  }
+}

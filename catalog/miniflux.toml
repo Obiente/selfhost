@@ -1,0 +1,18 @@
+schema = 1
+id = "miniflux"
+name = "Miniflux"
+description = "Read and organize feeds with a private PostgreSQL database."
+category = "News"
+image = "miniflux/miniflux:2.3.3"
+port = 8086
+container_port = 8080
+data_path = "/var/lib/miniflux"
+docs = "https://miniflux.app/docs/docker.html"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/miniflux.svg"
+deployment_only = true
+
+[database]
+engine = "postgres"
+
+[database.environment]
+DATABASE_URL = "${DATABASE_URL}"

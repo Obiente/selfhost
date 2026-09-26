@@ -1,0 +1,11 @@
+[
+  {
+    "app": "wallabag",
+    "id": "sqlite",
+    "name": "SQLite with persistent downloaded images",
+    "description": "SQLite with persistent downloaded images",
+    "recipe": null,
+    "blueprint": "wallabag",
+    "default": true
+  }
+]

@@ -1,0 +1,89 @@
+{
+  "id": "traefik",
+  "name": "Traefik",
+  "driver": "file_watch",
+  "description": "Write an independent dynamic configuration file. Choose an HTTPS entrypoint and an existing ACME certificate resolver.",
+  "defaults": {
+    "entrypoint": "websecure",
+    "certificate-resolver": "letsencrypt",
+    "upstream-ca-files": []
+  },
+  "template": {
+    "http": {
+      "routers": {
+        "{{route-id}}": {
+          "rule": "Host(`{{domain}}`)",
+          "entryPoints": ["{{entrypoint}}"],
+          "service": "{{route-id}}",
+          "tls": {
+            "certResolver": "{{certificate-resolver}}"
+          }
+        }
+      },
+      "services": {
+        "{{route-id}}": {
+          "loadBalancer": {
+            "servers": [
+              {
+                "url": "{{upstream-url}}"
+              }
+            ],
+            "passHostHeader": true,
+            "serversTransport": "{{route-id}}"
+          }
+        }
+      },
+      "serversTransports": {
+        "{{route-id}}": {
+          "rootCAs": "{{upstream-ca-files}}"
+        }
+      }
+    }
+  },
+  "settings_schema": {
+    "entrypoint": {
+      "label": "HTTPS entrypoint",
+      "kind": "identifier"
+    },
+    "certificate-resolver": {
+      "label": "ACME certificate resolver",
+      "kind": "identifier"
+    },
+    "upstream-ca-files": {
+      "label": "Upstream CA files on the proxy (optional)",
+      "kind": "paths"
+    }
+  },
+  "loopback_http_template": {
+    "http": {
+      "routers": {
+        "{{route-id}}": {
+          "rule": "Host(`{{domain}}`)",
+          "entryPoints": ["{{entrypoint}}"],
+          "service": "{{route-id}}",
+          "tls": {
+            "certResolver": "{{certificate-resolver}}"
+          }
+        }
+      },
+      "services": {
+        "{{route-id}}": {
+          "loadBalancer": {
+            "servers": [
+              {
+                "url": "{{upstream-url}}"
+              }
+            ],
+            "passHostHeader": true,
+            "serversTransport": "{{route-id}}"
+          }
+        }
+      },
+      "serversTransports": {
+        "{{route-id}}": {
+          "rootCAs": "{{upstream-ca-files}}"
+        }
+      }
+    }
+  }
+}

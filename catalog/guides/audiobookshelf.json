@@ -1,0 +1,14 @@
+{
+  "setup": [
+    "Persistent /data contains config and metadata. Mount audiobook and podcast libraries separately and create libraries in Audiobookshelf.",
+    "Automatic app setup creates the first root account and verifies initialization."
+  ],
+  "integration_notes": [
+    "Environment settings expose timezone, routing prefix, backup path and media tool paths. Additional paths must refer to mounted container directories.",
+    "Keep the SQLite configuration database on local storage. Back up config, metadata and your media."
+  ],
+  "limitations": [
+    "OIDC configuration, API tokens, libraries and scheduled backups are managed in Audiobookshelf; Selfhost does not automate these runtime settings yet.",
+    "Existing initialized servers are never reset by onboarding."
+  ]
+}

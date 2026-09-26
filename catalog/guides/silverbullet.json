@@ -1,0 +1,11 @@
+{
+  "setup": [
+    "Open the app and configure its spaces/accounts through the SilverBullet dashboard.",
+    "Legacy single-space deployments can use the SB_USER setting."
+  ],
+  "integration_notes": ["Filesystem watch mode supports local disks or polling on network mounts."],
+  "limitations": [
+    "Single-space credentials and API tokens do not create multi-space accounts.",
+    "Multi-space OIDC is configured in SilverBullet; Selfhost does not yet automate that configuration."
+  ]
+}

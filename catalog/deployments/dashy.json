@@ -1,0 +1,10 @@
+[
+  {
+    "app": "dashy",
+    "id": "native",
+    "name": "Native configuration",
+    "description": "Build a configurable dashboard with sections, widgets, status checks and themes.",
+    "blueprint": "dashy",
+    "default": true
+  }
+]

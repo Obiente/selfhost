@@ -1,0 +1,25 @@
+# https://docs.linuxserver.io/images/docker-heimdall/
+schema = 1
+id = "heimdall"
+name = "Heimdall"
+description = "Organize application links in a personal start page."
+category = "Dashboard"
+image = "lscr.io/linuxserver/heimdall:2.8.3"
+port = 8084
+container_port = 80
+data_path = "/config"
+docs = "https://docs.linuxserver.io/images/docker-heimdall/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/heimdall.svg"
+
+[environment]
+PUID = "1000"
+PGID = "1000"
+TZ = "UTC"
+ALLOW_INTERNAL_REQUESTS = "false"
+
+[[actions]]
+id = "check-web-config"
+label = "Validate web server configuration"
+description = "Check the bundled Nginx configuration without reloading the service."
+command = ["nginx", "-t"]
+timeout_seconds = 15

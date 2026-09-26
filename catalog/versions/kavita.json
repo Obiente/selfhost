@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "jvmilazz0/kavita:0.9.1",
+      "label": "0.9.1",
+      "notes": "Local Docker HTTP startup, native configuration roundtrip, declared read-only actions and container recreation with persistent volumes passed. First administrator setup and initialized state after recreation passed. External provider login and version upgrades require separate validation."
+    }
+  ]
+}

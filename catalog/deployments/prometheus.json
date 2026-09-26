@@ -1,0 +1,20 @@
+[
+  {
+    "app": "prometheus",
+    "id": "docker",
+    "name": "Basic Docker image",
+    "description": "Use the image defaults and configure the native app yourself.",
+    "recipe": "prometheus",
+    "blueprint": null,
+    "default": false
+  },
+  {
+    "app": "prometheus",
+    "id": "configured",
+    "name": "Editable configuration",
+    "description": "Create portable native configuration files with managed settings.",
+    "recipe": null,
+    "blueprint": "prometheus-configured",
+    "default": true
+  }
+]

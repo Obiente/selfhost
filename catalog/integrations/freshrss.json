@@ -1,0 +1,184 @@
+{
+  "schema": 1,
+  "name": "FreshRSS",
+  "documentation": "https://github.com/FreshRSS/FreshRSS/blob/edge/cli/README.md",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "timezone",
+      "label": "Timezone",
+      "kind": "string",
+      "path": ["TZ"]
+    },
+    {
+      "id": "cron",
+      "label": "Feed refresh minutes",
+      "kind": "string",
+      "path": ["CRON_MIN"]
+    },
+    {
+      "id": "trusted-proxy",
+      "label": "Trusted proxy addresses",
+      "kind": "string",
+      "path": ["TRUSTED_PROXY"],
+      "advanced": true,
+      "description": "Only list proxies you control."
+    }
+  ],
+  "actions": [
+    {
+      "id": "initialize",
+      "label": "Initialize FreshRSS",
+      "description": "Initialize SQLite and the selected administrator on a new installation. Existing configuration is preserved; if installation already exists use Create user instead.",
+      "inputs": [
+        {
+          "id": "username",
+          "label": "Administrator username",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 255
+        },
+        {
+          "id": "url",
+          "label": "Public URL",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 255
+        },
+        {
+          "id": "password",
+          "label": "Administrator password",
+          "kind": "secret",
+          "minimum_length": 12,
+          "maximum_length": 255
+        },
+        {
+          "id": "email",
+          "label": "Administrator email",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 255
+        }
+      ],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Initialize FreshRSS",
+          "command": {
+            "argv": [
+              "php",
+              "/var/www/FreshRSS/cli/do-install.php",
+              "--default-user",
+              "{{username}}",
+              "--base-url",
+              "{{url}}",
+              "--language",
+              "en",
+              "--api-enabled"
+            ],
+            "user": "www-data"
+          }
+        },
+        {
+          "label": "Create selected administrator",
+          "command": {
+            "argv": [
+              "php",
+              "/var/www/FreshRSS/cli/create-user.php",
+              "--user",
+              "{{username}}",
+              "--password",
+              "{{password}}",
+              "--email",
+              "{{email}}",
+              "--no-default-feeds"
+            ],
+            "user": "www-data"
+          }
+        }
+      ]
+    },
+    {
+      "id": "create-user",
+      "label": "Create user",
+      "description": "Create a new user; existing users are not modified. The installation default user is the administrator.",
+      "inputs": [
+        {
+          "id": "username",
+          "label": "Username",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 255
+        },
+        {
+          "id": "password",
+          "label": "Password",
+          "kind": "secret",
+          "minimum_length": 12,
+          "maximum_length": 255
+        },
+        {
+          "id": "email",
+          "label": "Email",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 255
+        }
+      ],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Create user",
+          "command": {
+            "argv": [
+              "php",
+              "/var/www/FreshRSS/cli/create-user.php",
+              "--user",
+              "{{username}}",
+              "--password",
+              "{{password}}",
+              "--email",
+              "{{email}}",
+              "--no-default-feeds"
+            ],
+            "user": "www-data"
+          }
+        }
+      ]
+    },
+    {
+      "id": "list-users",
+      "label": "List users",
+      "description": "List configured FreshRSS users.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "List users",
+          "command": {
+            "argv": ["php", "/var/www/FreshRSS/cli/list-users.php"],
+            "user": "www-data"
+          }
+        }
+      ]
+    },
+    {
+      "id": "backup-database",
+      "label": "Back up user databases",
+      "description": "Write FreshRSS database backups into its persistent data volume. Export them separately for disaster recovery.",
+      "inputs": [],
+      "schedulable": true,
+      "steps": [
+        {
+          "label": "Back up user databases",
+          "command": {
+            "argv": ["php", "/var/www/FreshRSS/cli/db-backup.php"],
+            "user": "www-data"
+          }
+        }
+      ]
+    }
+  ]
+}

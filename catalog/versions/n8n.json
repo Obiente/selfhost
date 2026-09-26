@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "docker.n8n.io/n8nio/n8n:2.40.7",
+      "label": "2.40.7",
+      "notes": "Local SQLite and PostgreSQL deployments passed native owner setup, owner authentication, workflow creation and export, native settings and persistent recreation. Upstream SSO licensing applies. PostgreSQL credential export was verified to remain encrypted, and the native workflow table was verified in PostgreSQL."
+    }
+  ],
+  "source": null
+}

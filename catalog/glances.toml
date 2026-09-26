@@ -1,0 +1,22 @@
+schema = 1
+id = "glances"
+name = "Glances"
+description = "Inspect resource metrics through a web interface and REST API."
+category = "Monitoring"
+image = "nicolargo/glances:4.5.6-full"
+port = 61208
+container_port = 61208
+data_path = "/root/.config/glances"
+docs = "https://glances.readthedocs.io/en/latest/docker.html"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/glances.svg"
+
+[environment]
+GLANCES_OPT = "-w --disable-plugin docker"
+
+[[actions]]
+id = "check-version"
+label = "Show version"
+description = "Show Glances and dependency versions."
+command = ["glances", "--version"]
+timeout_seconds = 60
+confirm = false

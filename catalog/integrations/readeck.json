@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "name": "Readeck",
+  "documentation": "https://codeberg.org/readeck/readeck/src/tag/0.23.4/configs/configs.go",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "public-url",
+      "label": "Public URL",
+      "kind": "string",
+      "path": ["READECK_SERVER_BASE_URL"]
+    },
+    {
+      "id": "allowed-hosts",
+      "label": "Allowed HTTP hosts",
+      "kind": "string",
+      "path": ["READECK_ALLOWED_HOSTS"],
+      "description": "Comma-separated exact hostnames."
+    },
+    {
+      "id": "trusted-proxies",
+      "label": "Trusted proxies",
+      "kind": "string",
+      "path": ["READECK_TRUSTED_PROXIES"],
+      "description": "Comma-separated CIDRs."
+    },
+    {
+      "id": "log-level",
+      "label": "Log level",
+      "kind": "string",
+      "path": ["READECK_LOG_LEVEL"],
+      "choices": ["DEBUG", "INFO", "WARN", "ERROR"]
+    },
+    {
+      "id": "mail-host",
+      "label": "SMTP host",
+      "kind": "string",
+      "path": ["READECK_MAIL_HOST"]
+    },
+    {
+      "id": "mail-user",
+      "label": "SMTP username",
+      "kind": "string",
+      "path": ["READECK_MAIL_USERNAME"]
+    },
+    {
+      "id": "mail-password",
+      "label": "SMTP password",
+      "kind": "secret",
+      "path": ["READECK_MAIL_PASSWORD"]
+    },
+    {
+      "id": "mail-from",
+      "label": "Sender email",
+      "kind": "string",
+      "path": ["READECK_MAIL_FROM"]
+    },
+    {
+      "id": "oidc-name",
+      "label": "Identity provider name",
+      "kind": "string",
+      "path": ["READECK_AUTH_OIDC_PROVIDERS_SELFHOST_NAME"]
+    },
+    {
+      "id": "oidc-url",
+      "label": "Identity provider issuer",
+      "kind": "string",
+      "path": ["READECK_AUTH_OIDC_PROVIDERS_SELFHOST_URL"]
+    },
+    {
+      "id": "oidc-client",
+      "label": "OIDC client ID",
+      "kind": "string",
+      "path": ["READECK_AUTH_OIDC_PROVIDERS_SELFHOST_CLIENT_ID"]
+    },
+    {
+      "id": "oidc-secret",
+      "label": "OIDC client secret",
+      "kind": "secret",
+      "path": ["READECK_AUTH_OIDC_PROVIDERS_SELFHOST_CLIENT_SECRET"]
+    },
+    {
+      "id": "oidc-provision",
+      "label": "Create accounts on first OIDC login",
+      "kind": "string",
+      "path": ["READECK_AUTH_OIDC_PROVIDERS_SELFHOST_PROVISIONING"],
+      "choices": ["true", "false"]
+    }
+  ],
+  "warnings": [
+    "OIDC provisioning does not grant administration rights. Existing providers in config.toml remain configured; the SELFHOST provider is a separate named entry."
+  ],
+  "actions": [],
+  "oidc_client": {
+    "callback_path": "/login/oidc",
+    "environment": {
+      "READECK_SERVER_BASE_URL": "{{app-url}}",
+      "READECK_AUTH_OIDC_PROVIDERS_SELFHOST_NAME": "{{name}}",
+      "READECK_AUTH_OIDC_PROVIDERS_SELFHOST_URL": "{{issuer-url}}",
+      "READECK_AUTH_OIDC_PROVIDERS_SELFHOST_CLIENT_ID": "{{client-id}}",
+      "READECK_AUTH_OIDC_PROVIDERS_SELFHOST_CLIENT_SECRET": "{{client-secret}}",
+      "READECK_AUTH_OIDC_PROVIDERS_SELFHOST_PROVISIONING": "false"
+    }
+  }
+}

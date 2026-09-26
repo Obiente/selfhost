@@ -1,0 +1,8 @@
+{
+  "id": "ntfy",
+  "name": "ntfy",
+  "description": "Discover an existing ntfy container without taking ownership of its deployment or storage.",
+  "image_repositories": ["binwiederhier/ntfy", "docker.io/binwiederhier/ntfy"],
+  "container_hint": "ntfy",
+  "actions": []
+}

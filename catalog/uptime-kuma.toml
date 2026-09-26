@@ -1,0 +1,18 @@
+schema = 1
+id = "uptime-kuma"
+name = "Uptime Kuma"
+description = "Know when your services need your attention."
+category = "Monitoring"
+image = "louislam/uptime-kuma:2.5.5"
+port = 3001
+container_port = 3001
+data_path = "/app/data"
+docs = "https://github.com/louislam/uptime-kuma"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/uptime-kuma.svg"
+
+[[actions]]
+id = "data-usage"
+label = "Data usage"
+description = "Show the size of this service's stored application data."
+command = ["du", "-sh", "/app/data"]
+timeout_seconds = 15

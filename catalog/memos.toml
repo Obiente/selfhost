@@ -1,0 +1,33 @@
+# Installation reference: https://github.com/usememos/memos#quick-start
+schema = 1
+id = "memos"
+name = "Memos"
+description = "Collect notes, ideas, and everyday thoughts in Markdown."
+category = "Productivity"
+image = "neosmemo/memos:0.31.0"
+port = 5230
+container_port = 5230
+data_path = "/var/opt/memos"
+docs = "https://github.com/usememos/memos#quick-start"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/memos.svg"
+
+[database]
+engines = ["mysql", "mariadb"]
+engine = "postgres"
+
+[database.environment]
+MEMOS_DRIVER = "postgres"
+MEMOS_DSN = "${DATABASE_URL}"
+
+[database.engine_environment.mysql]
+MEMOS_DRIVER = "mysql"
+MEMOS_DSN = "${DATABASE_GO_MYSQL_DSN}"
+
+[database.engine_environment.mariadb]
+MEMOS_DRIVER = "mysql"
+MEMOS_DSN = "${DATABASE_GO_MYSQL_DSN}"
+
+[database.engine_ssl_modes]
+postgres = ["disable","require","verify-full"]
+mysql = ["disable","require","verify-full"]
+mariadb = ["disable","require","verify-full"]

@@ -1,0 +1,13 @@
+{
+  "setup": [
+    "Complete the initial note database and password setup.",
+    "Configure OIDC and link your own account from Trilium Options."
+  ],
+  "integration_notes": [
+    "Environment settings take precedence over config.ini. Sync server, session duration and native backups are configurable."
+  ],
+  "limitations": [
+    "Disconnect the existing OIDC account before changing providers.",
+    "Native OIDC replaces the password sign-in after account linking; keep a recovery copy of configuration."
+  ]
+}

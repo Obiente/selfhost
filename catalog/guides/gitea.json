@@ -1,0 +1,15 @@
+{
+  "setup": [
+    "Enable the installation lock, restart, then create your chosen administrator using the declared action.",
+    "Verify the public URL before adding OAuth clients."
+  ],
+  "integration_notes": [
+    "Native settings preserve the normal Gitea configuration and named authentication sources.",
+    "Database placement includes PostgreSQL, MySQL and MariaDB using app-specific connection settings. Select a fresh or already migrated database before first start; changing the engine does not convert existing data.",
+    "MySQL and MariaDB TLS uses server certificate verification whenever enabled. A source configured as require therefore still needs a certificate trusted by the app; private CA certificates must be installed in the app trust store."
+  ],
+  "limitations": [
+    "OIDC does not automatically grant server administration to every new account.",
+    "Back up database, repositories and configuration together."
+  ]
+}

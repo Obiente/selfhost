@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "default_icon": "",
+  "app_name_max": 255,
+  "app_description_max": 512,
+  "name": "Wiki.js first administrator",
+  "state_path": "/",
+  "state_pointer": "",
+  "state_text_contains": "<title>Wiki.js Setup</title>",
+  "initial_state": "true",
+  "board_url": "{base}/",
+  "fields": [
+    {
+      "id": "email",
+      "label": "Administrator email",
+      "kind": "string",
+      "required": true,
+      "modes": ["bootstrap"],
+      "minimum_length": 1,
+      "maximum_length": 255
+    },
+    {
+      "id": "password",
+      "label": "Administrator password",
+      "kind": "secret",
+      "required": true,
+      "modes": ["bootstrap"],
+      "minimum_length": 12,
+      "maximum_length": 255
+    },
+    {
+      "id": "site-url",
+      "label": "Public site URL",
+      "kind": "string",
+      "required": true,
+      "modes": ["bootstrap"],
+      "minimum_length": 1,
+      "maximum_length": 255
+    }
+  ],
+  "warnings": [
+    "Initializes a new wiki and its first administrator. Telemetry is disabled. Existing installations are never reset."
+  ],
+  "steps": [
+    {
+      "id": "initialize",
+      "label": "Initialize wiki and selected administrator",
+      "method": "POST",
+      "path": "/finalize",
+      "modes": ["bootstrap"],
+      "body": {
+        "adminEmail": "{email}",
+        "adminPassword": "{password}",
+        "siteUrl": "{site-url}",
+        "telemetry": false
+      },
+      "expect": {
+        "/ok": true
+      }
+    }
+  ]
+}

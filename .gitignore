@@ -1,0 +1,14 @@
+/target
+/node_modules
+/ui/node_modules
+/ui/dist
+/site/node_modules
+/site/.vitepress/cache
+/site/.vitepress/generated
+/site/.vitepress/dist
+/.local
+/docs/blog/
+*.log
+.env
+*.tsbuildinfo
+__pycache__/

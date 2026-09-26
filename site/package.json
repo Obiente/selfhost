@@ -1,0 +1,16 @@
+{
+  "name": "selfhost-website",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "node ../scripts/generate-site-catalogue.mjs",
+    "prebuild": "node ../scripts/generate-site-catalogue.mjs",
+    "dev": "vitepress dev . --host 127.0.0.1",
+    "build": "vitepress build .",
+    "preview": "vitepress preview . --host 127.0.0.1"
+  },
+  "devDependencies": {
+    "vitepress": "^2.0.0-alpha.20",
+    "vue": "^3.5.0"
+  }
+}

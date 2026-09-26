@@ -1,0 +1,55 @@
+schema = 1
+id = "homarr"
+name = "Homarr"
+description = "A home for your apps, bookmarks, and integrations."
+category = "Dashboard"
+image = "ghcr.io/homarr-labs/homarr:v1.77.2"
+port = 7575
+container_port = 7575
+data_path = "/appdata"
+docs = "https://homarr.dev/docs/getting-started/installation/docker/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/homarr.svg"
+
+[database]
+engines = ["mysql", "mariadb"]
+engine = "postgres"
+unset_environment = ["DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD"]
+
+[database.environment]
+DB_DRIVER = "node-postgres"
+DB_DIALECT = "postgresql"
+DB_URL = "${DATABASE_URL}"
+
+[[secrets]]
+environment = "SECRET_ENCRYPTION_KEY"
+bytes = 32
+
+# Optional HTTP recipe for adding this project's other apps to the dashboard.
+# Sync can use a one-time key or the private connection created by onboarding.
+[dashboard]
+list_path = "/api/apps"
+create_path = "/api/apps"
+auth_header = "ApiKey"
+match_field = "href"
+
+[dashboard.body]
+name = "{name}"
+description = "{description}"
+iconUrl = "{icon}"
+href = "{url}"
+pingUrl = ""
+
+[database.engine_environment.mysql]
+DB_DRIVER = "mysql2"
+DB_DIALECT = "mysql"
+DB_URL = "${DATABASE_URL}"
+
+[database.engine_environment.mariadb]
+DB_DRIVER = "mysql2"
+DB_DIALECT = "mysql"
+DB_URL = "${DATABASE_URL}"
+
+[database.engine_ssl_modes]
+postgres = ["disable","require","verify-full"]
+mysql = ["disable"]
+mariadb = ["disable"]

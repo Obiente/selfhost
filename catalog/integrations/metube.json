@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "name": "MeTube",
+  "documentation": "https://github.com/alexta69/metube#configuration-via-environment-variables",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "concurrency",
+      "label": "Concurrent downloads",
+      "kind": "string",
+      "path": ["MAX_CONCURRENT_DOWNLOADS"]
+    },
+    {
+      "id": "custom-directories",
+      "label": "Allow per-download folders",
+      "kind": "string",
+      "path": ["CUSTOM_DIRS"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "create-directories",
+      "label": "Create download folders",
+      "kind": "string",
+      "path": ["CREATE_CUSTOM_DIRS"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "delete-files",
+      "label": "Delete files when removing completed items",
+      "kind": "string",
+      "path": ["DELETE_FILE_ON_TRASHCAN"],
+      "description": "When enabled, trashing a completed item deletes its downloaded files.",
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "filename",
+      "label": "Video filename template",
+      "kind": "string",
+      "path": ["OUTPUT_TEMPLATE"],
+      "description": "yt-dlp output template, for example %(title)s.%(ext)s."
+    },
+    {
+      "id": "playlist-limit",
+      "label": "Playlist item limit",
+      "kind": "string",
+      "path": ["DEFAULT_OPTION_PLAYLIST_ITEM_LIMIT"],
+      "description": "0 means unlimited."
+    },
+    {
+      "id": "subscription-interval",
+      "label": "Subscription check interval",
+      "kind": "string",
+      "path": ["SUBSCRIPTION_DEFAULT_CHECK_INTERVAL"],
+      "description": "Minutes between checks."
+    },
+    {
+      "id": "log-level",
+      "label": "Log level",
+      "kind": "string",
+      "path": ["LOGLEVEL"],
+      "choices": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "NONE"]
+    }
+  ],
+  "actions": [],
+  "warnings": [
+    "MeTube has no native user login in this recipe. Keep the loopback binding or protect access with an authentication proxy."
+  ]
+}

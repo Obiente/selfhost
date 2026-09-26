@@ -1,0 +1,28 @@
+schema = 1
+id = "ntfy"
+name = "ntfy"
+description = "Send notifications to your phone and browser."
+category = "Notifications"
+image = "binwiederhier/ntfy:v2.28.0"
+port = 8082
+container_port = 80
+data_path = "/var/cache/ntfy"
+command = ["serve"]
+docs = "https://docs.ntfy.sh/install/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/ntfy.svg"
+
+[environment]
+NTFY_CACHE_FILE = "/var/cache/ntfy/cache.db"
+NTFY_AUTH_FILE = "/var/cache/ntfy/auth.db"
+
+NTFY_AUTH_DEFAULT_ACCESS = "deny-all"
+NTFY_ENABLE_LOGIN = "true"
+NTFY_REQUIRE_LOGIN = "true"
+NTFY_ENABLE_SIGNUP = "false"
+
+[database]
+engine = "postgres"
+unset_environment = ["NTFY_CACHE_FILE", "NTFY_AUTH_FILE"]
+
+[database.environment]
+NTFY_DATABASE_URL = "${DATABASE_URL}"

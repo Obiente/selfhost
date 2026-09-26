@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "name": "Prometheus",
+  "documentation": "https://prometheus.io/docs/prometheus/latest/configuration/configuration/",
+  "driver": {
+    "kind": "yaml",
+    "file": "prometheus.yml",
+    "mount": "/etc/prometheus/prometheus.yml",
+    "argument": "--config.file"
+  },
+  "fields": [
+    {
+      "id": "scrape-interval",
+      "label": "Default scrape interval",
+      "kind": "string",
+      "path": ["global", "scrape_interval"],
+      "minimum_length": 2
+    },
+    {
+      "id": "evaluation-interval",
+      "label": "Rule evaluation interval",
+      "kind": "string",
+      "path": ["global", "evaluation_interval"],
+      "minimum_length": 2
+    },
+    {
+      "id": "external-labels",
+      "label": "External labels",
+      "kind": "json",
+      "path": ["global", "external_labels"]
+    },
+    {
+      "id": "scrape-jobs",
+      "label": "Scrape jobs",
+      "kind": "json",
+      "path": ["scrape_configs"]
+    },
+    {
+      "id": "rule-files",
+      "label": "Rule files",
+      "kind": "string_list",
+      "path": ["rule_files"]
+    }
+  ],
+  "warnings": [
+    "Use the Editable configuration deployment method. The basic Docker image keeps its image-provided configuration. Validate with promtool before restarting."
+  ],
+  "actions": [
+    {
+      "id": "check-config",
+      "label": "Validate configuration",
+      "description": "Validate the active configuration and referenced rules without changing them.",
+      "schedulable": true,
+      "inputs": [],
+      "steps": [
+        {
+          "label": "Validate configuration",
+          "command": {
+            "argv": ["/bin/promtool", "check", "config", "/etc/prometheus/prometheus.yml"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "check-ready",
+      "label": "Check readiness",
+      "description": "Check whether Prometheus is ready to serve queries.",
+      "schedulable": true,
+      "inputs": [],
+      "steps": [
+        {
+          "label": "Check readiness",
+          "command": {
+            "argv": ["/bin/promtool", "check", "ready", "--url=http://localhost:9090"]
+          }
+        }
+      ]
+    }
+  ]
+}

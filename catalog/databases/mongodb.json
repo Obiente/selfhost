@@ -1,0 +1,21 @@
+{
+  "engine": "mongodb",
+  "name": "MongoDB",
+  "image": "mongo:7.0.43",
+  "port": 27017,
+  "auth_database": "admin",
+  "data_path": "/data/db",
+  "healthcheck": {
+    "test": [
+      "CMD",
+      "mongosh",
+      "--quiet",
+      "--eval",
+      "const admin=db.getSiblingDB('admin'); if(!admin.auth(process.env.MONGO_INITDB_ROOT_USERNAME,process.env.MONGO_INITDB_ROOT_PASSWORD))quit(1); if(admin.runCommand({getCmdLineOpts:1}).parsed.security?.authorization!=='enabled')quit(1); if(admin.runCommand({ping:1}).ok!==1)quit(1);"
+    ],
+    "interval": "5s",
+    "timeout": "5s",
+    "retries": 30,
+    "start_period": "10s"
+  }
+}

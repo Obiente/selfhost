@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "name": "Jellyfin",
+  "documentation": "https://jellyfin.org/docs/general/administration/configuration/",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "published-url",
+      "label": "Advertised server URL",
+      "kind": "string",
+      "path": ["JELLYFIN_PublishedServerUrl"],
+      "description": "URL advertised to discovery clients; configure the proxy separately."
+    },
+    {
+      "id": "probe-size",
+      "label": "FFmpeg probe size",
+      "kind": "string",
+      "path": ["JELLYFIN_FFmpeg__probesize"]
+    },
+    {
+      "id": "analysis-duration",
+      "label": "FFmpeg analysis duration",
+      "kind": "string",
+      "path": ["JELLYFIN_FFmpeg__analyzeduration"]
+    }
+  ],
+  "actions": [],
+  "warnings": ["Media libraries, devices and SSO plugins require separate Jellyfin configuration."]
+}

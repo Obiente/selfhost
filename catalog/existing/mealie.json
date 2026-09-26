@@ -1,0 +1,8 @@
+{
+  "id": "mealie",
+  "name": "Mealie",
+  "description": "Discover an existing Mealie container without taking ownership of its deployment or storage.",
+  "image_repositories": ["ghcr.io/mealie-recipes/mealie"],
+  "container_hint": "mealie",
+  "actions": []
+}

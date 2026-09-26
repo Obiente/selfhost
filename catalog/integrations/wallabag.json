@@ -1,0 +1,321 @@
+{
+  "schema": 1,
+  "name": "Wallabag",
+  "documentation": "https://github.com/wallabag/docker",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "public-url",
+      "label": "Public URL",
+      "kind": "string",
+      "path": ["SYMFONY__ENV__DOMAIN_NAME"]
+    },
+    {
+      "id": "server-name",
+      "label": "Instance name",
+      "kind": "string",
+      "path": ["SYMFONY__ENV__SERVER_NAME"]
+    },
+    {
+      "id": "locale",
+      "label": "Default language",
+      "kind": "string",
+      "path": ["SYMFONY__ENV__LOCALE"]
+    },
+    {
+      "id": "registration",
+      "label": "Public registration",
+      "kind": "string",
+      "path": ["SYMFONY__ENV__FOSUSER_REGISTRATION"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "email-confirmation",
+      "label": "Confirm registrations by email",
+      "kind": "string",
+      "path": ["SYMFONY__ENV__FOSUSER_CONFIRMATION"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "mail-dsn",
+      "label": "SMTP DSN",
+      "kind": "secret",
+      "path": ["SYMFONY__ENV__MAILER_DSN"]
+    },
+    {
+      "id": "sender",
+      "label": "Outgoing email address",
+      "kind": "string",
+      "path": ["SYMFONY__ENV__FROM_EMAIL"]
+    },
+    {
+      "id": "twofactor-sender",
+      "label": "Two-factor email sender",
+      "kind": "string",
+      "path": ["SYMFONY__ENV__TWOFACTOR_SENDER"]
+    },
+    {
+      "id": "database-driver",
+      "label": "Database driver",
+      "kind": "string",
+      "path": ["SYMFONY__ENV__DATABASE_DRIVER"],
+      "choices": ["pdo_sqlite", "pdo_pgsql", "pdo_mysql"],
+      "advanced": true
+    },
+    {
+      "id": "database-host",
+      "label": "Database host",
+      "kind": "string",
+      "path": ["SYMFONY__ENV__DATABASE_HOST"],
+      "advanced": true
+    },
+    {
+      "id": "database-port",
+      "label": "Database port",
+      "kind": "string",
+      "path": ["SYMFONY__ENV__DATABASE_PORT"],
+      "advanced": true
+    },
+    {
+      "id": "database-name",
+      "label": "Database name",
+      "kind": "string",
+      "path": ["SYMFONY__ENV__DATABASE_NAME"],
+      "advanced": true
+    },
+    {
+      "id": "database-user",
+      "label": "Database username",
+      "kind": "string",
+      "path": ["SYMFONY__ENV__DATABASE_USER"],
+      "advanced": true
+    },
+    {
+      "id": "database-password",
+      "label": "Database password",
+      "kind": "secret",
+      "path": ["SYMFONY__ENV__DATABASE_PASSWORD"],
+      "advanced": true
+    },
+    {
+      "id": "redis-host",
+      "label": "Redis host",
+      "kind": "string",
+      "path": ["SYMFONY__ENV__REDIS_HOST"],
+      "advanced": true
+    },
+    {
+      "id": "redis-port",
+      "label": "Redis port",
+      "kind": "string",
+      "path": ["SYMFONY__ENV__REDIS_PORT"],
+      "advanced": true
+    },
+    {
+      "id": "redis-password",
+      "label": "Redis password",
+      "kind": "secret",
+      "path": ["SYMFONY__ENV__REDIS_PASSWORD"],
+      "advanced": true
+    },
+    {
+      "id": "php-memory",
+      "label": "PHP memory limit",
+      "kind": "string",
+      "path": ["PHP_MEMORY_LIMIT"],
+      "advanced": true
+    }
+  ],
+  "actions": [
+    {
+      "id": "change-password",
+      "label": "Change user password",
+      "description": "Set a selected user password. For a new instance, replace the initial wallabag password before public access.",
+      "inputs": [
+        {
+          "id": "username",
+          "label": "Username",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096,
+          "default": "wallabag"
+        },
+        {
+          "id": "password",
+          "label": "New password",
+          "kind": "secret",
+          "minimum_length": 12,
+          "maximum_length": 4096
+        }
+      ],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Change user password",
+          "command": {
+            "argv": [
+              "php",
+              "/var/www/wallabag/bin/console",
+              "fos:user:change-password",
+              "{{username}}",
+              "{{password}}",
+              "--env=prod",
+              "--no-interaction"
+            ],
+            "user": "nobody"
+          }
+        }
+      ]
+    },
+    {
+      "id": "create-user",
+      "label": "Create user",
+      "description": "Create a new non-administrator account; existing users are not changed.",
+      "inputs": [
+        {
+          "id": "username",
+          "label": "Username",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "email",
+          "label": "Email",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        },
+        {
+          "id": "password",
+          "label": "Password",
+          "kind": "secret",
+          "minimum_length": 12,
+          "maximum_length": 4096
+        }
+      ],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Create user",
+          "command": {
+            "argv": [
+              "php",
+              "/var/www/wallabag/bin/console",
+              "fos:user:create",
+              "{{username}}",
+              "{{email}}",
+              "{{password}}",
+              "--env=prod",
+              "--no-interaction"
+            ],
+            "user": "nobody"
+          }
+        }
+      ]
+    },
+    {
+      "id": "promote-admin",
+      "label": "Grant administrator role",
+      "description": "Grant ROLE_SUPER_ADMIN to the selected existing user. Review the exact username before running.",
+      "inputs": [
+        {
+          "id": "username",
+          "label": "Username",
+          "kind": "string",
+          "minimum_length": 1,
+          "maximum_length": 4096
+        }
+      ],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Grant administrator role",
+          "command": {
+            "argv": [
+              "php",
+              "/var/www/wallabag/bin/console",
+              "fos:user:promote",
+              "{{username}}",
+              "ROLE_SUPER_ADMIN",
+              "--env=prod",
+              "--no-interaction"
+            ],
+            "user": "nobody"
+          }
+        }
+      ],
+      "advanced": true
+    },
+    {
+      "id": "clear-cache",
+      "label": "Clear application cache",
+      "description": "Clear the production Symfony cache.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Clear application cache",
+          "command": {
+            "argv": [
+              "php",
+              "/var/www/wallabag/bin/console",
+              "cache:clear",
+              "--env=prod",
+              "--no-interaction"
+            ],
+            "user": "nobody"
+          }
+        }
+      ]
+    },
+    {
+      "id": "migrate-database",
+      "label": "Apply database migrations",
+      "description": "Apply the running image database migrations. Back up database and images first.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Apply database migrations",
+          "command": {
+            "argv": [
+              "php",
+              "/var/www/wallabag/bin/console",
+              "doctrine:migrations:migrate",
+              "--env=prod",
+              "--no-interaction"
+            ],
+            "user": "nobody"
+          }
+        }
+      ],
+      "advanced": true
+    },
+    {
+      "id": "list-commands",
+      "label": "List native commands",
+      "description": "Inspect the commands supported by the running image.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "List native commands",
+          "command": {
+            "argv": [
+              "php",
+              "/var/www/wallabag/bin/console",
+              "list",
+              "--raw",
+              "--env=prod",
+              "--no-interaction"
+            ],
+            "user": "nobody"
+          }
+        }
+      ]
+    }
+  ]
+}

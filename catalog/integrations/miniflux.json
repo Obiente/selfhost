@@ -1,0 +1,205 @@
+{
+  "schema": 1,
+  "name": "Miniflux",
+  "documentation": "https://miniflux.app/docs/configuration.html",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "public-url",
+      "label": "Public URL",
+      "kind": "string",
+      "path": ["BASE_URL"]
+    },
+    {
+      "id": "database-url",
+      "label": "PostgreSQL URL",
+      "kind": "secret",
+      "path": ["DATABASE_URL"],
+      "advanced": true
+    },
+    {
+      "id": "migrations",
+      "label": "Run migrations on startup",
+      "kind": "string",
+      "path": ["RUN_MIGRATIONS"],
+      "choices": ["1", "0"]
+    },
+    {
+      "id": "https",
+      "label": "HTTPS cookies and HSTS",
+      "kind": "string",
+      "path": ["HTTPS"],
+      "choices": ["1", "0"]
+    },
+    {
+      "id": "polling-frequency",
+      "label": "Feed polling interval (minutes)",
+      "kind": "string",
+      "path": ["POLLING_FREQUENCY"]
+    },
+    {
+      "id": "polling-limit",
+      "label": "Concurrent requests per host",
+      "kind": "string",
+      "path": ["POLLING_LIMIT_PER_HOST"]
+    },
+    {
+      "id": "workers",
+      "label": "Feed worker count",
+      "kind": "string",
+      "path": ["WORKER_POOL_SIZE"]
+    },
+    {
+      "id": "fetch-timeout",
+      "label": "Feed request timeout (seconds)",
+      "kind": "string",
+      "path": ["HTTP_CLIENT_TIMEOUT"]
+    },
+    {
+      "id": "private-feeds",
+      "label": "Allow private feed destinations",
+      "kind": "string",
+      "path": ["FETCHER_ALLOW_PRIVATE_NETWORKS"],
+      "choices": ["1", "0"],
+      "advanced": true
+    },
+    {
+      "id": "private-integrations",
+      "label": "Allow private integration destinations",
+      "kind": "string",
+      "path": ["INTEGRATION_ALLOW_PRIVATE_NETWORKS"],
+      "choices": ["1", "0"],
+      "advanced": true
+    },
+    {
+      "id": "metrics",
+      "label": "Prometheus metrics",
+      "kind": "string",
+      "path": ["METRICS_COLLECTOR"],
+      "choices": ["1", "0"]
+    },
+    {
+      "id": "metrics-networks",
+      "label": "Allowed metrics networks",
+      "kind": "string",
+      "path": ["METRICS_ALLOWED_NETWORKS"],
+      "advanced": true
+    },
+    {
+      "id": "metrics-user",
+      "label": "Metrics username",
+      "kind": "string",
+      "path": ["METRICS_USERNAME"],
+      "advanced": true
+    },
+    {
+      "id": "metrics-password",
+      "label": "Metrics password",
+      "kind": "secret",
+      "path": ["METRICS_PASSWORD"],
+      "advanced": true
+    },
+    {
+      "id": "proxy-networks",
+      "label": "Trusted reverse proxy networks",
+      "kind": "string",
+      "path": ["TRUSTED_REVERSE_PROXY_NETWORKS"],
+      "advanced": true
+    },
+    {
+      "id": "oidc-provider",
+      "label": "Authentication provider",
+      "kind": "string",
+      "path": ["OAUTH2_PROVIDER"],
+      "choices": ["", "oidc", "google"]
+    },
+    {
+      "id": "oidc-issuer",
+      "label": "OIDC issuer",
+      "kind": "string",
+      "path": ["OAUTH2_OIDC_DISCOVERY_ENDPOINT"]
+    },
+    {
+      "id": "oidc-client",
+      "label": "OIDC client ID",
+      "kind": "string",
+      "path": ["OAUTH2_CLIENT_ID"]
+    },
+    {
+      "id": "oidc-secret",
+      "label": "OIDC client secret",
+      "kind": "secret",
+      "path": ["OAUTH2_CLIENT_SECRET"]
+    },
+    {
+      "id": "oidc-create-users",
+      "label": "Create users at first OIDC login",
+      "kind": "string",
+      "path": ["OAUTH2_USER_CREATION"],
+      "choices": ["1", "0"]
+    },
+    {
+      "id": "log-level",
+      "label": "Log level",
+      "kind": "string",
+      "path": ["LOG_LEVEL"],
+      "choices": ["debug", "info", "warning", "error"]
+    },
+    {
+      "id": "maintenance",
+      "label": "Maintenance mode",
+      "kind": "string",
+      "path": ["MAINTENANCE_MODE"],
+      "choices": ["1", "0"],
+      "advanced": true
+    }
+  ],
+  "actions": [
+    {
+      "id": "check-health",
+      "label": "Check service health",
+      "description": "Run the built-in health check using the current environment.",
+      "inputs": [],
+      "schedulable": true,
+      "steps": [
+        {
+          "label": "Check service health",
+          "command": {
+            "argv": ["/usr/bin/miniflux", "-healthcheck", "auto"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "version",
+      "label": "Show version",
+      "description": "Show the running Miniflux build version.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Show version",
+          "command": {
+            "argv": ["/usr/bin/miniflux", "-version"]
+          }
+        }
+      ]
+    }
+  ],
+  "oidc_client": {
+    "callback_path": "/oauth2/oidc/callback",
+    "environment": {
+      "BASE_URL": "{{app-url}}",
+      "OAUTH2_PROVIDER": "oidc",
+      "OAUTH2_CLIENT_ID": "{{client-id}}",
+      "OAUTH2_CLIENT_SECRET": "{{client-secret}}",
+      "OAUTH2_OIDC_DISCOVERY_ENDPOINT": "{{issuer-url}}",
+      "OAUTH2_OIDC_PROVIDER_NAME": "{{name}}",
+      "OAUTH2_REDIRECT_URL": "{{callback-url}}",
+      "OAUTH2_USER_CREATION": "1",
+      "DISABLE_LOCAL_AUTH": "0"
+    }
+  }
+}

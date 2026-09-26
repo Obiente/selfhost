@@ -1,0 +1,13 @@
+{
+  "setup": [
+    "Start the app and sign in using PASSWORD from the private .env file.",
+    "Workspace files, editor configuration and extensions persist under /home/coder."
+  ],
+  "integration_notes": [
+    "Use the extension actions with an exact publisher.name identifier. Extensions execute inside your workspace.",
+    "HASHED_PASSWORD takes precedence over the generated PASSWORD."
+  ],
+  "limitations": [
+    "No native OIDC integration is assumed. An authentication proxy is a separate deployment decision."
+  ]
+}

@@ -1,0 +1,12 @@
+schema = 1
+id = "gatus"
+name = "Gatus"
+description = "Monitor endpoint conditions and publish a status page with persistent history."
+category = "Monitoring"
+image = "twinproduction/gatus:v5.37.0"
+port = 18082
+container_port = 8080
+data_path = "/data"
+docs = "https://github.com/TwiN/gatus"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/gatus.svg"
+deployment_only = true

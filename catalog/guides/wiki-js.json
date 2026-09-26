@@ -1,0 +1,17 @@
+{
+  "setup": [
+    "Choose the PostgreSQL stack and start it. Run Initial setup with an administrator email, password and the public site URL. The setup action only runs while the native first-run wizard is present.",
+    "The portable deployment includes a small native GraphQL helper in files/wiki-manage.cjs. Keep that file when moving the Compose directory."
+  ],
+  "integration_notes": [
+    "List identity providers signs in using a local administrator and returns provider summaries plus a revision. Supply that revision to Add OpenID Connect provider with a new provider ID and the existing client endpoints and credentials.",
+    "The identity action preserves existing providers and local login. New providers have self-registration and automatic group enrollment disabled. Add existing user mappings in Wiki.js administration.",
+    "Native database settings and the version action are available from the same dashboard and CLI integration interface.",
+    "Database placement supports PostgreSQL, MySQL and MariaDB. Wiki.js verifies server certificates whenever database TLS is enabled; add the database CA certificate body when using a private certificate authority."
+  ],
+  "limitations": [
+    "The identity action requires a local administrator without a pending MFA or password challenge. Accounts requiring those challenges should use Wiki.js administration.",
+    "Do not edit authentication strategies concurrently in Wiki.js while applying a reviewed identity action. The upstream API replaces the strategy collection and does not provide atomic compare-and-swap.",
+    "This profile configures an existing OIDC client; it does not create the client at the identity provider. Storage targets, mail delivery and other Wiki.js modules are configured in its administration interface."
+  ]
+}

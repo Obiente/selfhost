@@ -1,0 +1,13 @@
+{
+  "setup": [
+    "Create the first administrator through Readeck.",
+    "Set the public URL, allowed hosts and SMTP settings as needed."
+  ],
+  "integration_notes": [
+    "The named SELFHOST OIDC provider keeps provisioning disabled until you choose to allow new accounts."
+  ],
+  "limitations": [
+    "Provider URL changes can change upstream identity association. Review existing account links first.",
+    "The native config.toml and article storage remain part of the data backup."
+  ]
+}

@@ -1,0 +1,66 @@
+# https://grafana.com/docs/grafana/latest/setup-grafana/configure-docker/
+schema = 1
+id = "grafana"
+name = "Grafana"
+description = "Explore metrics and build dashboards from connected data sources."
+category = "Monitoring"
+image = "grafana/grafana:13.2.2"
+port = 3000
+container_port = 3000
+data_path = "/var/lib/grafana"
+docs = "https://grafana.com/docs/grafana/latest/setup-grafana/configure-docker/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/grafana.svg"
+
+[environment]
+GF_SECURITY_ADMIN_USER = "admin"
+GF_USERS_ALLOW_SIGN_UP = "false"
+GF_AUTH_ANONYMOUS_ENABLED = "false"
+GF_ANALYTICS_REPORTING_ENABLED = "false"
+
+[[secrets]]
+environment = "GF_SECURITY_ADMIN_PASSWORD"
+bytes = 24
+
+[[secrets]]
+environment = "GF_SECURITY_SECRET_KEY"
+bytes = 32
+
+[database]
+engines = ["mysql", "mariadb"]
+engine = "postgres"
+
+[database.environment]
+GF_DATABASE_TYPE = "postgres"
+GF_DATABASE_HOST = "${DATABASE_HOST}:${DATABASE_PORT}"
+GF_DATABASE_NAME = "${DATABASE_NAME}"
+GF_DATABASE_USER = "${DATABASE_USER}"
+GF_DATABASE_PASSWORD = "${DATABASE_PASSWORD}"
+GF_DATABASE_SSL_MODE = "${DATABASE_SSL_MODE}"
+
+[[actions]]
+id = "list-plugins"
+label = "List installed plugins"
+description = "Show plugins installed in this Grafana instance."
+command = ["grafana", "cli", "plugins", "ls"]
+timeout_seconds = 15
+
+[database.engine_environment.mysql]
+GF_DATABASE_TYPE = "mysql"
+GF_DATABASE_HOST = "${DATABASE_HOST}:${DATABASE_PORT}"
+GF_DATABASE_NAME = "${DATABASE_NAME}"
+GF_DATABASE_USER = "${DATABASE_USER}"
+GF_DATABASE_PASSWORD = "${DATABASE_PASSWORD}"
+GF_DATABASE_SSL_MODE = "${DATABASE_SSL_ENABLED}"
+
+[database.engine_environment.mariadb]
+GF_DATABASE_TYPE = "mysql"
+GF_DATABASE_HOST = "${DATABASE_HOST}:${DATABASE_PORT}"
+GF_DATABASE_NAME = "${DATABASE_NAME}"
+GF_DATABASE_USER = "${DATABASE_USER}"
+GF_DATABASE_PASSWORD = "${DATABASE_PASSWORD}"
+GF_DATABASE_SSL_MODE = "${DATABASE_SSL_ENABLED}"
+
+[database.engine_ssl_modes]
+postgres = ["disable","require","verify-full"]
+mysql = ["disable","require","verify-full"]
+mariadb = ["disable","require","verify-full"]

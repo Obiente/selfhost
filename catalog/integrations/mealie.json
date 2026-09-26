@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "name": "Mealie",
+  "documentation": "https://mealie.io/documentation/getting-started/installation/backend-config/",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "public-url",
+      "label": "Public URL",
+      "kind": "string",
+      "path": ["BASE_URL"]
+    },
+    {
+      "id": "signup",
+      "label": "Allow account registration",
+      "kind": "string",
+      "path": ["ALLOW_SIGNUP"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "oidc-enabled",
+      "label": "OpenID Connect",
+      "kind": "string",
+      "path": ["OIDC_AUTH_ENABLED"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "oidc-client",
+      "label": "OIDC client ID",
+      "kind": "string",
+      "path": ["OIDC_CLIENT_ID"]
+    },
+    {
+      "id": "oidc-discovery",
+      "label": "OIDC discovery URL",
+      "kind": "string",
+      "path": ["OIDC_CONFIGURATION_URL"]
+    },
+    {
+      "id": "oidc-name",
+      "label": "Login provider label",
+      "kind": "string",
+      "path": ["OIDC_PROVIDER_NAME"]
+    },
+    {
+      "id": "oidc-signup",
+      "label": "Allow new OIDC users",
+      "kind": "string",
+      "path": ["OIDC_SIGNUP_ENABLED"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "oidc-auto",
+      "label": "Automatic OIDC redirect",
+      "kind": "string",
+      "path": ["OIDC_AUTO_REDIRECT"],
+      "choices": ["true", "false"],
+      "advanced": true
+    },
+    {
+      "id": "oidc-admin-group",
+      "label": "Administrator group claim value",
+      "kind": "string",
+      "path": ["OIDC_ADMIN_GROUP"],
+      "advanced": true,
+      "description": "Every member of this IdP group becomes an administrator. Leave unset until group membership is reviewed."
+    },
+    {
+      "id": "oidc-secret",
+      "label": "OIDC client secret (for confidential clients)",
+      "kind": "secret",
+      "path": ["OIDC_CLIENT_SECRET"],
+      "advanced": true
+    }
+  ],
+  "actions": []
+}

@@ -1,0 +1,11 @@
+{
+  "id": "keycloak",
+  "name": "Keycloak",
+  "image_markers": ["keycloak/keycloak"],
+  "environment_issuer": ["KC_HOSTNAME"],
+  "instructions": [
+    "Append /realms/your-realm to the hostname to obtain the issuer.",
+    "Create a Web OIDC client with authorization code and PKCE S256. Register the exact callback.",
+    "Copy the administrator's exact user ID from the realm's Users page."
+  ]
+}

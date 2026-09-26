@@ -1,0 +1,17 @@
+schema = 1
+id = "readeck"
+name = "Readeck"
+description = "Save articles and web pages to read later."
+category = "Productivity"
+image = "codeberg.org/readeck/readeck:0.23.4"
+port = 8000
+container_port = 8000
+data_path = "/readeck"
+docs = "https://readeck.org/en/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/readeck.svg"
+
+[database]
+engine = "postgres"
+
+[database.environment]
+READECK_DATABASE_SOURCE = "${DATABASE_URL}"

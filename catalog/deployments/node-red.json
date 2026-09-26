@@ -1,0 +1,20 @@
+[
+  {
+    "app": "node-red",
+    "id": "docker",
+    "name": "Basic Docker image",
+    "description": "Use the image defaults and configure the native app yourself.",
+    "recipe": "node-red",
+    "blueprint": null,
+    "default": false
+  },
+  {
+    "app": "node-red",
+    "id": "configured",
+    "name": "Administrator login",
+    "description": "Create portable native configuration files with managed settings.",
+    "recipe": null,
+    "blueprint": "node-red-configured",
+    "default": true
+  }
+]

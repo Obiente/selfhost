@@ -1,0 +1,16 @@
+{
+  "setup": [
+    "Start the app and use Automatic app setup to choose an administrator, create a private board and issue a scoped connection key.",
+    "Review proposed service links before adding them to the board."
+  ],
+  "integration_notes": [
+    "Later Sync plans use the saved key and private board. No global Selfhost dashboard is required.",
+    "OIDC keeps local credentials available; group membership is managed locally until you choose another policy.",
+    "Database placement includes PostgreSQL, MySQL and MariaDB using app-specific connection settings. Select a fresh or already migrated database before first start; changing the engine does not convert existing data."
+  ],
+  "limitations": [
+    "Do not rotate SECRET_ENCRYPTION_KEY without Homarr recovery procedures.",
+    "Existing deployments retain their frozen recipe; new onboarding capabilities do not silently replace that definition.",
+    "MySQL and MariaDB source bindings currently require TLS mode disable and a private network. Sources requiring TLS are rejected by these bindings; certificate-aware custom deployments remain manual. PostgreSQL retains its native TLS modes."
+  ]
+}

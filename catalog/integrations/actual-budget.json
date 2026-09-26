@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "name": "Actual Budget",
+  "documentation": "https://actualbudget.org/docs/config/oauth-auth/",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "login-methods",
+      "label": "Allowed login methods",
+      "kind": "string",
+      "path": ["ACTUAL_ALLOWED_LOGIN_METHODS"],
+      "description": "Comma-separated methods: password,openid. Only use header with an explicitly trusted authentication proxy."
+    },
+    {
+      "id": "public-url",
+      "label": "OpenID public URL",
+      "kind": "string",
+      "path": ["ACTUAL_OPENID_SERVER_HOSTNAME"]
+    },
+    {
+      "id": "discovery-url",
+      "label": "OIDC discovery document",
+      "kind": "string",
+      "path": ["ACTUAL_OPENID_DISCOVERY_URL"],
+      "description": "Complete /.well-known/openid-configuration URL."
+    },
+    {
+      "id": "client-id",
+      "label": "OIDC client ID",
+      "kind": "string",
+      "path": ["ACTUAL_OPENID_CLIENT_ID"]
+    },
+    {
+      "id": "client-secret",
+      "label": "OIDC client secret",
+      "kind": "secret",
+      "path": ["ACTUAL_OPENID_CLIENT_SECRET"]
+    },
+    {
+      "id": "enforce-openid",
+      "label": "Require OpenID login",
+      "kind": "string",
+      "path": ["ACTUAL_OPENID_ENFORCE"],
+      "description": "The first OpenID user becomes server owner. Keep password login until the intended owner has signed in successfully.",
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "user-creation",
+      "label": "Create OIDC accounts",
+      "kind": "string",
+      "path": ["ACTUAL_USER_CREATION_MODE"],
+      "description": "Manual requires pre-created users; the first OIDC login establishes ownership.",
+      "choices": ["manual", "login"]
+    },
+    {
+      "id": "token-expiration",
+      "label": "Token lifetime",
+      "kind": "string",
+      "path": ["ACTUAL_TOKEN_EXPIRATION"],
+      "description": "Seconds, never, or openid-provider."
+    },
+    {
+      "id": "file-limit",
+      "label": "Upload limit in MB",
+      "kind": "string",
+      "path": ["ACTUAL_UPLOAD_FILE_SIZE_LIMIT_MB"]
+    }
+  ],
+  "actions": [],
+  "warnings": [
+    "The first person to sign in with OpenID becomes the server owner. Restrict the identity-provider application to the intended owner before enabling OpenID, and verify ownership before allowing other accounts. Selfhost does not assign this role."
+  ],
+  "oidc_client": {
+    "callback_path": "/openid/callback",
+    "environment": {
+      "ACTUAL_OPENID_DISCOVERY_URL": "{{discovery-url}}",
+      "ACTUAL_OPENID_CLIENT_ID": "{{client-id}}",
+      "ACTUAL_OPENID_CLIENT_SECRET": "{{client-secret}}",
+      "ACTUAL_OPENID_SERVER_HOSTNAME": "{{app-url}}",
+      "ACTUAL_OPENID_AUTH_METHOD": "openid",
+      "ACTUAL_OPENID_ENFORCE": "false",
+      "ACTUAL_ALLOWED_LOGIN_METHODS": "password,openid",
+      "ACTUAL_USER_CREATION_MODE": "manual"
+    }
+  }
+}

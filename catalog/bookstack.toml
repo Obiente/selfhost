@@ -1,0 +1,36 @@
+schema = 1
+id = "bookstack"
+name = "BookStack"
+description = "Organize documentation into books with persistent uploads and a private MariaDB database."
+category = "Knowledge"
+image = "lscr.io/linuxserver/bookstack:version-v26.09"
+port = 6875
+container_port = 80
+data_path = "/config"
+docs = "https://www.bookstackapp.com/docs/admin/installation/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/bookstack.svg"
+deployment_only = true
+
+[database]
+engine = "mariadb"
+engines = [ "mysql" ]
+
+[database.environment]
+DB_CONNECTION = "mysql"
+DB_HOST = "${DATABASE_HOST}"
+DB_PORT = "${DATABASE_PORT}"
+DB_DATABASE = "${DATABASE_NAME}"
+DB_USERNAME = "${DATABASE_USER}"
+DB_PASSWORD = "${DATABASE_PASSWORD}"
+
+[database.engine_environment.mysql]
+DB_CONNECTION = "mysql"
+DB_HOST = "${DATABASE_HOST}"
+DB_PORT = "${DATABASE_PORT}"
+DB_DATABASE = "${DATABASE_NAME}"
+DB_USERNAME = "${DATABASE_USER}"
+DB_PASSWORD = "${DATABASE_PASSWORD}"
+
+[database.engine_ssl_modes]
+mariadb = [ "disable" ]
+mysql = [ "disable" ]

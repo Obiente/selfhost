@@ -1,0 +1,171 @@
+{
+  "id": "zitadel",
+  "icon": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/zitadel.svg",
+  "name": "ZITADEL",
+  "category": "Identity",
+  "description": "Run your own identity API, login UI and private PostgreSQL database.",
+  "inputs": {
+    "domain": {
+      "label": "Public identity hostname",
+      "kind": "hostname",
+      "default": "identity.example.com"
+    },
+    "port": {
+      "label": "Local HTTP port behind your TLS proxy",
+      "kind": "port",
+      "default": 18081
+    },
+    "admin-email": {
+      "label": "Administrator email",
+      "kind": "email",
+      "default": "admin@example.com"
+    }
+  },
+  "secrets": {
+    "DATABASE_PASSWORD": {
+      "bytes": 24
+    },
+    "ADMIN_PASSWORD": {
+      "bytes": 24,
+      "prefix": "Sh1!"
+    },
+    "ZITADEL_MASTERKEY": {
+      "bytes": 16
+    }
+  },
+  "environment_generators": {
+    "LOGIN_TOKEN_EXPIRES": {
+      "utc_expiry_days": 365
+    }
+  },
+  "compose": {
+    "services": {
+      "database": {
+        "image": "postgres:17-alpine",
+        "restart": "unless-stopped",
+        "environment": {
+          "POSTGRES_USER": "zitadel",
+          "POSTGRES_DB": "zitadel",
+          "POSTGRES_PASSWORD": "${DATABASE_PASSWORD}"
+        },
+        "volumes": ["database:/var/lib/postgresql/data"],
+        "healthcheck": {
+          "test": ["CMD-SHELL", "pg_isready -U zitadel -d zitadel"],
+          "interval": "5s",
+          "timeout": "5s",
+          "retries": 30
+        }
+      },
+      "api": {
+        "image": "ghcr.io/zitadel/zitadel:v4.19.1",
+        "restart": "unless-stopped",
+        "user": "0",
+        "command": ["start-from-init", "--masterkey", "${ZITADEL_MASTERKEY}"],
+        "environment": {
+          "ZITADEL_EXTERNALDOMAIN": "{{domain}}",
+          "ZITADEL_EXTERNALPORT": "443",
+          "ZITADEL_EXTERNALSECURE": "true",
+          "ZITADEL_TLS_ENABLED": "false",
+          "ZITADEL_DATABASE_POSTGRES_DSN": "postgresql://zitadel:${DATABASE_PASSWORD}@database:5432/zitadel?sslmode=disable",
+          "ZITADEL_FIRSTINSTANCE_ORG_NAME": "Selfhost",
+          "ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME": "{{admin-email}}",
+          "ZITADEL_FIRSTINSTANCE_ORG_HUMAN_EMAIL_ADDRESS": "{{admin-email}}",
+          "ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD": "${ADMIN_PASSWORD}",
+          "ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORDCHANGEREQUIRED": "true",
+          "ZITADEL_FIRSTINSTANCE_LOGINCLIENTPATPATH": "/bootstrap/login-client.pat",
+          "ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_USERNAME": "login-client",
+          "ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_NAME": "Login UI",
+          "ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_PAT_EXPIRATIONDATE": "${LOGIN_TOKEN_EXPIRES}",
+          "ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED": "true",
+          "ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI": "https://{{domain}}/ui/v2/login/",
+          "ZITADEL_OIDC_DEFAULTLOGINURLV2": "https://{{domain}}/ui/v2/login/login?authRequest=",
+          "ZITADEL_OIDC_DEFAULTLOGOUTURLV2": "https://{{domain}}/ui/v2/login/logout?post_logout_redirect=",
+          "ZITADEL_SAML_DEFAULTLOGINURLV2": "https://{{domain}}/ui/v2/login/login?samlRequest="
+        },
+        "depends_on": {
+          "database": {
+            "condition": "service_healthy"
+          }
+        },
+        "volumes": ["bootstrap:/bootstrap"],
+        "healthcheck": {
+          "test": ["CMD", "/app/zitadel", "ready"],
+          "interval": "10s",
+          "timeout": "30s",
+          "retries": 20,
+          "start_period": "20s"
+        }
+      },
+      "login": {
+        "image": "ghcr.io/zitadel/zitadel-login:v4.19.1",
+        "restart": "unless-stopped",
+        "user": "0",
+        "environment": {
+          "ZITADEL_API_URL": "http://api:8080",
+          "NEXT_PUBLIC_BASE_PATH": "/ui/v2/login",
+          "ZITADEL_SERVICE_USER_TOKEN_FILE": "/bootstrap/login-client.pat",
+          "CUSTOM_REQUEST_HEADERS": "Host:{{domain}},X-Forwarded-Proto:https"
+        },
+        "depends_on": {
+          "api": {
+            "condition": "service_healthy"
+          }
+        },
+        "volumes": ["bootstrap:/bootstrap:ro"]
+      },
+      "identity": {
+        "image": "caddy:2.11.2-alpine",
+        "restart": "unless-stopped",
+        "command": ["caddy", "run", "--config", "/etc/caddy/identity.json"],
+        "ports": ["127.0.0.1:{{port}}:8080"],
+        "configs": [
+          {
+            "source": "gateway",
+            "target": "/etc/caddy/identity.json"
+          }
+        ],
+        "depends_on": {
+          "api": {
+            "condition": "service_healthy"
+          },
+          "login": {
+            "condition": "service_started"
+          }
+        },
+        "healthcheck": {
+          "test": [
+            "CMD",
+            "wget",
+            "-q",
+            "-O",
+            "/dev/null",
+            "http://127.0.0.1:8080/ui/v2/login/healthy"
+          ],
+          "interval": "10s",
+          "timeout": "5s",
+          "retries": 30
+        }
+      }
+    },
+    "volumes": {
+      "database": {},
+      "bootstrap": {}
+    },
+    "configs": {
+      "gateway": {
+        "content": "{\"admin\":{\"disabled\":true},\"apps\":{\"http\":{\"servers\":{\"identity\":{\"listen\":[\":8080\"],\"routes\":[{\"match\":[{\"path\":[\"/ui/v2/login/*\"]}],\"handle\":[{\"handler\":\"reverse_proxy\",\"upstreams\":[{\"dial\":\"login:3000\"}]}],\"terminal\":true},{\"handle\":[{\"handler\":\"reverse_proxy\",\"upstreams\":[{\"dial\":\"api:8080\"}],\"transport\":{\"protocol\":\"http\",\"versions\":[\"h2c\",\"2\"]},\"headers\":{\"request\":{\"set\":{\"Host\":[\"{{domain}}\"]}}}}]}]}}}}}"
+      }
+    },
+    "x-selfhost": {
+      "wait_seconds": 300
+    }
+  },
+  "instructions": [
+    "Review the generated Compose and environment, then start the project.",
+    "Connect the loopback HTTP port to a local TLS proxy or restricted SSH tunnel. Use verified HTTPS for cross-server hops.",
+    "Sign in using the administrator email and ADMIN_PASSWORD from the project environment, then change the bootstrap password.",
+    "Create an OIDC Web application with Authorization Code and PKCE and Selfhost's HTTPS /auth/callback URL. Add its issuer, client and your exact subject ID in Selfhost login settings.",
+    "Back up ZITADEL_MASTERKEY with the database. Changing or losing it prevents decryption of stored data.",
+    "Rotate the login-client personal access token before LOGIN_TOKEN_EXPIRES. Its lifetime is one year from creation."
+  ]
+}

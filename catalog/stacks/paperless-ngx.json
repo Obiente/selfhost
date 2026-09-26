@@ -1,0 +1,125 @@
+{
+  "id": "paperless-ngx",
+  "name": "Paperless-ngx with PostgreSQL and Redis",
+  "description": "Document OCR, persistent media/export/consume storage and a generated first administrator.",
+  "category": "Documents",
+  "inputs": {
+    "port": {
+      "label": "Local HTTP port",
+      "kind": "port",
+      "default": 8000
+    },
+    "hostname": {
+      "label": "Initial hostname (change public URL later in app settings)",
+      "kind": "hostname",
+      "default": "localhost"
+    },
+    "admin-user": {
+      "label": "Administrator username",
+      "kind": "identifier",
+      "default": "admin"
+    },
+    "admin-email": {
+      "label": "Administrator email",
+      "kind": "email",
+      "default": "admin@example.com"
+    }
+  },
+  "secrets": {
+    "DATABASE_PASSWORD": {
+      "bytes": 24
+    },
+    "ADMIN_PASSWORD": {
+      "bytes": 24
+    },
+    "APP_SECRET": {
+      "bytes": 32
+    }
+  },
+  "compose": {
+    "services": {
+      "database": {
+        "image": "postgres:17-alpine",
+        "restart": "unless-stopped",
+        "environment": {
+          "POSTGRES_DB": "paperless",
+          "POSTGRES_USER": "paperless",
+          "POSTGRES_PASSWORD": "${DATABASE_PASSWORD}"
+        },
+        "volumes": ["database:/var/lib/postgresql/data"],
+        "healthcheck": {
+          "test": ["CMD-SHELL", "pg_isready -U paperless -d paperless"],
+          "interval": "5s",
+          "timeout": "5s",
+          "retries": 30
+        }
+      },
+      "redis": {
+        "image": "redis:8.2.2-alpine",
+        "restart": "unless-stopped",
+        "command": ["redis-server", "--appendonly", "yes"],
+        "volumes": ["redis:/data"],
+        "healthcheck": {
+          "test": ["CMD", "redis-cli", "ping"],
+          "interval": "5s",
+          "timeout": "5s",
+          "retries": 30
+        }
+      },
+      "paperless-ngx": {
+        "image": "ghcr.io/paperless-ngx/paperless-ngx:3.2.1",
+        "restart": "unless-stopped",
+        "ports": ["127.0.0.1:{{port}}:8000"],
+        "environment": {
+          "PAPERLESS_DBHOST": "database",
+          "PAPERLESS_DBPORT": "5432",
+          "PAPERLESS_DBNAME": "paperless",
+          "PAPERLESS_DBUSER": "paperless",
+          "PAPERLESS_DBPASS": "${DATABASE_PASSWORD}",
+          "PAPERLESS_REDIS": "redis://redis:6379",
+          "PAPERLESS_SECRET_KEY": "${APP_SECRET}",
+          "PAPERLESS_ADMIN_USER": "{{admin-user}}",
+          "PAPERLESS_ADMIN_MAIL": "{{admin-email}}",
+          "PAPERLESS_ADMIN_PASSWORD": "${ADMIN_PASSWORD}",
+          "PAPERLESS_URL": "http://{{hostname}}:{{port}}",
+          "PAPERLESS_OCR_LANGUAGE": "eng",
+          "PAPERLESS_TIME_ZONE": "UTC",
+          "PAPERLESS_ACCOUNT_ALLOW_SIGNUPS": "false",
+          "PAPERLESS_TASK_WORKERS": "1",
+          "PAPERLESS_THREADS_PER_WORKER": "1",
+          "PAPERLESS_DBENGINE": "postgresql"
+        },
+        "volumes": [
+          "data:/usr/src/paperless/data",
+          "media:/usr/src/paperless/media",
+          "export:/usr/src/paperless/export",
+          "consume:/usr/src/paperless/consume"
+        ],
+        "x-selfhost-app": "paperless-ngx",
+        "depends_on": {
+          "database": {
+            "condition": "service_healthy"
+          },
+          "redis": {
+            "condition": "service_healthy"
+          }
+        }
+      }
+    },
+    "volumes": {
+      "database": {},
+      "redis": {},
+      "data": {},
+      "media": {},
+      "export": {},
+      "consume": {}
+    }
+  },
+  "instructions": [
+    "Review the generated Compose and environment before starting. Only the app HTTP port is published, on loopback.",
+    "Keep credentials, database and data volumes together in an independent backup. Exported Compose files do not include volume data.",
+    "Sign in with the selected username and ADMIN_PASSWORD. Bootstrap settings do not reset an existing user.",
+    "Use Document export for portable backups, then copy the export volume elsewhere. OCR is enabled for English; choose additional languages explicitly.",
+    "Office document and email conversion require optional Tika/Gotenberg services. Add those only when needed and keep them private."
+  ]
+}

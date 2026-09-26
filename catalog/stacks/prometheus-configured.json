@@ -1,0 +1,41 @@
+{
+  "id": "prometheus-configured",
+  "name": "Prometheus with editable configuration",
+  "description": "Store scrape jobs and recording rules in an ordinary mounted Prometheus configuration file.",
+  "category": "Infrastructure",
+  "inputs": {
+    "port": {
+      "label": "Local HTTP port",
+      "kind": "port",
+      "default": 9090
+    }
+  },
+  "secrets": {},
+  "files": {
+    "prometheus.yml": "global:\n  scrape_interval: 15s\n  evaluation_interval: 15s\nscrape_configs:\n  - job_name: prometheus\n    static_configs:\n      - targets: [\"localhost:9090\"]\n"
+  },
+  "compose": {
+    "services": {
+      "prometheus": {
+        "image": "prom/prometheus:v3.15.0",
+        "restart": "unless-stopped",
+        "ports": ["127.0.0.1:{{port}}:9090"],
+        "command": [
+          "--config.file=/etc/prometheus/prometheus.yml",
+          "--storage.tsdb.path=/prometheus",
+          "--storage.tsdb.retention.time=15d"
+        ],
+        "volumes": ["data:/prometheus", "./files/prometheus.yml:/etc/prometheus/prometheus.yml:ro"],
+        "x-selfhost-integration": "prometheus-configured"
+      }
+    },
+    "volumes": {
+      "data": {}
+    }
+  },
+  "instructions": [
+    "Edit native scrape configuration through App settings or files/prometheus.yml.",
+    "Run Check configuration before restarting to apply a file change.",
+    "Add remote scrape targets only across a trusted network and configure TLS/authentication for each target. Prometheus has no application OIDC login; protect its HTTP interface at the proxy."
+  ]
+}

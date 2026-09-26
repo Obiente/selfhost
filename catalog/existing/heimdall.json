@@ -1,0 +1,15 @@
+{
+  "id": "heimdall",
+  "name": "Heimdall",
+  "description": "Discover an existing Heimdall container without taking ownership of its deployment or storage.",
+  "image_repositories": ["lscr.io/linuxserver/heimdall"],
+  "container_hint": "heimdall",
+  "actions": [
+    {
+      "id": "check-web-config",
+      "label": "Validate web server configuration",
+      "description": "Check the bundled Nginx configuration without reloading the service.",
+      "argv": ["nginx", "-t"]
+    }
+  ]
+}

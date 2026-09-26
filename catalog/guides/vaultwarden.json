@@ -1,0 +1,16 @@
+{
+  "setup": [
+    "Create your vault accounts and configure SMTP as required, then disable general registration.",
+    "Set DOMAIN to the reachable vault URL before adding OIDC."
+  ],
+  "integration_notes": [
+    "SSO retains the master password and does not grant vault administration.",
+    "The SQLite action creates a database snapshot, not a complete vault backup.",
+    "Database placement includes PostgreSQL, MySQL and MariaDB using app-specific connection settings. Select a fresh or already migrated database before first start; changing the engine does not convert existing data."
+  ],
+  "limitations": [
+    "Admin-page config.json settings override environment values; reconcile those before applying Selfhost settings.",
+    "Back up attachments, sends, RSA keys, configuration and the database together.",
+    "MySQL and MariaDB source bindings currently require TLS mode disable and a private network. Sources requiring TLS are rejected by these bindings; certificate-aware custom deployments remain manual. PostgreSQL retains its native TLS modes."
+  ]
+}

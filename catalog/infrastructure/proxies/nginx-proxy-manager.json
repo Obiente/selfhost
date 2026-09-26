@@ -1,0 +1,75 @@
+{
+  "id": "nginx-proxy-manager",
+  "name": "Nginx Proxy Manager",
+  "driver": "rest_create",
+  "description": "Create a proxy host with automatic certificate renewal. Supply an existing certificate ID, or use new after reviewing the certificate authority's terms in Nginx Proxy Manager.",
+  "read_path": "/api/nginx/proxy-hosts",
+  "write_path": "/api/nginx/proxy-hosts",
+  "domain_pointer": "/domain_names",
+  "defaults": {
+    "certificate-id": 0,
+    "acme-email": "",
+    "acme-terms-agreed": false,
+    "upstream-ca-file": "/etc/ssl/certs/ca-certificates.crt"
+  },
+  "template": {
+    "domain_names": ["{{domain}}"],
+    "forward_scheme": "https",
+    "forward_host": "{{upstream-host}}",
+    "forward_port": "{{upstream-port}}",
+    "certificate_id": "{{certificate-id}}",
+    "ssl_forced": true,
+    "caching_enabled": false,
+    "block_exploits": true,
+    "allow_websocket_upgrade": true,
+    "http2_support": true,
+    "access_list_id": 0,
+    "advanced_config": "proxy_ssl_verify on;\nproxy_ssl_server_name on;\nproxy_ssl_name {{upstream-host}};\nproxy_ssl_trusted_certificate {{upstream-ca-file}};",
+    "locations": [],
+    "meta": {
+      "letsencrypt_email": "{{acme-email}}",
+      "letsencrypt_agree": "{{acme-terms-agreed}}",
+      "dns_challenge": false
+    }
+  },
+  "settings_schema": {
+    "certificate-id": {
+      "label": "Existing certificate ID or new",
+      "kind": "certificate"
+    },
+    "acme-email": {
+      "label": "Certificate contact email",
+      "kind": "email",
+      "required_when": ["certificate-id", "new"]
+    },
+    "acme-terms-agreed": {
+      "label": "Accept certificate authority terms",
+      "kind": "accept",
+      "required_when": ["certificate-id", "new"]
+    },
+    "upstream-ca-file": {
+      "label": "Upstream CA bundle on the proxy",
+      "kind": "path"
+    }
+  },
+  "loopback_http_template": {
+    "domain_names": ["{{domain}}"],
+    "forward_scheme": "http",
+    "forward_host": "{{upstream-host}}",
+    "forward_port": "{{upstream-port}}",
+    "certificate_id": "{{certificate-id}}",
+    "ssl_forced": true,
+    "caching_enabled": false,
+    "block_exploits": true,
+    "allow_websocket_upgrade": true,
+    "http2_support": true,
+    "access_list_id": 0,
+    "advanced_config": "",
+    "locations": [],
+    "meta": {
+      "letsencrypt_email": "{{acme-email}}",
+      "letsencrypt_agree": "{{acme-terms-agreed}}",
+      "dns_challenge": false
+    }
+  }
+}

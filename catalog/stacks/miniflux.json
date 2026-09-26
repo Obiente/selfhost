@@ -1,0 +1,80 @@
+{
+  "id": "miniflux",
+  "name": "Miniflux with PostgreSQL",
+  "description": "A feed reader with automatic migrations and a generated first administrator password.",
+  "category": "News",
+  "inputs": {
+    "port": {
+      "label": "Local HTTP port",
+      "kind": "port",
+      "default": 8086
+    },
+    "hostname": {
+      "label": "Initial hostname (change public URL later in app settings)",
+      "kind": "hostname",
+      "default": "localhost"
+    },
+    "admin-user": {
+      "label": "Administrator username",
+      "kind": "identifier",
+      "default": "admin"
+    }
+  },
+  "secrets": {
+    "DATABASE_PASSWORD": {
+      "bytes": 24
+    },
+    "ADMIN_PASSWORD": {
+      "bytes": 24
+    }
+  },
+  "compose": {
+    "services": {
+      "database": {
+        "image": "postgres:17-alpine",
+        "restart": "unless-stopped",
+        "environment": {
+          "POSTGRES_DB": "miniflux",
+          "POSTGRES_USER": "miniflux",
+          "POSTGRES_PASSWORD": "${DATABASE_PASSWORD}"
+        },
+        "volumes": ["database:/var/lib/postgresql/data"],
+        "healthcheck": {
+          "test": ["CMD-SHELL", "pg_isready -U miniflux -d miniflux"],
+          "interval": "5s",
+          "timeout": "5s",
+          "retries": 30
+        }
+      },
+      "miniflux": {
+        "image": "miniflux/miniflux:2.3.3",
+        "restart": "unless-stopped",
+        "ports": ["127.0.0.1:{{port}}:8080"],
+        "environment": {
+          "DATABASE_URL": "postgres://miniflux:${DATABASE_PASSWORD}@database:5432/miniflux?sslmode=disable",
+          "RUN_MIGRATIONS": "1",
+          "CREATE_ADMIN": "1",
+          "ADMIN_USERNAME": "{{admin-user}}",
+          "ADMIN_PASSWORD": "${ADMIN_PASSWORD}",
+          "BASE_URL": "http://{{hostname}}:{{port}}",
+          "LISTEN_ADDR": "0.0.0.0:8080"
+        },
+        "volumes": [],
+        "x-selfhost-app": "miniflux",
+        "depends_on": {
+          "database": {
+            "condition": "service_healthy"
+          }
+        }
+      }
+    },
+    "volumes": {
+      "database": {}
+    }
+  },
+  "instructions": [
+    "Review the generated Compose and environment before starting. Only the app HTTP port is published, on loopback.",
+    "Keep credentials, database and data volumes together in an independent backup. Exported Compose files do not include volume data.",
+    "Sign in using the selected username and ADMIN_PASSWORD. Bootstrap variables create an initial administrator and do not reset an existing account."
+  ]
+}

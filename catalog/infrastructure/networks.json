@@ -1,0 +1,32 @@
+[
+  {
+    "id": "wireguard",
+    "name": "WireGuard",
+    "mode": "existing_network",
+    "guidance": "Connect the proxy and service peers with individual keys. Scope AllowedIPs to required peer addresses and restrict destination ports with host firewall rules. Record the peer identities and firewall policy here."
+  },
+  {
+    "id": "netbird",
+    "name": "NetBird",
+    "mode": "existing_network",
+    "guidance": "Enroll the proxy and service peers, use separate groups, and allow only the needed service ports with unidirectional access policies. Record the peer groups and policy ID here."
+  },
+  {
+    "id": "tailscale",
+    "name": "Tailscale / Headscale",
+    "mode": "existing_network",
+    "guidance": "Use dedicated peer identities and grants for only the required destination ports. Record the tags and grants used for this connection."
+  },
+  {
+    "id": "ssh",
+    "name": "OpenSSH tunnel",
+    "mode": "existing_network",
+    "guidance": "Run a persistent tunnel on the proxy host, bind forwarded ports to loopback, pin host keys, and restrict the tunnel account to the specific PermitOpen destination. Record the service unit and SSH identity here."
+  },
+  {
+    "id": "custom",
+    "name": "Another private network",
+    "mode": "existing_network",
+    "guidance": "Record the endpoint identities and scoped access policy. A registration is not proof of encryption or reachability; probe HTTPS from the actual proxy host."
+  }
+]

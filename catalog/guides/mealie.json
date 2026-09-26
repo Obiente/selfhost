@@ -1,0 +1,13 @@
+{
+  "setup": [
+    "Start Mealie and complete its initial account setup before exposing it.",
+    "Set the public URL and registration policy for your household."
+  ],
+  "integration_notes": [
+    "OIDC can be configured with local login retained. PostgreSQL may be dedicated, shared or external."
+  ],
+  "limitations": [
+    "Database connection changes do not migrate recipe data.",
+    "Group and household permissions remain under Mealie administration."
+  ]
+}

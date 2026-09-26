@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "Glances",
+  "documentation": "https://glances.readthedocs.io/en/latest/docker.html",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "glances-opt",
+      "label": "GLANCES_OPT",
+      "kind": "string",
+      "path": ["GLANCES_OPT"],
+      "advanced": true
+    },
+    {
+      "id": "tz",
+      "label": "TZ",
+      "kind": "string",
+      "path": ["TZ"],
+      "advanced": true
+    }
+  ]
+}

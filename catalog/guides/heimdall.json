@@ -1,0 +1,12 @@
+{
+  "setup": [
+    "Create users or add password protection before exposing the dashboard.",
+    "Add application links through Heimdall."
+  ],
+  "integration_notes": [
+    "The declared action checks nginx configuration. Container identity and time-zone settings are editable."
+  ],
+  "limitations": [
+    "This profile does not provision an OIDC account or import dashboard links automatically."
+  ]
+}

@@ -1,0 +1,353 @@
+{
+  "schema": 1,
+  "name": "Paperless-ngx",
+  "documentation": "https://docs.paperless-ngx.com/configuration/",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "public-url",
+      "label": "Public URL",
+      "kind": "string",
+      "path": ["PAPERLESS_URL"]
+    },
+    {
+      "id": "timezone",
+      "label": "Timezone",
+      "kind": "string",
+      "path": ["PAPERLESS_TIME_ZONE"]
+    },
+    {
+      "id": "ocr-language",
+      "label": "OCR languages",
+      "kind": "string",
+      "path": ["PAPERLESS_OCR_LANGUAGE"]
+    },
+    {
+      "id": "ocr-languages-install",
+      "label": "Additional OCR language packages",
+      "kind": "string",
+      "path": ["PAPERLESS_OCR_LANGUAGES"],
+      "advanced": true
+    },
+    {
+      "id": "filename",
+      "label": "Document filename format",
+      "kind": "string",
+      "path": ["PAPERLESS_FILENAME_FORMAT"]
+    },
+    {
+      "id": "consume-recursive",
+      "label": "Watch subdirectories",
+      "kind": "string",
+      "path": ["PAPERLESS_CONSUMER_RECURSIVE"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "consume-tags",
+      "label": "Use subdirectories as tags",
+      "kind": "string",
+      "path": ["PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "consumer-delete-duplicates",
+      "label": "Delete duplicate incoming files",
+      "kind": "string",
+      "path": ["PAPERLESS_CONSUMER_DELETE_DUPLICATES"],
+      "choices": ["true", "false"],
+      "advanced": true
+    },
+    {
+      "id": "task-workers",
+      "label": "Task worker count",
+      "kind": "string",
+      "path": ["PAPERLESS_TASK_WORKERS"]
+    },
+    {
+      "id": "worker-threads",
+      "label": "Threads per worker",
+      "kind": "string",
+      "path": ["PAPERLESS_THREADS_PER_WORKER"]
+    },
+    {
+      "id": "database-host",
+      "label": "Database host",
+      "kind": "string",
+      "path": ["PAPERLESS_DBHOST"],
+      "advanced": true
+    },
+    {
+      "id": "database-name",
+      "label": "Database name",
+      "kind": "string",
+      "path": ["PAPERLESS_DBNAME"],
+      "advanced": true
+    },
+    {
+      "id": "database-user",
+      "label": "Database username",
+      "kind": "string",
+      "path": ["PAPERLESS_DBUSER"],
+      "advanced": true
+    },
+    {
+      "id": "database-password",
+      "label": "Database password",
+      "kind": "secret",
+      "path": ["PAPERLESS_DBPASS"],
+      "advanced": true
+    },
+    {
+      "id": "redis",
+      "label": "Redis URL",
+      "kind": "secret",
+      "path": ["PAPERLESS_REDIS"],
+      "advanced": true
+    },
+    {
+      "id": "signup",
+      "label": "Allow local signups",
+      "kind": "string",
+      "path": ["PAPERLESS_ACCOUNT_ALLOW_SIGNUPS"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "social-signup",
+      "label": "Allow IdP signups",
+      "kind": "string",
+      "path": ["PAPERLESS_SOCIALACCOUNT_ALLOW_SIGNUPS"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "social-config",
+      "label": "Identity provider configuration (JSON)",
+      "kind": "secret",
+      "path": ["PAPERLESS_SOCIALACCOUNT_PROVIDERS"],
+      "advanced": true
+    },
+    {
+      "id": "social-apps",
+      "label": "Authentication provider modules",
+      "kind": "string",
+      "path": ["PAPERLESS_APPS"],
+      "advanced": true
+    },
+    {
+      "id": "disable-local-login",
+      "label": "Disable local login",
+      "kind": "string",
+      "path": ["PAPERLESS_DISABLE_REGULAR_LOGIN"],
+      "choices": ["true", "false"],
+      "advanced": true
+    },
+    {
+      "id": "tika",
+      "label": "Enable Tika/Gotenberg conversion",
+      "kind": "string",
+      "path": ["PAPERLESS_TIKA_ENABLED"],
+      "choices": ["true", "false"],
+      "advanced": true
+    },
+    {
+      "id": "tika-url",
+      "label": "Tika endpoint",
+      "kind": "string",
+      "path": ["PAPERLESS_TIKA_ENDPOINT"],
+      "advanced": true
+    },
+    {
+      "id": "gotenberg-url",
+      "label": "Gotenberg endpoint",
+      "kind": "string",
+      "path": ["PAPERLESS_TIKA_GOTENBERG_ENDPOINT"],
+      "advanced": true
+    },
+    {
+      "id": "smtp-host",
+      "label": "SMTP host",
+      "kind": "string",
+      "path": ["PAPERLESS_EMAIL_HOST"]
+    },
+    {
+      "id": "smtp-user",
+      "label": "SMTP user",
+      "kind": "string",
+      "path": ["PAPERLESS_EMAIL_HOST_USER"]
+    },
+    {
+      "id": "smtp-password",
+      "label": "SMTP password",
+      "kind": "secret",
+      "path": ["PAPERLESS_EMAIL_HOST_PASSWORD"]
+    },
+    {
+      "id": "smtp-tls",
+      "label": "SMTP STARTTLS",
+      "kind": "string",
+      "path": ["PAPERLESS_EMAIL_USE_TLS"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "smtp-from",
+      "label": "Sender address",
+      "kind": "string",
+      "path": ["PAPERLESS_EMAIL_FROM"]
+    },
+    {
+      "id": "database-options",
+      "label": "Database driver options",
+      "kind": "string",
+      "path": ["PAPERLESS_DB_OPTIONS"],
+      "advanced": true,
+      "description": "Version 3 native options, for example sslmode=verify-full,sslrootcert=/certs/ca.pem. Mount any referenced certificate separately."
+    },
+    {
+      "id": "database-engine",
+      "label": "Database engine",
+      "kind": "string",
+      "path": ["PAPERLESS_DBENGINE"],
+      "choices": ["sqlite", "postgresql", "mariadb"],
+      "advanced": true
+    }
+  ],
+  "actions": [
+    {
+      "id": "export-documents",
+      "label": "Export documents and database",
+      "description": "Create a portable archive in the persistent export volume. Copy it off this host for disaster recovery.",
+      "inputs": [],
+      "schedulable": true,
+      "steps": [
+        {
+          "label": "Export documents and database",
+          "command": {
+            "argv": ["document_exporter", "/usr/src/paperless/export"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "sanity-check",
+      "label": "Check document storage",
+      "description": "Check database and stored-file consistency without deleting files.",
+      "inputs": [],
+      "schedulable": true,
+      "steps": [
+        {
+          "label": "Check document storage",
+          "command": {
+            "argv": ["document_sanity_checker"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "optimize-index",
+      "label": "Optimize search index",
+      "description": "Optimize the existing search index.",
+      "inputs": [],
+      "schedulable": true,
+      "steps": [
+        {
+          "label": "Optimize search index",
+          "command": {
+            "argv": ["document_index", "optimize"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rebuild-index",
+      "label": "Rebuild search index",
+      "description": "Rebuild the full-text index when needed.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Rebuild search index",
+          "command": {
+            "argv": ["document_index", "reindex", "--if-needed"]
+          }
+        }
+      ],
+      "advanced": true
+    },
+    {
+      "id": "rename-documents",
+      "label": "Apply filename format",
+      "description": "Rename stored document files using the current filename format. Back up the document store first.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Apply filename format",
+          "command": {
+            "argv": ["document_renamer"]
+          }
+        }
+      ],
+      "advanced": true
+    },
+    {
+      "id": "train-matcher",
+      "label": "Train automatic document matcher",
+      "description": "Train the classifier using existing document assignments.",
+      "inputs": [],
+      "schedulable": true,
+      "steps": [
+        {
+          "label": "Train automatic document matcher",
+          "command": {
+            "argv": ["document_create_classifier"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rebuild-thumbnails",
+      "label": "Rebuild thumbnails",
+      "description": "Regenerate document thumbnails; may take a long time.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Rebuild thumbnails",
+          "command": {
+            "argv": ["document_thumbnails"]
+          }
+        }
+      ],
+      "advanced": true
+    }
+  ],
+  "oidc_client": {
+    "callback_path": "/accounts/oidc/selfhost/login/callback/",
+    "environment": {
+      "PAPERLESS_APPS": "allauth.socialaccount.providers.openid_connect",
+      "PAPERLESS_SOCIALACCOUNT_ALLOW_SIGNUPS": "true",
+      "PAPERLESS_SOCIAL_AUTO_SIGNUP": "true",
+      "PAPERLESS_DISABLE_REGULAR_LOGIN": "false"
+    },
+    "environment_json": {
+      "PAPERLESS_SOCIALACCOUNT_PROVIDERS": {
+        "openid_connect": {
+          "APPS": [
+            {
+              "provider_id": "selfhost",
+              "name": "{{name}}",
+              "client_id": "{{client-id}}",
+              "secret": "{{client-secret}}",
+              "settings": {
+                "server_url": "{{issuer-url}}",
+                "token_auth_method": "client_secret_basic",
+                "use_pkce": true
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "setup": [
+    "Persistent application configuration lives in /kavita/config. Add explicit media mounts before creating libraries.",
+    "Automatic app setup creates the first administrator with a username, password and email, then checks that an administrator exists."
+  ],
+  "integration_notes": [
+    "Timezone is available as a typed environment setting. The health action checks the running API.",
+    "Library scanning, readers, users and server preferences remain available in Kavita."
+  ],
+  "limitations": [
+    "This recipe uses the available 0.9.1 container image tag. Patch release names do not necessarily correspond to Docker image tags.",
+    "Kavita runtime settings, OIDC and library creation are not automated by this profile."
+  ]
+}

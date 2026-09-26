@@ -1,0 +1,58 @@
+{
+  "id": "wallabag",
+  "name": "Wallabag with SQLite",
+  "description": "Persist articles, database and downloaded images in separate named volumes.",
+  "category": "Productivity",
+  "inputs": {
+    "port": {
+      "label": "Local HTTP port",
+      "kind": "port",
+      "default": 8087
+    },
+    "hostname": {
+      "label": "Initial hostname (change public URL later in app settings)",
+      "kind": "hostname",
+      "default": "localhost"
+    }
+  },
+  "secrets": {
+    "APP_SECRET": {
+      "bytes": 32
+    }
+  },
+  "compose": {
+    "services": {
+      "wallabag": {
+        "image": "wallabag/wallabag:2.6.14",
+        "restart": "unless-stopped",
+        "ports": ["127.0.0.1:{{port}}:80"],
+        "environment": {
+          "SYMFONY__ENV__DATABASE_DRIVER": "pdo_sqlite",
+          "SYMFONY__ENV__DOMAIN_NAME": "http://{{hostname}}:{{port}}",
+          "SYMFONY__ENV__SECRET": "${APP_SECRET}",
+          "SYMFONY__ENV__FOSUSER_REGISTRATION": "false",
+          "SYMFONY__ENV__FOSUSER_CONFIRMATION": "true",
+          "SYMFONY__ENV__SERVER_NAME": "Wallabag"
+        },
+        "volumes": ["data:/var/www/wallabag/data", "images:/var/www/wallabag/web/assets/images"],
+        "x-selfhost-app": "wallabag"
+      }
+    },
+    "volumes": {
+      "data": {},
+      "images": {}
+    }
+  },
+  "instructions": [
+    "Review the generated Compose and environment before starting. Only the app HTTP port is published, on loopback.",
+    "Keep credentials, database and data volumes together in an independent backup. Exported Compose files do not include volume data.",
+    "Wallabag initially creates the wallabag account. Run the Change user password action with a new password immediately; keep the app private until complete.",
+    "Downloaded images and the SQLite database both need backup."
+  ],
+  "requirements": [
+    {
+      "id": "initial-account",
+      "label": "Change the initial wallabag account password with the native action before exposing this app beyond loopback."
+    }
+  ]
+}

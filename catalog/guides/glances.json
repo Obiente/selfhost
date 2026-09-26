@@ -1,0 +1,14 @@
+{
+  "setup": [
+    "The default web deployment listens on port 61208 and runs without a Docker socket or host privileges.",
+    "Use the native command option field for supported Glances web settings and mount extra configuration only when needed."
+  ],
+  "integration_notes": [
+    "This isolated container reports the resources visible inside its namespace.",
+    "Full host monitoring, container discovery and hardware metrics require explicit host resources and permissions."
+  ],
+  "limitations": [
+    "Host PID namespace, devices and Docker socket access are not silently enabled.",
+    "Secure access through an authenticated reverse proxy; this recipe does not provision identity provider integration."
+  ]
+}

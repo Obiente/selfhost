@@ -1,0 +1,8 @@
+{
+  "id": "silverbullet",
+  "name": "SilverBullet",
+  "description": "Discover an existing SilverBullet container without taking ownership of its deployment or storage.",
+  "image_repositories": ["ghcr.io/silverbulletmd/silverbullet"],
+  "container_hint": "silverbullet",
+  "actions": []
+}

@@ -1,0 +1,16 @@
+node_modules/
+**/node_modules/
+target/
+.local/
+ui/dist/
+site/.vitepress/dist/
+site/.vitepress/cache/
+site/.vitepress/generated/
+Cargo.lock
+**/*.rs
+**/*.toml
+**/*.tsbuildinfo
+**/licenses/
+LICENSE
+
+**/package-lock.json

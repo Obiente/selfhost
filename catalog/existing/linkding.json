@@ -1,0 +1,8 @@
+{
+  "id": "linkding",
+  "name": "Linkding",
+  "description": "Discover an existing Linkding container without taking ownership of its deployment or storage.",
+  "image_repositories": ["sissbruecker/linkding", "docker.io/sissbruecker/linkding"],
+  "container_hint": "linkding",
+  "actions": []
+}

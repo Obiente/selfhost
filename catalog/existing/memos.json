@@ -1,0 +1,8 @@
+{
+  "id": "memos",
+  "name": "Memos",
+  "description": "Discover an existing Memos container without taking ownership of its deployment or storage.",
+  "image_repositories": ["neosmemo/memos", "docker.io/neosmemo/memos"],
+  "container_hint": "memos",
+  "actions": []
+}

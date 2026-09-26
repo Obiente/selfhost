@@ -1,0 +1,50 @@
+schema = 1
+id = "forgejo"
+name = "Forgejo"
+description = "Host Git repositories, issues and code reviews over HTTP."
+category = "Development"
+image = "codeberg.org/forgejo/forgejo:16"
+port = 3003
+container_port = 3000
+data_path = "/data"
+docs = "https://forgejo.org/docs/latest/admin/installation/docker/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/forgejo.svg"
+
+[environment]
+USER_UID = "1000"
+USER_GID = "1000"
+FORGEJO__database__DB_TYPE = "sqlite3"
+FORGEJO__server__DISABLE_SSH = "true"
+
+[database]
+engines = ["mysql", "mariadb"]
+engine = "postgres"
+
+[database.environment]
+FORGEJO__database__DB_TYPE = "postgres"
+FORGEJO__database__HOST = "${DATABASE_HOST}:${DATABASE_PORT}"
+FORGEJO__database__NAME = "${DATABASE_NAME}"
+FORGEJO__database__USER = "${DATABASE_USER}"
+FORGEJO__database__PASSWD = "${DATABASE_PASSWORD}"
+FORGEJO__database__SSL_MODE = "${DATABASE_SSL_MODE}"
+
+[database.engine_environment.mysql]
+FORGEJO__database__DB_TYPE = "mysql"
+FORGEJO__database__HOST = "${DATABASE_HOST}:${DATABASE_PORT}"
+FORGEJO__database__NAME = "${DATABASE_NAME}"
+FORGEJO__database__USER = "${DATABASE_USER}"
+FORGEJO__database__PASSWD = "${DATABASE_PASSWORD}"
+FORGEJO__database__SSL_MODE = "${DATABASE_SSL_ENABLED}"
+
+[database.engine_environment.mariadb]
+FORGEJO__database__DB_TYPE = "mysql"
+FORGEJO__database__HOST = "${DATABASE_HOST}:${DATABASE_PORT}"
+FORGEJO__database__NAME = "${DATABASE_NAME}"
+FORGEJO__database__USER = "${DATABASE_USER}"
+FORGEJO__database__PASSWD = "${DATABASE_PASSWORD}"
+FORGEJO__database__SSL_MODE = "${DATABASE_SSL_ENABLED}"
+
+[database.engine_ssl_modes]
+postgres = ["disable","require","verify-full"]
+mysql = ["disable","require","verify-full"]
+mariadb = ["disable","require","verify-full"]

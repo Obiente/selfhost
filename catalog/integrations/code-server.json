@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "name": "code-server",
+  "documentation": "https://coder.com/docs/code-server/FAQ",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "hashed-password",
+      "label": "Hashed login password",
+      "kind": "secret",
+      "path": ["HASHED_PASSWORD"],
+      "description": "Argon2 PHC hash. Takes precedence over PASSWORD; Selfhost preserves the existing generated password."
+    },
+    {
+      "id": "log-level",
+      "label": "Log level",
+      "kind": "string",
+      "path": ["LOG_LEVEL"],
+      "choices": ["trace", "debug", "info", "warn", "error", "off"]
+    },
+    {
+      "id": "idle-timeout",
+      "label": "Idle shutdown timeout",
+      "kind": "string",
+      "path": ["CODE_SERVER_IDLE_TIMEOUT_SECONDS"],
+      "description": "Seconds before an idle server exits. Container restart policy still applies."
+    },
+    {
+      "id": "reconnect-timeout",
+      "label": "Reconnection grace time",
+      "kind": "string",
+      "path": ["CODE_SERVER_RECONNECTION_GRACE_TIME"],
+      "description": "Seconds an editor session waits for a disconnected client."
+    }
+  ],
+  "actions": [
+    {
+      "id": "install-extension",
+      "label": "Install editor extension",
+      "description": "Download and install a trusted extension by publisher.name or publisher.name@version. Extensions execute code inside the workspace.",
+      "inputs": [
+        {
+          "id": "extension",
+          "label": "Extension ID",
+          "kind": "string",
+          "minimum_length": 3,
+          "maximum_length": 180
+        }
+      ],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Install editor extension",
+          "command": {
+            "argv": ["code-server", "--install-extension", "{{extension}}"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "remove-extension",
+      "label": "Remove editor extension",
+      "description": "Uninstall the selected extension while preserving workspace files.",
+      "inputs": [
+        {
+          "id": "extension",
+          "label": "Extension ID",
+          "kind": "string",
+          "minimum_length": 3,
+          "maximum_length": 180
+        }
+      ],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Remove editor extension",
+          "command": {
+            "argv": ["code-server", "--uninstall-extension", "{{extension}}"]
+          }
+        }
+      ]
+    }
+  ]
+}

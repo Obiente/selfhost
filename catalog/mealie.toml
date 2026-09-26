@@ -1,0 +1,32 @@
+# Installation reference: https://mealie.io/documentation/getting-started/installation/sqlite/
+# SQLite storage must stay on a local disk. Follow the first-login instructions
+# in the documentation and change the initial account credentials.
+schema = 1
+id = "mealie"
+name = "Mealie"
+description = "Save recipes, plan meals, and organize your grocery lists."
+category = "Food"
+image = "ghcr.io/mealie-recipes/mealie:v3.27.0"
+port = 9925
+container_port = 9000
+data_path = "/app/data"
+docs = "https://mealie.io/documentation/getting-started/installation/sqlite/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/mealie.svg"
+
+[environment]
+ALLOW_SIGNUP = "false"
+TZ = "UTC"
+PUID = "1000"
+PGID = "1000"
+
+[database]
+engine = "postgres"
+
+[database.environment]
+DB_ENGINE = "postgres"
+POSTGRES_USER = "${DATABASE_USER}"
+POSTGRES_PASSWORD = "${DATABASE_PASSWORD}"
+POSTGRES_SERVER = "${DATABASE_HOST}"
+POSTGRES_PORT = "${DATABASE_PORT}"
+POSTGRES_DB = "${DATABASE_NAME}"
+PGSSLMODE = "${DATABASE_SSL_MODE}"

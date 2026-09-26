@@ -1,0 +1,104 @@
+{
+  "id": "caddy",
+  "name": "Caddy",
+  "driver": "json_collection",
+  "description": "Add a hostname route to an existing HTTPS server. Caddy manages certificate issuance and renewal.",
+  "read_path": "/config/apps/http/servers/{{server}}/routes",
+  "write_path": "/config/apps/http/servers/{{server}}/routes",
+  "domain_pointer": "/match/0/host",
+  "defaults": {
+    "server": "srv0",
+    "upstream-ca": null
+  },
+  "template": {
+    "@id": "{{route-id}}",
+    "match": [
+      {
+        "host": ["{{domain}}"]
+      }
+    ],
+    "handle": [
+      {
+        "handler": "reverse_proxy",
+        "upstreams": [
+          {
+            "dial": "{{upstream-address}}"
+          }
+        ],
+        "transport": {
+          "protocol": "http",
+          "tls": {
+            "server_name": "{{upstream-host}}",
+            "ca": "{{upstream-ca}}"
+          }
+        }
+      }
+    ],
+    "terminal": true
+  },
+  "settings_schema": {
+    "server": {
+      "label": "HTTPS server ID",
+      "kind": "identifier"
+    },
+    "upstream-ca": {
+      "label": "Upstream certificate trust",
+      "kind": "ca_pool"
+    }
+  },
+  "preflight": [
+    {
+      "path": "/config/apps/http/servers/{{server}}",
+      "pointer": "/listen",
+      "condition": "https_listener",
+      "message": "Choose a Caddy server listening on HTTPS port 443."
+    },
+    {
+      "path": "/config/apps/http/servers/{{server}}",
+      "pointer": "/automatic_https/disable",
+      "condition": "not_true",
+      "message": "Automatic HTTPS is disabled on this Caddy server."
+    },
+    {
+      "path": "/config/apps/http/servers/{{server}}",
+      "pointer": "/automatic_https/disable_certificates",
+      "condition": "not_true",
+      "message": "Automatic certificates are disabled on this Caddy server."
+    },
+    {
+      "path": "/config/apps/http/servers/{{server}}",
+      "pointer": "/automatic_https/skip",
+      "condition": "empty",
+      "message": "This server excludes domains from automatic HTTPS; review those exclusions first."
+    },
+    {
+      "path": "/config/apps/http/servers/{{server}}",
+      "pointer": "/automatic_https/skip_certificates",
+      "condition": "empty",
+      "message": "This server excludes domains from certificate management; review those exclusions first."
+    }
+  ],
+  "loopback_http_template": {
+    "@id": "{{route-id}}",
+    "match": [
+      {
+        "host": ["{{domain}}"]
+      }
+    ],
+    "handle": [
+      {
+        "handler": "reverse_proxy",
+        "upstreams": [
+          {
+            "dial": "{{upstream-address}}"
+          }
+        ],
+        "transport": {
+          "protocol": "http"
+        }
+      }
+    ],
+    "terminal": true
+  },
+  "concurrency_path": "/config/apps/http/servers/{{server}}"
+}

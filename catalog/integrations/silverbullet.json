@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "name": "SilverBullet",
+  "documentation": "https://silverbullet.md/Install/Configuration",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "single-user",
+      "label": "Single-space login",
+      "kind": "secret",
+      "path": ["SB_USER"],
+      "description": "Legacy single-space mode: username:password. Multi-space accounts are managed in the app."
+    },
+    {
+      "id": "api-token",
+      "label": "Single-space API token",
+      "kind": "secret",
+      "path": ["SB_AUTH_TOKEN"],
+      "description": "Legacy single-space mode only. Multi-space tokens belong to individual accounts."
+    },
+    {
+      "id": "index-page",
+      "label": "Default page",
+      "kind": "string",
+      "path": ["SB_INDEX_PAGE"]
+    },
+    {
+      "id": "url-prefix",
+      "label": "URL prefix",
+      "kind": "string",
+      "path": ["SB_URL_PREFIX"],
+      "description": "For example /notes. Update the proxy route alongside this setting."
+    },
+    {
+      "id": "readonly",
+      "label": "Read-only mode",
+      "kind": "string",
+      "path": ["SB_READ_ONLY"],
+      "description": "Empty disables; any nonempty value enables.",
+      "choices": ["", "1"]
+    },
+    {
+      "id": "ignore",
+      "label": "Ignored paths",
+      "kind": "string",
+      "path": ["SB_SPACE_IGNORE"],
+      "description": "Gitignore-style patterns; does not read .gitignore."
+    },
+    {
+      "id": "watch-mode",
+      "label": "Filesystem change detection",
+      "kind": "string",
+      "path": ["SB_FS_WATCH"],
+      "description": "Use poll for NFS/SMB mounts.",
+      "choices": ["auto", "poll", "off"]
+    },
+    {
+      "id": "poll-interval",
+      "label": "Filesystem polling interval",
+      "kind": "string",
+      "path": ["SB_FS_POLL_INTERVAL"],
+      "description": "Seconds, only used in poll mode."
+    },
+    {
+      "id": "name",
+      "label": "Application name",
+      "kind": "string",
+      "path": ["SB_NAME"]
+    }
+  ],
+  "actions": [],
+  "warnings": [
+    "Multi-space OIDC and account membership are configured in the SilverBullet dashboard. The single-space credential fields do not create multi-space users."
+  ]
+}

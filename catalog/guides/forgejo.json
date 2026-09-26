@@ -1,0 +1,15 @@
+{
+  "setup": [
+    "Enable the installation lock and restart after reviewing database and public URL settings.",
+    "Run Create administrator with an explicitly chosen account, then verify sign-in."
+  ],
+  "integration_notes": [
+    "The OIDC action configures a named authentication source.",
+    "Dedicated, shared and external PostgreSQL choices apply to fresh deployments.",
+    "Database placement includes PostgreSQL, MySQL and MariaDB using app-specific connection settings. Select a fresh or already migrated database before first start; changing the engine does not convert existing data.",
+    "MySQL and MariaDB TLS uses server certificate verification whenever enabled. A source configured as require therefore still needs a certificate trusted by the app; private CA certificates must be installed in the app trust store."
+  ],
+  "limitations": [
+    "Changing the database connection is not a data migration. Back up repositories, configuration and database before moving an existing installation."
+  ]
+}

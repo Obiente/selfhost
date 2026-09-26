@@ -1,0 +1,51 @@
+{
+  "id": "node-red-configured",
+  "name": "Node-RED with administrator login",
+  "description": "A portable settings.js with administrator authentication, persistent context and an independent flow encryption key.",
+  "category": "Infrastructure",
+  "inputs": {
+    "port": {
+      "label": "Local HTTP port",
+      "kind": "port",
+      "default": 1880
+    }
+  },
+  "secrets": {
+    "ADMIN_PASSWORD": {
+      "bytes": 24
+    },
+    "CREDENTIAL_SECRET": {
+      "bytes": 32
+    }
+  },
+  "files": {
+    "settings.js": "const bcrypt = require('/usr/src/node-red/node_modules/bcryptjs');\nif (!process.env.SELFHOST_ADMIN_PASSWORD || !process.env.SELFHOST_CREDENTIAL_SECRET) throw new Error('Administrator and flow encryption credentials are required');\nmodule.exports = {\n  uiPort: 1880, uiHost: '0.0.0.0', userDir: '/data', flowFile: 'flows.json',\n  credentialSecret: process.env.SELFHOST_CREDENTIAL_SECRET,\n  adminAuth: {type:'credentials', users:[{username:process.env.SELFHOST_ADMIN_USER || 'admin', password:bcrypt.hashSync(process.env.SELFHOST_ADMIN_PASSWORD,12), permissions:'*'}]},\n  httpNodeRoot: process.env.SELFHOST_HTTP_NODE_ROOT || '/api',\n  disableEditor: process.env.SELFHOST_DISABLE_EDITOR === 'true',\n  contextStorage: { default: { module: 'localfilesystem' } },\n  logging: { console: { level: process.env.SELFHOST_LOG_LEVEL || 'info', metrics:false, audit:true } },\n  editorTheme: { projects: { enabled: process.env.NODE_RED_ENABLE_PROJECTS === 'true' } }\n};\n"
+  },
+  "compose": {
+    "services": {
+      "node-red": {
+        "image": "nodered/node-red:5.0.7",
+        "restart": "unless-stopped",
+        "ports": ["127.0.0.1:{{port}}:1880"],
+        "command": ["node-red", "--userDir", "/data", "--settings", "/data/settings.js"],
+        "environment": {
+          "SELFHOST_ADMIN_USER": "admin",
+          "SELFHOST_ADMIN_PASSWORD": "${ADMIN_PASSWORD}",
+          "SELFHOST_CREDENTIAL_SECRET": "${CREDENTIAL_SECRET}",
+          "NODE_RED_ENABLE_PROJECTS": "true"
+        },
+        "volumes": ["data:/data", "./files/settings.js:/data/settings.js:ro"],
+        "x-selfhost-integration": "node-red-configured"
+      }
+    },
+    "volumes": {
+      "data": {}
+    }
+  },
+  "instructions": [
+    "Start the stack and sign in as admin using ADMIN_PASSWORD in the private project .env.",
+    "Keep CREDENTIAL_SECRET stable and back it up with /data; it protects flow credentials.",
+    "Editor authentication does not protect HTTP In flow endpoints under /api. Add authentication to those flows or their proxy.",
+    "settings.js is ordinary portable JavaScript executed only by Node-RED inside its container."
+  ]
+}

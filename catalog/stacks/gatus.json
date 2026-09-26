@@ -1,0 +1,36 @@
+{
+  "id": "gatus",
+  "name": "Gatus",
+  "category": "Monitoring",
+  "description": "Monitor endpoint conditions and publish a status page with persistent history.",
+  "inputs": {
+    "port": {
+      "label": "Local HTTP port",
+      "kind": "port",
+      "default": 18082
+    }
+  },
+  "secrets": {},
+  "compose": {
+    "services": {
+      "gatus": {
+        "image": "twinproduction/gatus:v5.37.0",
+        "x-selfhost-app": "gatus",
+        "restart": "unless-stopped",
+        "ports": ["127.0.0.1:{{port}}:8080"],
+        "volumes": ["data:/data", "./files/gatus.yaml:/config/config.yaml:ro"]
+      }
+    },
+    "volumes": {
+      "data": {}
+    }
+  },
+  "files": {
+    "gatus.yaml": "web:\n  port: 8080\nstorage:\n  type: sqlite\n  path: /data/gatus.db\nmetrics: true\nui:\n  title: Service status\nendpoints:\n  - name: Gatus\n    group: Internal\n    url: http://127.0.0.1:8080/health\n    interval: 60s\n    conditions:\n      - \"[STATUS] == 200\"\n"
+  },
+  "instructions": [
+    "Review the portable Compose and native configuration before starting.",
+    "The default listener is local-only. Add an authenticated HTTPS proxy before exposing private data.",
+    "Edit endpoint conditions, alerts, authentication and storage in App settings. Native YAML remains portable."
+  ]
+}

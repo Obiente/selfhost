@@ -1,0 +1,15 @@
+{
+  "id": "uptime-kuma",
+  "name": "Uptime Kuma",
+  "description": "Discover an existing Uptime Kuma container without taking ownership of its deployment or storage.",
+  "image_repositories": ["louislam/uptime-kuma", "docker.io/louislam/uptime-kuma"],
+  "container_hint": "uptime-kuma",
+  "actions": [
+    {
+      "id": "data-usage",
+      "label": "Data usage",
+      "description": "Show the size of this service's stored application data.",
+      "argv": ["du", "-sh", "/app/data"]
+    }
+  ]
+}

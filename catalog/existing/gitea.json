@@ -1,0 +1,8 @@
+{
+  "id": "gitea",
+  "name": "Gitea",
+  "description": "Discover an existing Gitea container without taking ownership of its deployment or storage.",
+  "image_repositories": ["docker.gitea.com/gitea"],
+  "container_hint": "gitea",
+  "actions": []
+}

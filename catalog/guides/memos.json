@@ -1,0 +1,15 @@
+{
+  "setup": [
+    "Start Memos and create its initial administrator.",
+    "Set the canonical instance URL when introducing a domain."
+  ],
+  "integration_notes": [
+    "Runtime configuration includes rate limits, trusted proxies and an explicit private-webhook allowlist.",
+    "Memos supports mounted protobuf JSON for provider and instance policy provisioning.",
+    "Database placement includes PostgreSQL, MySQL and MariaDB using app-specific connection settings. Select a fresh or already migrated database before first start; changing the engine does not convert existing data.",
+    "MySQL and MariaDB TLS uses server certificate verification whenever enabled. A source configured as require therefore still needs a certificate trusted by the app; private CA certificates must be installed in the app trust store."
+  ],
+  "limitations": [
+    "Selfhost does not yet generate or edit Memos provider files. Configure those in Memos or add reviewed native files to your portable Compose project."
+  ]
+}

@@ -1,0 +1,413 @@
+{
+  "schema": 1,
+  "name": "Nextcloud",
+  "documentation": "https://docs.nextcloud.com/server/latest/admin_manual/occ_command.html",
+  "driver": {
+    "kind": "command",
+    "read": {
+      "argv": [
+        "php",
+        "-d",
+        "apc.enable_cli=1",
+        "/var/www/html/occ",
+        "--no-interaction",
+        "config:list",
+        "system",
+        "--output=json"
+      ],
+      "user": "www-data"
+    },
+    "write": {
+      "argv": [
+        "php",
+        "-d",
+        "apc.enable_cli=1",
+        "/var/www/html/occ",
+        "--no-interaction",
+        "config:import"
+      ],
+      "user": "www-data"
+    },
+    "scope": "system",
+    "null_deletes": true
+  },
+  "fields": [
+    {
+      "id": "trusted-domains",
+      "label": "Trusted domains",
+      "kind": "string_list",
+      "path": ["system", "trusted_domains"],
+      "description": "Hostnames allowed to access this Nextcloud instance."
+    },
+    {
+      "id": "default-phone-region",
+      "label": "Default phone region",
+      "kind": "string",
+      "path": ["system", "default_phone_region"]
+    },
+    {
+      "id": "default-language",
+      "label": "Default language",
+      "kind": "string",
+      "path": ["system", "default_language"]
+    },
+    {
+      "id": "maintenance-window",
+      "label": "Maintenance window (UTC hour)",
+      "kind": "integer",
+      "path": ["system", "maintenance_window_start"],
+      "advanced": true,
+      "minimum": 0,
+      "maximum": 23
+    },
+    {
+      "id": "overwrite-protocol",
+      "label": "Public protocol",
+      "kind": "string",
+      "path": ["system", "overwriteprotocol"],
+      "choices": ["http", "https"],
+      "advanced": true
+    },
+    {
+      "id": "public-url",
+      "label": "Public URL",
+      "kind": "string",
+      "path": ["system", "overwrite.cli.url"],
+      "advanced": true
+    },
+    {
+      "id": "maintenance",
+      "label": "Maintenance mode",
+      "kind": "boolean",
+      "path": ["system", "maintenance"],
+      "advanced": true
+    }
+  ],
+  "actions": [
+    {
+      "id": "status",
+      "label": "Check installation",
+      "description": "Read Nextcloud installation status.",
+      "inputs": [],
+      "advanced": false,
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Check installation",
+          "command": {
+            "argv": [
+              "php",
+              "-d",
+              "apc.enable_cli=1",
+              "/var/www/html/occ",
+              "--no-interaction",
+              "status",
+              "--output=json"
+            ],
+            "user": "www-data"
+          }
+        }
+      ]
+    },
+    {
+      "id": "list-apps",
+      "label": "Installed apps",
+      "description": "List enabled and disabled apps.",
+      "inputs": [],
+      "advanced": false,
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Installed apps",
+          "command": {
+            "argv": [
+              "php",
+              "-d",
+              "apc.enable_cli=1",
+              "/var/www/html/occ",
+              "--no-interaction",
+              "app:list",
+              "--output=json"
+            ],
+            "user": "www-data"
+          }
+        }
+      ]
+    },
+    {
+      "id": "update-apps",
+      "label": "Update all apps",
+      "description": "Update installed Nextcloud apps. Back up app data before upgrading.",
+      "inputs": [],
+      "advanced": false,
+      "schedulable": true,
+      "steps": [
+        {
+          "label": "Update all apps",
+          "command": {
+            "argv": [
+              "php",
+              "-d",
+              "apc.enable_cli=1",
+              "/var/www/html/occ",
+              "--no-interaction",
+              "app:update",
+              "--all"
+            ],
+            "user": "www-data"
+          }
+        }
+      ]
+    },
+    {
+      "id": "install-app",
+      "label": "Install an app",
+      "description": "Download and enable a Nextcloud app by its app-store ID.",
+      "inputs": [
+        {
+          "id": "app-id",
+          "label": "App ID",
+          "kind": "string"
+        }
+      ],
+      "advanced": false,
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Install an app",
+          "command": {
+            "argv": [
+              "php",
+              "-d",
+              "apc.enable_cli=1",
+              "/var/www/html/occ",
+              "--no-interaction",
+              "app:install",
+              "{{app-id}}"
+            ],
+            "user": "www-data"
+          }
+        }
+      ]
+    },
+    {
+      "id": "scan-files",
+      "label": "Scan files",
+      "description": "Scan storage and update the file index for all users.",
+      "inputs": [],
+      "advanced": true,
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Scan files",
+          "command": {
+            "argv": [
+              "php",
+              "-d",
+              "apc.enable_cli=1",
+              "/var/www/html/occ",
+              "--no-interaction",
+              "files:scan",
+              "--all"
+            ],
+            "user": "www-data"
+          }
+        }
+      ]
+    },
+    {
+      "id": "repair",
+      "label": "Repair installation",
+      "description": "Run Nextcloud maintenance repair operations.",
+      "inputs": [],
+      "advanced": true,
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Repair installation",
+          "command": {
+            "argv": [
+              "php",
+              "-d",
+              "apc.enable_cli=1",
+              "/var/www/html/occ",
+              "--no-interaction",
+              "maintenance:repair"
+            ],
+            "user": "www-data"
+          }
+        }
+      ]
+    },
+    {
+      "id": "run-cron",
+      "label": "Run background jobs",
+      "description": "Run due Nextcloud background jobs now.",
+      "inputs": [],
+      "advanced": true,
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Run background jobs",
+          "command": {
+            "argv": [
+              "php",
+              "-d",
+              "apc.enable_cli=1",
+              "/var/www/html/occ",
+              "--no-interaction",
+              "background:cron"
+            ],
+            "user": "www-data"
+          }
+        },
+        {
+          "command": {
+            "user": "www-data",
+            "argv": ["php", "-d", "apc.enable_cli=1", "/var/www/html/cron.php"]
+          },
+          "label": "Run background jobs"
+        }
+      ]
+    },
+    {
+      "id": "occ",
+      "label": "Run occ command",
+      "description": "Run advanced occ arguments as the web-server user. Enter a JSON array of arguments; commands can change or delete app data.",
+      "inputs": [
+        {
+          "id": "arguments",
+          "label": "Arguments (JSON array)",
+          "kind": "arguments"
+        }
+      ],
+      "advanced": true,
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Run occ command",
+          "command": {
+            "argv": [
+              "php",
+              "-d",
+              "apc.enable_cli=1",
+              "/var/www/html/occ",
+              "--no-interaction",
+              "{{arguments}}"
+            ],
+            "user": "www-data"
+          }
+        }
+      ]
+    },
+    {
+      "id": "connect-oidc",
+      "label": "Connect identity provider",
+      "description": "Install OIDC support and configure sign-in. Keep local administrator login available until a browser login succeeds.",
+      "inputs": [
+        {
+          "id": "provider",
+          "label": "Login provider name",
+          "kind": "string",
+          "default": "selfhost"
+        },
+        {
+          "id": "client-id",
+          "label": "Client ID",
+          "kind": "string"
+        },
+        {
+          "id": "client-secret",
+          "label": "Client secret",
+          "kind": "secret"
+        },
+        {
+          "id": "discovery-url",
+          "label": "Discovery URL",
+          "kind": "string"
+        }
+      ],
+      "advanced": true,
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Install OIDC app",
+          "skip_if": {
+            "argv": [
+              "php",
+              "-d",
+              "apc.enable_cli=1",
+              "/var/www/html/occ",
+              "--no-interaction",
+              "app:getpath",
+              "user_oidc"
+            ],
+            "user": "www-data"
+          },
+          "command": {
+            "argv": [
+              "php",
+              "-d",
+              "apc.enable_cli=1",
+              "/var/www/html/occ",
+              "--no-interaction",
+              "app:install",
+              "user_oidc"
+            ],
+            "user": "www-data"
+          }
+        },
+        {
+          "label": "Enable OIDC app",
+          "command": {
+            "argv": [
+              "php",
+              "-d",
+              "apc.enable_cli=1",
+              "/var/www/html/occ",
+              "--no-interaction",
+              "app:enable",
+              "user_oidc"
+            ],
+            "user": "www-data"
+          }
+        },
+        {
+          "label": "Connect identity provider",
+          "command": {
+            "argv": [
+              "php",
+              "-d",
+              "apc.enable_cli=1",
+              "/var/www/html/occ",
+              "--no-interaction",
+              "user_oidc:provider",
+              "{{provider}}",
+              "--clientid={{client-id}}",
+              "--clientsecret-env=SELFHOST_OIDC_SECRET",
+              "--discoveryuri={{discovery-url}}",
+              "--scope=openid email profile",
+              "--mapping-uid=sub",
+              "--mapping-display-name=name",
+              "--mapping-email=email"
+            ],
+            "user": "www-data",
+            "environment": {
+              "SELFHOST_OIDC_SECRET": "{{client-secret}}"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "oidc_client": {
+    "inputs": {
+      "client-secret": "{{client-secret}}",
+      "client-id": "{{client-id}}",
+      "discovery-url": "{{discovery-url}}",
+      "provider": "{{name}}"
+    },
+    "callback_path": "/index.php/apps/user_oidc/code",
+    "action": "connect-oidc"
+  }
+}

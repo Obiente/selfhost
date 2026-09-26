@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "Homepage",
+  "documentation": "https://gethomepage.dev/configs/services/",
+  "driver": {
+    "kind": "yaml",
+    "file": "homepage-services.yaml",
+    "mount": "/app/config/services.yaml"
+  },
+  "fields": [
+    {
+      "id": "services",
+      "label": "Service groups and widgets",
+      "kind": "json",
+      "path": [],
+      "description": "Native Homepage services.yaml array. Includes groups, app links, widgets, descriptions, icons, status checks and per-service options. Keep secrets in HOMEPAGE_VAR_ environment variables.",
+      "advanced": false
+    }
+  ],
+  "warnings": [
+    "Homepage has no built-in authentication. Protect it with an authenticated reverse proxy.",
+    "Widget credentials belong in HOMEPAGE_VAR_ environment variables, referenced from YAML. Do not put reusable tokens in public links."
+  ]
+}

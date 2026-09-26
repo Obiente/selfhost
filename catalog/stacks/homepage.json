@@ -1,0 +1,49 @@
+{
+  "id": "homepage",
+  "name": "Homepage",
+  "category": "Dashboards",
+  "description": "Build a private dashboard of services, bookmarks and application widgets.",
+  "inputs": {
+    "port": {
+      "label": "Local HTTP port",
+      "kind": "port",
+      "default": 13000
+    }
+  },
+  "secrets": {},
+  "compose": {
+    "services": {
+      "homepage": {
+        "image": "ghcr.io/gethomepage/homepage:v2.4.0",
+        "x-selfhost-app": "homepage",
+        "restart": "unless-stopped",
+        "ports": ["127.0.0.1:{{port}}:3000"],
+        "volumes": [
+          "data:/app/config",
+          "./files/homepage-settings.yaml:/app/config/settings.yaml:ro",
+          "./files/homepage-services.yaml:/app/config/services.yaml:ro",
+          "./files/homepage-bookmarks.yaml:/app/config/bookmarks.yaml:ro",
+          "./files/homepage-widgets.yaml:/app/config/widgets.yaml:ro"
+        ],
+        "environment": {
+          "HOMEPAGE_ALLOWED_HOSTS": "localhost:{{port}},127.0.0.1:{{port}}"
+        }
+      }
+    },
+    "volumes": {
+      "data": {}
+    }
+  },
+  "files": {
+    "homepage-settings.yaml": "title: My services\ntheme: dark\ncolor: slate\n",
+    "homepage-services.yaml": "[]\n",
+    "homepage-bookmarks.yaml": "[]\n",
+    "homepage-widgets.yaml": "[]\n"
+  },
+  "instructions": [
+    "Review the portable Compose and native configuration before starting.",
+    "The default listener is local-only. Add an authenticated HTTPS proxy before exposing private data.",
+    "Add service groups, bookmarks and widget definitions in the corresponding native YAML files. Set HOMEPAGE_ALLOWED_HOSTS to your exact domain and port when adding a proxy.",
+    "Homepage has no built-in authentication. Use an authenticated reverse proxy. Docker socket access is intentionally absent; use a separately secured socket proxy if needed."
+  ]
+}

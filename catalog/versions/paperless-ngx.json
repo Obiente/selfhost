@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "ghcr.io/paperless-ngx/paperless-ngx:3.2.1",
+      "label": "3.2.1",
+      "notes": "Local PostgreSQL backend was asserted at runtime. Selected administrator login, PDF consumption, native document export manifest, sanity check, index optimization, environment changes and persistent recreation passed. Alternate MariaDB and OIDC bindings are source-audited."
+    }
+  ],
+  "source": {
+    "repository": "paperless-ngx/paperless-ngx",
+    "tag_prefix": "v",
+    "image_prefix": "",
+    "stream": "3.2",
+    "automatic": false,
+    "smoke_path": "/",
+    "smoke_status": 302
+  }
+}

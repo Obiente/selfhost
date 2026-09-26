@@ -1,0 +1,38 @@
+schema = 1
+id = "paperless-ngx"
+name = "Paperless-ngx"
+description = "Archive and search documents with OCR, private PostgreSQL and Redis."
+category = "Documents"
+image = "ghcr.io/paperless-ngx/paperless-ngx:3.2.1"
+port = 8000
+container_port = 8000
+data_path = "/usr/src/paperless/data"
+docs = "https://docs.paperless-ngx.com/setup/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/paperless-ngx.svg"
+deployment_only = true
+
+[database]
+engine = "postgres"
+engines = [ "mariadb" ]
+
+[database.environment]
+PAPERLESS_DBENGINE = "postgresql"
+PAPERLESS_DBHOST = "${DATABASE_HOST}"
+PAPERLESS_DBPORT = "${DATABASE_PORT}"
+PAPERLESS_DBNAME = "${DATABASE_NAME}"
+PAPERLESS_DBUSER = "${DATABASE_USER}"
+PAPERLESS_DBPASS = "${DATABASE_PASSWORD}"
+PAPERLESS_DB_OPTIONS = "sslmode=${DATABASE_SSL_MODE}"
+
+[database.engine_environment.mariadb]
+PAPERLESS_DBENGINE = "mariadb"
+PAPERLESS_DBHOST = "${DATABASE_HOST}"
+PAPERLESS_DBPORT = "${DATABASE_PORT}"
+PAPERLESS_DBNAME = "${DATABASE_NAME}"
+PAPERLESS_DBUSER = "${DATABASE_USER}"
+PAPERLESS_DBPASS = "${DATABASE_PASSWORD}"
+PAPERLESS_DB_OPTIONS = "ssl_mode=${DATABASE_MYSQL_SSL_MODE}"
+
+[database.engine_ssl_modes]
+postgres = [ "disable", "require", "verify-full" ]
+mariadb = [ "disable", "require", "verify-full" ]

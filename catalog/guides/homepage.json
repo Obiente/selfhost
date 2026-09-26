@@ -1,0 +1,17 @@
+{
+  "setup": [
+    "The native deployment creates portable settings, services, bookmarks and widgets YAML files under files/.",
+    "Use Native settings to edit the services list as structured JSON. The root list is written as native YAML.",
+    "Set HOMEPAGE_ALLOWED_HOSTS to your exact public host and port when adding a domain."
+  ],
+  "integration_notes": [
+    "Service entries can contain supported Homepage widget configuration and credentials.",
+    "Settings, bookmarks and widgets remain ordinary files that can be edited through project configuration or directly.",
+    "No Docker socket is attached by default."
+  ],
+  "limitations": [
+    "Homepage has no built-in login. Place it behind authentication before exposing it.",
+    "Automatic synchronization of Selfhost projects into Homepage is not implemented by this profile.",
+    "Only services.yaml has a typed settings profile; the other native files use the regular file editor."
+  ]
+}

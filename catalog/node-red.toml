@@ -1,0 +1,25 @@
+# https://nodered.org/docs/getting-started/docker
+# The editor has no login by default. Configure adminAuth in /data/settings.js
+# before making this service accessible beyond localhost.
+schema = 1
+id = "node-red"
+name = "Node-RED"
+description = "Build automation flows connecting devices, APIs and online services."
+category = "Automation"
+image = "nodered/node-red:5.0.7"
+port = 1880
+container_port = 1880
+data_path = "/data"
+docs = "https://nodered.org/docs/getting-started/docker"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/node-red.svg"
+
+[environment]
+TZ = "UTC"
+NODE_RED_ENABLE_PROJECTS = "true"
+
+[[actions]]
+id = "check-settings"
+label = "Check settings syntax"
+description = "Check JavaScript syntax in settings.js. This does not validate credentials or flows."
+command = ["node", "--check", "/data/settings.js"]
+timeout_seconds = 15

@@ -1,0 +1,8 @@
+{
+  "id": "actual-budget",
+  "name": "Actual Budget",
+  "description": "Discover an existing Actual Budget container without taking ownership of its deployment or storage.",
+  "image_repositories": ["actualbudget/actual-server", "docker.io/actualbudget/actual-server"],
+  "container_hint": "actual-budget",
+  "actions": []
+}

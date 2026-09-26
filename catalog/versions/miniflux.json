@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "miniflux/miniflux:2.3.3",
+      "label": "2.3.3",
+      "notes": "Local PostgreSQL stack initialization, selected administrator authentication, native health action, environment changes and persistent recreation passed. OIDC settings are source-audited; no provider browser round trip was performed."
+    }
+  ],
+  "source": {
+    "repository": "miniflux/v2",
+    "tag_prefix": "",
+    "image_prefix": "",
+    "stream": "2.3",
+    "automatic": false,
+    "smoke_path": "/healthcheck",
+    "smoke_status": 200
+  }
+}

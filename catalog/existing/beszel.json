@@ -1,0 +1,15 @@
+{
+  "id": "beszel",
+  "name": "Beszel Hub",
+  "description": "Discover an existing Beszel Hub container without taking ownership of its deployment or storage.",
+  "image_repositories": ["henrygd/beszel", "docker.io/henrygd/beszel"],
+  "container_hint": "beszel",
+  "actions": [
+    {
+      "id": "health",
+      "label": "Check hub health",
+      "description": "Check whether the Beszel hub is responding.",
+      "argv": ["/beszel", "health", "--url", "http://localhost:8090"]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "ghcr.io/advplyr/audiobookshelf:2.36.1",
+      "label": "2.36.1",
+      "notes": "Local Docker HTTP startup, native configuration roundtrip, declared read-only actions and container recreation with persistent volumes passed. First administrator setup and initialized state after recreation passed. External provider login and version upgrades require separate validation."
+    }
+  ],
+  "source": {
+    "repository": "advplyr/audiobookshelf",
+    "tag_prefix": "v",
+    "image_prefix": "",
+    "stream": "2.36",
+    "automatic": false,
+    "smoke_path": "/",
+    "smoke_status": 200
+  }
+}

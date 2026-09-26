@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "ghcr.io/requarks/wiki:2.5.315",
+      "label": "2.5.315",
+      "notes": "Local PostgreSQL initialization through native setup API, selected administrator login, reviewed OIDC strategy addition preserving local login, environment changes and persistent recreation passed. External provider login was not performed."
+    }
+  ],
+  "source": {
+    "repository": "Requarks/wiki",
+    "tag_prefix": "v",
+    "image_prefix": "",
+    "stream": "2.5",
+    "automatic": false,
+    "smoke_path": "/",
+    "smoke_status": 200
+  }
+}

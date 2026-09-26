@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "default_icon": "",
+  "app_name_max": 255,
+  "app_description_max": 512,
+  "name": "n8n owner setup",
+  "state_path": "/rest/settings",
+  "state_pointer": "/data/userManagement/showSetupOnFirstLoad",
+  "initial_state": "true",
+  "board_url": "{base}/",
+  "fields": [
+    {
+      "id": "email",
+      "label": "Owner email",
+      "kind": "string",
+      "required": true,
+      "modes": ["bootstrap"],
+      "minimum_length": 1,
+      "maximum_length": 255
+    },
+    {
+      "id": "first-name",
+      "label": "First name",
+      "kind": "string",
+      "required": true,
+      "modes": ["bootstrap"],
+      "minimum_length": 1,
+      "maximum_length": 255
+    },
+    {
+      "id": "last-name",
+      "label": "Last name",
+      "kind": "string",
+      "required": true,
+      "modes": ["bootstrap"],
+      "minimum_length": 1,
+      "maximum_length": 255
+    },
+    {
+      "id": "password",
+      "label": "Owner password",
+      "kind": "secret",
+      "required": true,
+      "modes": ["bootstrap"],
+      "minimum_length": 12,
+      "maximum_length": 255
+    }
+  ],
+  "warnings": [
+    "Creates the first owner only. Configure public URLs and HTTPS cookies before exposing this instance."
+  ],
+  "steps": [
+    {
+      "id": "owner",
+      "label": "Create selected instance owner",
+      "method": "POST",
+      "path": "/rest/owner/setup",
+      "modes": ["bootstrap"],
+      "body": {
+        "email": "{email}",
+        "firstName": "{first-name}",
+        "lastName": "{last-name}",
+        "password": "{password}"
+      }
+    }
+  ]
+}

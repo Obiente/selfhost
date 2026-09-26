@@ -1,0 +1,15 @@
+{
+  "setup": [
+    "Choose the PostgreSQL stack. Review the administrator username and local HTTP port, then start the stack. Miniflux migrates its database and creates the first administrator using the generated ADMIN_PASSWORD in the private environment file.",
+    "Sign in with the chosen administrator. Creating a fresh stack never resets accounts in an existing database."
+  ],
+  "integration_notes": [
+    "Native settings cover polling, workers, HTTP timeouts, metrics, public URL and database connection. Review a plan, apply it, then recreate the container to load changed environment values.",
+    "Connect an existing OIDC client from Identity. The callback is the public URL followed by /oauth2/oidc/callback. Local login remains enabled; a new OIDC user is not automatically an administrator.",
+    "Use Check service health for a repeatable health action. Keep PostgreSQL data and credentials together in backups."
+  ],
+  "limitations": [
+    "The generated stack uses a private PostgreSQL service. Changing database settings does not transfer existing feed data.",
+    "Feed subscriptions, API token creation and administrator promotion remain available in Miniflux itself."
+  ]
+}

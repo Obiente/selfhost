@@ -1,0 +1,14 @@
+schema = 1
+id = "trilium"
+name = "Trilium Notes"
+description = "Organize notes, documents and ideas in a linked workspace."
+category = "Productivity"
+image = "triliumnext/trilium:v0.105.0"
+port = 8085
+container_port = 8080
+data_path = "/home/node/trilium-data"
+docs = "https://docs.triliumnotes.org/user-guide/setup/server/installation/docker"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/trilium.svg"
+
+[environment]
+TRILIUM_DATA_DIR = "/home/node/trilium-data"

@@ -1,0 +1,16 @@
+{
+  "setup": [
+    "Choose the single Docker image or AIO deployment method.",
+    "For the single image, use generated admin credentials and configure trusted domains for the public URL."
+  ],
+  "integration_notes": [
+    "For the single-image deployment, native settings are read and written through occ. Application updates, maintenance commands and supported OIDC setup use reviewed actions.",
+    "An existing AIO can be connected without transferring its storage or lifecycle to Selfhost.",
+    "Single-image database placement includes PostgreSQL, MySQL and MariaDB using app-specific connection settings. Select a fresh or already migrated database before first start; changing the engine does not convert existing data."
+  ],
+  "limitations": [
+    "AIO retains control of its child containers, backups and updates.",
+    "Nextcloud OIDC setup does not automatically grant the admin group to an IdP user.",
+    "MySQL and MariaDB source bindings currently require TLS mode disable and a private network. Sources requiring TLS are rejected by these bindings; certificate-aware custom deployments remain manual. PostgreSQL retains its native TLS modes."
+  ]
+}

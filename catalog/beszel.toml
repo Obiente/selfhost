@@ -1,0 +1,21 @@
+schema = 1
+id = "beszel"
+name = "Beszel Hub"
+description = "Monitor your servers through connected Beszel agents."
+category = "Monitoring"
+image = "henrygd/beszel:0.20.0"
+port = 8090
+container_port = 8090
+data_path = "/beszel_data"
+docs = "https://beszel.dev/guide/hub-installation"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/beszel.svg"
+
+[environment]
+APP_URL = "http://localhost:8090"
+
+[[actions]]
+id = "health"
+label = "Check hub health"
+description = "Check whether the Beszel hub is responding."
+command = ["/beszel", "health", "--url", "http://localhost:8090"]
+timeout_seconds = 15

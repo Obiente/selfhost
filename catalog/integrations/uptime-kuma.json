@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "name": "Uptime Kuma",
+  "documentation": "https://github.com/louislam/uptime-kuma/wiki/Environment-Variables",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "timezone",
+      "label": "Time zone",
+      "kind": "string",
+      "path": ["TZ"]
+    },
+    {
+      "id": "sqlite-single-connection",
+      "label": "Single SQLite connection",
+      "kind": "string",
+      "path": ["UPTIME_KUMA_SQLITE_SINGLE_CONNECTION"],
+      "description": "Keep true unless investigating contention with an app-supported configuration.",
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "extra-ca",
+      "label": "Additional CA bundle",
+      "kind": "string",
+      "path": ["NODE_EXTRA_CA_CERTS"],
+      "description": "Absolute container path to a separately mounted PEM certificate bundle. TLS verification remains enabled."
+    }
+  ],
+  "actions": [
+    {
+      "id": "health",
+      "label": "Check application health",
+      "description": "Run the bundled local application health check.",
+      "inputs": [],
+      "schedulable": true,
+      "steps": [
+        {
+          "label": "Check application health",
+          "command": {
+            "argv": ["node", "/app/extra/healthcheck.js"]
+          }
+        }
+      ]
+    }
+  ]
+}

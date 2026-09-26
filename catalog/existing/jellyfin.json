@@ -1,0 +1,15 @@
+{
+  "id": "jellyfin",
+  "name": "Jellyfin",
+  "description": "Discover an existing Jellyfin container without taking ownership of its deployment or storage.",
+  "image_repositories": ["jellyfin/jellyfin", "docker.io/jellyfin/jellyfin"],
+  "container_hint": "jellyfin",
+  "actions": [
+    {
+      "id": "check-health",
+      "label": "Check server health",
+      "description": "Check Jellyfin's local HTTP health endpoint.",
+      "argv": ["curl", "--fail", "--silent", "http://127.0.0.1:8096/health"]
+    }
+  ]
+}

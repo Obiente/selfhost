@@ -1,0 +1,48 @@
+schema = 1
+id = "wiki-js"
+name = "Wiki.js"
+description = "Write and organize a collaborative wiki with a private PostgreSQL database."
+category = "Knowledge"
+image = "ghcr.io/requarks/wiki:2.5.315"
+port = 3005
+container_port = 3000
+data_path = "/wiki/data"
+docs = "https://docs.requarks.io/install/docker"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/wikijs.svg"
+deployment_only = true
+
+[database]
+engine = "postgres"
+engines = [ "mysql", "mariadb" ]
+
+[database.environment]
+DB_TYPE = "postgres"
+DB_HOST = "${DATABASE_HOST}"
+DB_PORT = "${DATABASE_PORT}"
+DB_NAME = "${DATABASE_NAME}"
+DB_USER = "${DATABASE_USER}"
+DB_PASS = "${DATABASE_PASSWORD}"
+DB_SSL = "${DATABASE_SSL_ENABLED}"
+
+[database.engine_environment.mysql]
+DB_TYPE = "mysql"
+DB_HOST = "${DATABASE_HOST}"
+DB_PORT = "${DATABASE_PORT}"
+DB_NAME = "${DATABASE_NAME}"
+DB_USER = "${DATABASE_USER}"
+DB_PASS = "${DATABASE_PASSWORD}"
+DB_SSL = "${DATABASE_SSL_ENABLED}"
+
+[database.engine_environment.mariadb]
+DB_TYPE = "mariadb"
+DB_HOST = "${DATABASE_HOST}"
+DB_PORT = "${DATABASE_PORT}"
+DB_NAME = "${DATABASE_NAME}"
+DB_USER = "${DATABASE_USER}"
+DB_PASS = "${DATABASE_PASSWORD}"
+DB_SSL = "${DATABASE_SSL_ENABLED}"
+
+[database.engine_ssl_modes]
+postgres = [ "disable", "require", "verify-full" ]
+mysql = [ "disable", "require", "verify-full" ]
+mariadb = [ "disable", "require", "verify-full" ]

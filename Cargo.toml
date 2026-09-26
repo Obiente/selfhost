@@ -1,0 +1,48 @@
+[package]
+name = "selfhost"
+version = "0.1.1"
+edition = "2024"
+rust-version = "1.98"
+description = "Manage self-hosted projects from a local dashboard and command line"
+homepage = "https://obiente.org"
+repository = "https://github.com/obiente/selfhost"
+readme = "README.md"
+license = "AGPL-3.0-or-later"
+keywords = ["selfhost", "docker", "homarr", "dashboard", "cli"]
+categories = ["command-line-utilities"]
+include = ["/src/**", "/catalog/**", "/docs/**", "!/docs/blog/**", "/ui/dist/**", "/ui/src/**", "/ui/public/**", "/ui/package.json", "/ui/package-lock.json", "/ui/tsconfig.json", "/ui/vite.config.ts", "/ui/index.html", "/Cargo.toml", "/Cargo.lock", "/README.md", "/CONTRIBUTING.md", "/LICENSE"]
+
+[dependencies]
+anyhow = "1"
+axum = "0.8"
+clap = { version = "4", features = ["derive"] }
+directories = "6"
+fs2 = "0.4"
+getrandom = "0.3"
+mime_guess = "2"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+rust-embed = "8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3"
+tokio = { version = "1", features = ["full"] }
+toml = "0.8"
+crossterm = "0.29"
+unicode-width = "0.2"
+
+sha2 = "0.10"
+tar = "0.4"
+serde_yaml = "0.9"
+
+tokio-util = { version = "0.7", features = ["io"] }
+openidconnect = { version = "4", default-features = false, features = ["reqwest", "rustls-tls"] }
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_System_JobObjects", "Win32_System_Threading", "Win32_System_Console", "Win32_Security"] }
+
+[profile.release]
+strip = "symbols"

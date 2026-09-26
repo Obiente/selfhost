@@ -1,0 +1,17 @@
+{
+  "engine": "mysql",
+  "name": "MySQL",
+  "image": "mysql:8.4",
+  "port": 3306,
+  "data_path": "/var/lib/mysql",
+  "healthcheck": {
+    "test": [
+      "CMD-SHELL",
+      "MYSQL_PWD=\"$$MYSQL_ROOT_PASSWORD\" mysqladmin --protocol=tcp -h 127.0.0.1 -uroot ping --silent"
+    ],
+    "interval": "5s",
+    "timeout": "5s",
+    "retries": 40,
+    "start_period": "20s"
+  }
+}

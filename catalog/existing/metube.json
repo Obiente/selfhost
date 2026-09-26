@@ -1,0 +1,15 @@
+{
+  "id": "metube",
+  "name": "MeTube",
+  "description": "Discover an existing MeTube container without taking ownership of its deployment or storage.",
+  "image_repositories": ["ghcr.io/alexta69/metube"],
+  "container_hint": "metube",
+  "actions": [
+    {
+      "id": "download-usage",
+      "label": "Check download storage",
+      "description": "Show disk space used by downloaded media and queue state.",
+      "argv": ["du", "-sh", "/downloads"]
+    }
+  ]
+}

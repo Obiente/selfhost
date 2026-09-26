@@ -1,0 +1,23 @@
+schema = 1
+id = "audiobookshelf"
+name = "Audiobookshelf"
+description = "Listen to audiobooks and podcasts, manage libraries and synchronize playback."
+category = "Media"
+image = "ghcr.io/advplyr/audiobookshelf:2.36.1"
+port = 13378
+container_port = 80
+data_path = "/data"
+docs = "https://audiobookshelf.org/docs/documentation/install/docker/"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/audiobookshelf.svg"
+
+[environment]
+CONFIG_PATH = "/data/config"
+METADATA_PATH = "/data/metadata"
+
+[[actions]]
+id = "check-health"
+label = "Check HTTP health"
+description = "Check the local Audiobookshelf HTTP server."
+command = ["wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/healthcheck"]
+timeout_seconds = 60
+confirm = false

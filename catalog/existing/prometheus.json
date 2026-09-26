@@ -1,0 +1,21 @@
+{
+  "id": "prometheus",
+  "name": "Prometheus",
+  "description": "Discover an existing Prometheus container without taking ownership of its deployment or storage.",
+  "image_repositories": ["prom/prometheus", "docker.io/prom/prometheus"],
+  "container_hint": "prometheus",
+  "actions": [
+    {
+      "id": "check-config",
+      "label": "Validate configuration",
+      "description": "Validate the active configuration and referenced rules without changing them.",
+      "argv": ["/bin/promtool", "check", "config", "/etc/prometheus/prometheus.yml"]
+    },
+    {
+      "id": "check-ready",
+      "label": "Check readiness",
+      "description": "Check whether Prometheus is ready to serve queries.",
+      "argv": ["/bin/promtool", "check", "ready", "--url=http://localhost:9090"]
+    }
+  ]
+}

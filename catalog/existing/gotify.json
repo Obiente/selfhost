@@ -1,0 +1,8 @@
+{
+  "id": "gotify",
+  "name": "Gotify",
+  "description": "Discover an existing Gotify container without taking ownership of its deployment or storage.",
+  "image_repositories": ["gotify/server", "docker.io/gotify/server"],
+  "container_hint": "gotify",
+  "actions": []
+}

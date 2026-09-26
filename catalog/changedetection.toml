@@ -1,0 +1,14 @@
+schema = 1
+id = "changedetection"
+name = "Change Detection"
+description = "Track changes to web pages and receive notifications."
+category = "Monitoring"
+image = "ghcr.io/dgtlmoon/changedetection.io:latest"
+port = 5000
+container_port = 5000
+data_path = "/datastore"
+docs = "https://github.com/dgtlmoon/changedetection.io"
+icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/changedetection.svg"
+
+[environment]
+TZ = "UTC"

@@ -1,0 +1,112 @@
+{
+  "id": "bookstack",
+  "name": "BookStack with MariaDB",
+  "description": "Persistent documentation, isolated MariaDB and an automatically initialized administrator.",
+  "category": "Knowledge",
+  "inputs": {
+    "port": {
+      "label": "Local HTTP port",
+      "kind": "port",
+      "default": 6875
+    },
+    "hostname": {
+      "label": "Initial hostname (change public URL later in app settings)",
+      "kind": "hostname",
+      "default": "localhost"
+    },
+    "admin-email": {
+      "label": "Administrator email",
+      "kind": "email",
+      "default": "admin@example.com"
+    },
+    "admin-name": {
+      "label": "Administrator display name",
+      "kind": "identifier",
+      "default": "admin"
+    }
+  },
+  "secrets": {
+    "DATABASE_PASSWORD": {
+      "bytes": 24
+    },
+    "ADMIN_PASSWORD": {
+      "bytes": 24,
+      "prefix": "Sh1!"
+    },
+    "DATABASE_ROOT_PASSWORD": {
+      "bytes": 24
+    },
+    "APP_KEY": {
+      "bytes": 16
+    }
+  },
+  "compose": {
+    "services": {
+      "database": {
+        "image": "mariadb:11.4.8",
+        "restart": "unless-stopped",
+        "environment": {
+          "MARIADB_DATABASE": "bookstack",
+          "MARIADB_USER": "bookstack",
+          "MARIADB_PASSWORD": "${DATABASE_PASSWORD}",
+          "MARIADB_ROOT_PASSWORD": "${DATABASE_ROOT_PASSWORD}"
+        },
+        "volumes": ["database:/var/lib/mysql"],
+        "healthcheck": {
+          "test": ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"],
+          "interval": "5s",
+          "timeout": "5s",
+          "retries": 30
+        }
+      },
+      "bookstack": {
+        "image": "lscr.io/linuxserver/bookstack:version-v26.09",
+        "restart": "unless-stopped",
+        "ports": ["127.0.0.1:{{port}}:80"],
+        "environment": {
+          "PUID": "1000",
+          "PGID": "1000",
+          "TZ": "UTC",
+          "APP_URL": "http://{{hostname}}:{{port}}",
+          "APP_KEY": "${APP_KEY}",
+          "DB_HOST": "database",
+          "DB_PORT": "3306",
+          "DB_DATABASE": "bookstack",
+          "DB_USERNAME": "bookstack",
+          "DB_PASSWORD": "${DATABASE_PASSWORD}",
+          "SELFHOST_ADMIN_EMAIL": "{{admin-email}}",
+          "SELFHOST_ADMIN_NAME": "{{admin-name}}",
+          "SELFHOST_ADMIN_PASSWORD": "${ADMIN_PASSWORD}"
+        },
+        "volumes": [
+          "content:/config",
+          "./files/initialize-admin.sh:/selfhost/initialize-admin.sh:ro"
+        ],
+        "x-selfhost-app": "bookstack",
+        "depends_on": {
+          "database": {
+            "condition": "service_healthy"
+          }
+        },
+        "entrypoint": [
+          "/bin/sh",
+          "-c",
+          "mkdir -p /custom-cont-init.d && cp /selfhost/initialize-admin.sh /custom-cont-init.d/initialize-admin.sh && chmod 755 /custom-cont-init.d/initialize-admin.sh && exec /init"
+        ]
+      }
+    },
+    "volumes": {
+      "database": {},
+      "content": {}
+    }
+  },
+  "instructions": [
+    "Review the generated Compose and environment before starting. Only the app HTTP port is published, on loopback.",
+    "Keep credentials, database and data volumes together in an independent backup. Exported Compose files do not include volume data.",
+    "The startup hook replaces only BookStack's initial default administrator. Existing administrator accounts are not reset. Sign in with the selected email and ADMIN_PASSWORD.",
+    "Save APP_KEY with your backup. Do not rotate it casually because it protects encrypted application data."
+  ],
+  "files": {
+    "initialize-admin.sh": "#!/bin/sh\nset -eu\nset +e\nphp /app/www/artisan bookstack:create-admin --initial --no-interaction --email=\"$SELFHOST_ADMIN_EMAIL\" --name=\"$SELFHOST_ADMIN_NAME\" --password=\"$SELFHOST_ADMIN_PASSWORD\"\nstatus=$?\nset -e\n[ \"$status\" -eq 0 ] || [ \"$status\" -eq 2 ]\n"
+  }
+}

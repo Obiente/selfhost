@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "nicolargo/glances:4.5.6-full",
+      "label": "4.5.6-full",
+      "notes": "Local Docker HTTP startup, native configuration roundtrip, declared read-only actions and container recreation with persistent volumes passed. External provider login and version upgrades require separate validation."
+    }
+  ]
+}

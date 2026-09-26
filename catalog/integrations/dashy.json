@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "name": "Dashy",
+  "documentation": "https://dashy.to/docs/configuring/",
+  "driver": {
+    "kind": "yaml",
+    "file": "dashy.yaml",
+    "mount": "/app/user-data/conf.yml"
+  },
+  "fields": [
+    {
+      "id": "pageinfo-title",
+      "label": "pageInfo / title",
+      "kind": "string",
+      "path": ["pageInfo", "title"],
+      "advanced": true
+    },
+    {
+      "id": "pageinfo-description",
+      "label": "pageInfo / description",
+      "kind": "string",
+      "path": ["pageInfo", "description"],
+      "advanced": true
+    },
+    {
+      "id": "pageinfo-logo",
+      "label": "pageInfo / logo",
+      "kind": "string",
+      "path": ["pageInfo", "logo"],
+      "advanced": true
+    },
+    {
+      "id": "pageinfo-navlinks",
+      "label": "pageInfo / navLinks",
+      "kind": "json",
+      "path": ["pageInfo", "navLinks"],
+      "advanced": true
+    },
+    {
+      "id": "appconfig-theme",
+      "label": "appConfig / theme",
+      "kind": "string",
+      "path": ["appConfig", "theme"],
+      "advanced": true
+    },
+    {
+      "id": "appconfig-layout",
+      "label": "appConfig / layout",
+      "kind": "string",
+      "path": ["appConfig", "layout"],
+      "advanced": true
+    },
+    {
+      "id": "appconfig-iconsize",
+      "label": "appConfig / iconSize",
+      "kind": "string",
+      "path": ["appConfig", "iconSize"],
+      "advanced": true
+    },
+    {
+      "id": "appconfig-language",
+      "label": "appConfig / language",
+      "kind": "string",
+      "path": ["appConfig", "language"],
+      "advanced": true
+    },
+    {
+      "id": "appconfig-statuscheck",
+      "label": "appConfig / statusCheck",
+      "kind": "boolean",
+      "path": ["appConfig", "statusCheck"],
+      "advanced": true
+    },
+    {
+      "id": "appconfig-statuscheckinterval",
+      "label": "appConfig / statusCheckInterval",
+      "kind": "integer",
+      "path": ["appConfig", "statusCheckInterval"],
+      "advanced": true,
+      "minimum": 10
+    },
+    {
+      "id": "appconfig-hidecomponents",
+      "label": "appConfig / hideComponents",
+      "kind": "json",
+      "path": ["appConfig", "hideComponents"],
+      "advanced": true
+    },
+    {
+      "id": "appconfig-auth",
+      "label": "appConfig / auth",
+      "kind": "json",
+      "path": ["appConfig", "auth"],
+      "advanced": true
+    },
+    {
+      "id": "appconfig-keycloak",
+      "label": "appConfig / keycloak",
+      "kind": "json",
+      "path": ["appConfig", "keycloak"],
+      "advanced": true
+    },
+    {
+      "id": "appconfig-customcss",
+      "label": "appConfig / customCss",
+      "kind": "string",
+      "path": ["appConfig", "customCss"],
+      "advanced": true
+    },
+    {
+      "id": "sections",
+      "label": "sections",
+      "kind": "json",
+      "path": ["sections"],
+      "advanced": true
+    },
+    {
+      "id": "pages",
+      "label": "pages",
+      "kind": "json",
+      "path": ["pages"],
+      "advanced": true
+    }
+  ],
+  "warnings": [
+    "Keep authentication at a reverse proxy; browser-side dashboard login does not protect server assets or APIs.",
+    "This recipe mounts configuration read-only; edit through Selfhost or the exported YAML."
+  ]
+}

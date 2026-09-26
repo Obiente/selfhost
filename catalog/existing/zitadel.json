@@ -1,0 +1,8 @@
+{
+  "id": "zitadel",
+  "name": "ZITADEL",
+  "description": "Link your identity provider. Configure dashboard sign-in separately in Access using its issuer and a client registration.",
+  "image_repositories": ["ghcr.io/zitadel/zitadel", "zitadel/zitadel"],
+  "container_hint": "zitadel",
+  "actions": []
+}

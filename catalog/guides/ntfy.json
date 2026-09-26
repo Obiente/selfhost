@@ -1,0 +1,13 @@
+{
+  "setup": [
+    "Start ntfy, then run Create user and explicitly choose admin for the first trusted administrator.",
+    "Grant each ordinary user access only to the topic patterns they need."
+  ],
+  "integration_notes": [
+    "New recipes deny anonymous topic access. Repeating Create user does not reset an existing account.",
+    "Set the public base URL before enabling attachments; use /var/cache/ntfy/attachments for persistent attachments."
+  ],
+  "limitations": [
+    "An OIDC login contract is not assumed. ntfy users, tokens and topic ACLs remain its native access system."
+  ]
+}

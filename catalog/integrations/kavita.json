@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "Kavita",
+  "documentation": "https://wiki.kavitareader.com/installation/docker/",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "tz",
+      "label": "TZ",
+      "kind": "string",
+      "path": ["TZ"],
+      "advanced": true
+    }
+  ]
+}

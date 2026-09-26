@@ -1,0 +1,122 @@
+{
+  "schema": 1,
+  "name": "Homarr",
+  "documentation": "https://homarr.dev/docs/advanced/single-sign-on/",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "base-url",
+      "label": "Public URL",
+      "kind": "string",
+      "path": ["BASE_URL"]
+    },
+    {
+      "id": "auth-providers",
+      "label": "Login providers",
+      "kind": "string",
+      "path": ["AUTH_PROVIDERS"],
+      "description": "Retain credentials until OIDC access is verified.",
+      "choices": ["credentials", "credentials,oidc", "oidc", "credentials,ldap", "ldap"]
+    },
+    {
+      "id": "session-duration",
+      "label": "Session duration",
+      "kind": "string",
+      "path": ["AUTH_SESSION_EXPIRY_TIME"],
+      "description": "Examples: 30m, 12h, 7d."
+    },
+    {
+      "id": "oidc-issuer",
+      "label": "OIDC issuer",
+      "kind": "string",
+      "path": ["AUTH_OIDC_ISSUER"]
+    },
+    {
+      "id": "oidc-client",
+      "label": "OIDC client ID",
+      "kind": "string",
+      "path": ["AUTH_OIDC_CLIENT_ID"]
+    },
+    {
+      "id": "oidc-secret",
+      "label": "OIDC secret",
+      "kind": "secret",
+      "path": ["AUTH_OIDC_CLIENT_SECRET"]
+    },
+    {
+      "id": "oidc-local-groups",
+      "label": "Manage OIDC groups in Homarr",
+      "kind": "string",
+      "path": ["AUTH_OIDC_GROUPS_LOCAL_MANAGEMENT"],
+      "description": "Enable to keep group membership managed by Homarr administrators. Disabling resumes group synchronization from the IdP.",
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "oidc-groups",
+      "label": "Group claim",
+      "kind": "string",
+      "path": ["AUTH_OIDC_GROUPS_ATTRIBUTE"]
+    },
+    {
+      "id": "ldap-uri",
+      "label": "LDAP URL",
+      "kind": "string",
+      "path": ["AUTH_LDAP_URI"],
+      "description": "Prefer verified LDAPS for remote connections."
+    },
+    {
+      "id": "ldap-base",
+      "label": "LDAP base DN",
+      "kind": "string",
+      "path": ["AUTH_LDAP_BASE"]
+    },
+    {
+      "id": "ldap-bind",
+      "label": "LDAP bind DN",
+      "kind": "string",
+      "path": ["AUTH_LDAP_BIND_DN"]
+    },
+    {
+      "id": "ldap-password",
+      "label": "LDAP bind password",
+      "kind": "secret",
+      "path": ["AUTH_LDAP_BIND_PASSWORD"]
+    },
+    {
+      "id": "external-connections",
+      "label": "Disable outbound integrations",
+      "kind": "string",
+      "path": ["NO_EXTERNAL_CONNECTION"],
+      "description": "Disables internet-dependent features such as feeds and weather.",
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "log-level",
+      "label": "Log level",
+      "kind": "string",
+      "path": ["LOG_LEVEL"],
+      "choices": ["debug", "info", "warn", "error"]
+    }
+  ],
+  "actions": [],
+  "oidc_client": {
+    "callback_path": "/api/auth/callback/oidc",
+    "environment": {
+      "BASE_URL": "{{app-url}}",
+      "NEXTAUTH_URL": "{{app-url}}",
+      "AUTH_PROVIDERS": "credentials,oidc",
+      "AUTH_OIDC_ISSUER": "{{issuer-url}}",
+      "AUTH_OIDC_CLIENT_ID": "{{client-id}}",
+      "AUTH_OIDC_CLIENT_SECRET": "{{client-secret}}",
+      "AUTH_OIDC_CLIENT_NAME": "{{name}}",
+      "AUTH_OIDC_SCOPE_OVERWRITE": "openid profile email",
+      "AUTH_OIDC_TOKEN_ENDPOINT_AUTH_METHOD": "client_secret_basic",
+      "AUTH_OIDC_AUTO_LOGIN": "false",
+      "AUTH_OIDC_ENABLE_DANGEROUS_ACCOUNT_LINKING": "false",
+      "AUTH_OIDC_ENABLE_DANGEROUS_CREDENTIALS_LINKING": "false",
+      "AUTH_OIDC_GROUPS_LOCAL_MANAGEMENT": "true"
+    }
+  }
+}

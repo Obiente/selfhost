@@ -1,0 +1,14 @@
+{
+  "setup": [
+    "Choose Editable configuration, or run selfhost app init prometheus --method configured.",
+    "Edit scrape jobs in native settings or files/prometheus.yml, then run Check configuration."
+  ],
+  "integration_notes": [
+    "The configuration remains ordinary Prometheus YAML. Recreate after saving a reviewed edit.",
+    "Add rule files through the portable project files and list them in rule_files."
+  ],
+  "limitations": [
+    "No unauthenticated remote reload endpoint is enabled.",
+    "Protect the HTTP interface with a proxy or private network. Prometheus does not provide application OIDC login."
+  ]
+}

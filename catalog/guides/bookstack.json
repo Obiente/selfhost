@@ -1,0 +1,17 @@
+{
+  "setup": [
+    "Choose the MariaDB stack and select the first administrator email and name. A portable initialization hook replaces the upstream default account with the generated ADMIN_PASSWORD before normal use.",
+    "The hook only initializes the default account or an instance with no administrator. It preserves existing administrator accounts on subsequent starts."
+  ],
+  "integration_notes": [
+    "Identity connection stages OIDC discovery and client credentials. Before switching Authentication method to oidc, map the intended administrator external identity subject. Create IdP administrator can create a separate administrator with an unused email.",
+    "BookStack replaces password login when AUTH_METHOD is changed to oidc. Keep a database backup and a way to revert this environment setting; verify the selected administrator mapping first.",
+    "For a domain change, first back up the database, run Migrate stored content URLs with old and new URLs, and change the Public URL setting. Recreate the service.",
+    "Maintenance actions rebuild search, permissions and content references. Keep APP_KEY and both MariaDB and application volumes in backups.",
+    "Database placement supports MariaDB and MySQL on a private network. These mappings accept only TLS mode disable; sources requiring TLS are rejected by these bindings. Certificate-aware custom deployments remain manual. Do not send these database connections over a public network."
+  ],
+  "limitations": [
+    "OIDC setup is staged deliberately because enabling it changes the primary login method. Selfhost does not claim a verified browser login just from saving credentials.",
+    "SMTP, OIDC groups and database fields are configurable. SAML and LDAP authentication require the corresponding additional native settings in the portable Compose environment."
+  ]
+}

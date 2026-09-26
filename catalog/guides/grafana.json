@@ -1,0 +1,15 @@
+{
+  "setup": [
+    "Sign in using the generated administrator credentials and change them in Grafana as needed.",
+    "Connect an IdP, optionally selecting a verified human account for organization administration."
+  ],
+  "integration_notes": [
+    "Other OIDC users receive Viewer; server-wide Grafana administrator access is never automatically granted.",
+    "PostgreSQL can be dedicated, shared or external.",
+    "Database placement includes PostgreSQL, MySQL and MariaDB using app-specific connection settings. Select a fresh or already migrated database before first start; changing the engine does not convert existing data.",
+    "MySQL and MariaDB TLS uses server certificate verification whenever enabled. A source configured as require therefore still needs a certificate trusted by the app; private CA certificates must be installed in the app trust store."
+  ],
+  "limitations": [
+    "Datasource provisioning and dashboard import remain separate from login configuration."
+  ]
+}

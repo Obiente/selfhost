@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "ghcr.io/homarr-labs/homarr:v1.77.2",
+      "label": "1.77.2",
+      "notes": "Local Docker initialization, private API key, board creation and incremental service links verified. Other platforms and provider login require separate validation."
+    }
+  ],
+  "source": {
+    "repository": "homarr-labs/homarr",
+    "tag_prefix": "v",
+    "image_prefix": "v",
+    "stream": "1.77",
+    "automatic": false,
+    "smoke_path": "/",
+    "smoke_status": 200
+  }
+}

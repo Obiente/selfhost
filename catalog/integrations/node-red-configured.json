@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "name": "Node-RED",
+  "documentation": "https://nodered.org/docs/user-guide/runtime/configuration",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "administrator",
+      "label": "Administrator username",
+      "kind": "string",
+      "path": ["SELFHOST_ADMIN_USER"],
+      "description": "Used by the Administrator login deployment method."
+    },
+    {
+      "id": "http-root",
+      "label": "HTTP flow URL prefix",
+      "kind": "string",
+      "path": ["SELFHOST_HTTP_NODE_ROOT"],
+      "description": "Used by the configured settings.js. HTTP In endpoints need their own authentication."
+    },
+    {
+      "id": "disable-editor",
+      "label": "Disable editor UI",
+      "kind": "string",
+      "path": ["SELFHOST_DISABLE_EDITOR"],
+      "description": "Keeps the authenticated Admin API available.",
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "log-level",
+      "label": "Log level",
+      "kind": "string",
+      "path": ["SELFHOST_LOG_LEVEL"],
+      "choices": ["fatal", "error", "warn", "info", "debug", "trace"]
+    },
+    {
+      "id": "projects",
+      "label": "Enable projects",
+      "kind": "string",
+      "path": ["NODE_RED_ENABLE_PROJECTS"],
+      "choices": ["true", "false"]
+    }
+  ],
+  "actions": [
+    {
+      "id": "check-settings",
+      "label": "Check settings syntax",
+      "description": "Check JavaScript syntax in settings.js. This does not validate credentials or flows.",
+      "schedulable": true,
+      "inputs": [],
+      "steps": [
+        {
+          "label": "Check settings syntax",
+          "command": {
+            "argv": ["node", "--check", "/data/settings.js"]
+          }
+        }
+      ]
+    }
+  ],
+  "warnings": [
+    "The SELFHOST_ settings require the Administrator login deployment method and its mounted settings.js. Custom or existing settings.js must explicitly read these variables."
+  ]
+}

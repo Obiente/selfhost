@@ -1,0 +1,13 @@
+{
+  "setup": [
+    "Create a server password through Actual, then import or create your budget.",
+    "For OIDC, restrict the provider application to your intended server owner before connecting it."
+  ],
+  "integration_notes": [
+    "OpenID configuration keeps password login available. User creation remains manual."
+  ],
+  "limitations": [
+    "The first OpenID login becomes server owner. Selfhost cannot assign or transfer that role.",
+    "Back up /data including both server account data and budget files."
+  ]
+}

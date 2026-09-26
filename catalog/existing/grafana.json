@@ -1,0 +1,15 @@
+{
+  "id": "grafana",
+  "name": "Grafana",
+  "description": "Discover an existing Grafana container without taking ownership of its deployment or storage.",
+  "image_repositories": ["grafana/grafana", "docker.io/grafana/grafana"],
+  "container_hint": "grafana",
+  "actions": [
+    {
+      "id": "list-plugins",
+      "label": "List installed plugins",
+      "description": "Show plugins installed in this Grafana instance.",
+      "argv": ["grafana", "cli", "plugins", "ls"]
+    }
+  ]
+}

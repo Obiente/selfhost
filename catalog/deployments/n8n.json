@@ -1,0 +1,20 @@
+[
+  {
+    "app": "n8n",
+    "id": "sqlite",
+    "name": "SQLite container",
+    "description": "One persistent container for a small instance.",
+    "recipe": "n8n",
+    "blueprint": null,
+    "default": true
+  },
+  {
+    "app": "n8n",
+    "id": "postgres",
+    "name": "PostgreSQL stack",
+    "description": "Separate persistent PostgreSQL database.",
+    "recipe": null,
+    "blueprint": "n8n-postgres",
+    "default": false
+  }
+]

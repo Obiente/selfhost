@@ -1,0 +1,15 @@
+{
+  "setup": [
+    "Choose Administrator login, or run selfhost app init node-red --method configured.",
+    "Sign in as admin using ADMIN_PASSWORD in the private project environment."
+  ],
+  "integration_notes": [
+    "Portable files/settings.js configures editor authentication, persistent context and a stable flow encryption key.",
+    "Change supported native fields and recreate the container when ready."
+  ],
+  "limitations": [
+    "HTTP In flow endpoints have their own authentication requirements.",
+    "Keep CREDENTIAL_SECRET with your backup; changing it can make existing flow credentials unreadable.",
+    "The basic image or a custom settings.js does not consume the generated SELFHOST_ settings automatically."
+  ]
+}

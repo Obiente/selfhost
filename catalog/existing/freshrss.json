@@ -1,0 +1,8 @@
+{
+  "id": "freshrss",
+  "name": "FreshRSS",
+  "description": "Discover an existing FreshRSS container without taking ownership of its deployment or storage.",
+  "image_repositories": ["freshrss/freshrss", "docker.io/freshrss/freshrss"],
+  "container_hint": "freshrss",
+  "actions": []
+}

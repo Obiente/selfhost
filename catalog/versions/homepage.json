@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "ghcr.io/gethomepage/homepage:v2.4.0",
+      "label": "v2.4.0",
+      "notes": "Local Docker HTTP startup, native configuration roundtrip, declared read-only actions and container recreation with persistent volumes passed. Native file bytes used a fixture volume because this host did not share bind directories; host file sharing remains unverified. External authentication and version upgrades require separate validation."
+    }
+  ],
+  "source": {
+    "repository": "gethomepage/homepage",
+    "tag_prefix": "v",
+    "image_prefix": "v",
+    "stream": "2.4",
+    "automatic": false,
+    "smoke_path": "/",
+    "smoke_status": 200
+  }
+}

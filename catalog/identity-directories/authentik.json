@@ -1,0 +1,11 @@
+{
+  "id": "authentik",
+  "name": "authentik",
+  "image_markers": ["goauthentik/server"],
+  "environment_issuer": ["OIDC_ISSUER"],
+  "instructions": [
+    "Create an OAuth2/OpenID provider and application, and copy its exact issuer including /application/o/your-slug/.",
+    "Enable authorization code with PKCE and register the exact callback.",
+    "Supply administrators' exact sub claims according to the provider's subject mode."
+  ]
+}

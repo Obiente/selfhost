@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "lscr.io/linuxserver/bookstack:version-v26.09",
+      "label": "26.09",
+      "notes": "Local MariaDB stack replaced default administrator through native initialization, verified selected password, rebuilt search and retained data across recreation. OIDC credentials are staged; enabling login needs verified account mapping."
+    }
+  ],
+  "source": null
+}

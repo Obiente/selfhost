@@ -1,0 +1,8 @@
+{
+  "id": "homarr",
+  "name": "Homarr",
+  "description": "Discover an existing Homarr container without taking ownership of its deployment or storage.",
+  "image_repositories": ["ghcr.io/homarr-labs/homarr"],
+  "container_hint": "homarr",
+  "actions": []
+}

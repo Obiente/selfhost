@@ -1,0 +1,208 @@
+{
+  "schema": 1,
+  "name": "Gatus",
+  "documentation": "https://github.com/TwiN/gatus",
+  "driver": {
+    "kind": "yaml",
+    "file": "gatus.yaml",
+    "mount": "/config/config.yaml"
+  },
+  "fields": [
+    {
+      "id": "metrics",
+      "label": "metrics",
+      "kind": "boolean",
+      "path": ["metrics"],
+      "advanced": true
+    },
+    {
+      "id": "ui-title",
+      "label": "ui / title",
+      "kind": "string",
+      "path": ["ui", "title"],
+      "advanced": true
+    },
+    {
+      "id": "ui-description",
+      "label": "ui / description",
+      "kind": "string",
+      "path": ["ui", "description"],
+      "advanced": true
+    },
+    {
+      "id": "ui-header",
+      "label": "ui / header",
+      "kind": "string",
+      "path": ["ui", "header"],
+      "advanced": true
+    },
+    {
+      "id": "ui-logo",
+      "label": "ui / logo",
+      "kind": "string",
+      "path": ["ui", "logo"],
+      "advanced": true
+    },
+    {
+      "id": "ui-link",
+      "label": "ui / link",
+      "kind": "string",
+      "path": ["ui", "link"],
+      "advanced": true
+    },
+    {
+      "id": "ui-buttons",
+      "label": "ui / buttons",
+      "kind": "json",
+      "path": ["ui", "buttons"],
+      "advanced": true
+    },
+    {
+      "id": "ui-dark-mode",
+      "label": "ui / dark-mode",
+      "kind": "boolean",
+      "path": ["ui", "dark-mode"],
+      "advanced": true
+    },
+    {
+      "id": "endpoints",
+      "label": "endpoints",
+      "kind": "json",
+      "path": ["endpoints"],
+      "advanced": true
+    },
+    {
+      "id": "external-endpoints",
+      "label": "external-endpoints",
+      "kind": "json",
+      "path": ["external-endpoints"],
+      "advanced": true
+    },
+    {
+      "id": "alerting",
+      "label": "alerting",
+      "kind": "json",
+      "path": ["alerting"],
+      "advanced": true
+    },
+    {
+      "id": "tunneling",
+      "label": "tunneling",
+      "kind": "json",
+      "path": ["tunneling"],
+      "advanced": true
+    },
+    {
+      "id": "storage-type",
+      "label": "storage / type",
+      "kind": "string",
+      "path": ["storage", "type"],
+      "advanced": true,
+      "choices": ["sqlite", "postgres", "memory"]
+    },
+    {
+      "id": "storage-path",
+      "label": "storage / path",
+      "kind": "secret",
+      "path": ["storage", "path"],
+      "advanced": true
+    },
+    {
+      "id": "storage-caching",
+      "label": "storage / caching",
+      "kind": "boolean",
+      "path": ["storage", "caching"],
+      "advanced": true
+    },
+    {
+      "id": "security-basic-username",
+      "label": "security / basic / username",
+      "kind": "string",
+      "path": ["security", "basic", "username"],
+      "advanced": true
+    },
+    {
+      "id": "security-basic-password-bcrypt-base64",
+      "label": "security / basic / password-bcrypt-base64",
+      "kind": "secret",
+      "path": ["security", "basic", "password-bcrypt-base64"],
+      "advanced": true
+    },
+    {
+      "id": "security-oidc-issuer-url",
+      "label": "security / oidc / issuer-url",
+      "kind": "string",
+      "path": ["security", "oidc", "issuer-url"],
+      "advanced": true
+    },
+    {
+      "id": "security-oidc-redirect-url",
+      "label": "security / oidc / redirect-url",
+      "kind": "string",
+      "path": ["security", "oidc", "redirect-url"],
+      "advanced": true
+    },
+    {
+      "id": "security-oidc-client-id",
+      "label": "security / oidc / client-id",
+      "kind": "string",
+      "path": ["security", "oidc", "client-id"],
+      "advanced": true
+    },
+    {
+      "id": "security-oidc-client-secret",
+      "label": "security / oidc / client-secret",
+      "kind": "secret",
+      "path": ["security", "oidc", "client-secret"],
+      "advanced": true
+    },
+    {
+      "id": "security-oidc-scopes",
+      "label": "security / oidc / scopes",
+      "kind": "string_list",
+      "path": ["security", "oidc", "scopes"],
+      "advanced": true
+    },
+    {
+      "id": "security-oidc-allowed-subjects",
+      "label": "security / oidc / allowed-subjects",
+      "kind": "string_list",
+      "path": ["security", "oidc", "allowed-subjects"],
+      "advanced": true
+    },
+    {
+      "id": "security-oidc-session-ttl",
+      "label": "security / oidc / session-ttl",
+      "kind": "string",
+      "path": ["security", "oidc", "session-ttl"],
+      "advanced": true
+    },
+    {
+      "id": "web-port",
+      "label": "web / port",
+      "kind": "integer",
+      "path": ["web", "port"],
+      "advanced": true,
+      "minimum": 1,
+      "maximum": 65535
+    },
+    {
+      "id": "web-tls-certificate-file",
+      "label": "web / tls / certificate-file",
+      "kind": "string",
+      "path": ["web", "tls", "certificate-file"],
+      "advanced": true
+    },
+    {
+      "id": "web-tls-private-key-file",
+      "label": "web / tls / private-key-file",
+      "kind": "string",
+      "path": ["web", "tls", "private-key-file"],
+      "advanced": true
+    }
+  ],
+  "warnings": [
+    "OIDC allowed-subjects must explicitly restrict access if the provider serves other users. Empty allowed-subjects permits all authenticated subjects.",
+    "Endpoint, alert and tunnel JSON can contain secrets. Prefer configuration-file environment substitutions and private network connections."
+  ]
+}

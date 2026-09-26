@@ -1,0 +1,13 @@
+{
+  "setup": [
+    "Run Initialize with the public URL and your chosen administrator credentials.",
+    "List users to verify initialization."
+  ],
+  "integration_notes": [
+    "The database backup action creates an application snapshot. Copy it to independent storage with the remaining data.",
+    "Refresh feeds can run as a reviewed recurring task."
+  ],
+  "limitations": [
+    "The automatic initialization recipe currently uses SQLite. External database migration needs FreshRSS tools."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "setup": [
+    "The native deployment requires explicit Docker socket acknowledgement. Even a read-only socket bind grants powerful access to the Docker API.",
+    "Shell, container actions and MCP are disabled by default. Keep the service private until authentication and proxy access are configured."
+  ],
+  "integration_notes": [
+    "The OIDC connection profile configures the issuer and client credentials, with callback /api/auth/callback.",
+    "Use provider claims to assign the supported roles and container filters. OIDC replaces the local user authentication flow.",
+    "Remote agents, remote hosts, filters and other supported options are available as native environment settings."
+  ],
+  "limitations": [
+    "Agent deployments and their credentials must be configured explicitly.",
+    "The Docker socket is not a restricted logs-only API, even when its filesystem mount is read-only."
+  ]
+}

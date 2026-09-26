@@ -1,0 +1,286 @@
+{
+  "schema": 1,
+  "name": "n8n",
+  "documentation": "https://docs.n8n.io/deploy/host-n8n/configure/",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "editor-url",
+      "label": "Public editor URL",
+      "kind": "string",
+      "path": ["N8N_EDITOR_BASE_URL"]
+    },
+    {
+      "id": "webhook-url",
+      "label": "Public webhook URL",
+      "kind": "string",
+      "path": ["WEBHOOK_URL"]
+    },
+    {
+      "id": "hostname",
+      "label": "Hostname",
+      "kind": "string",
+      "path": ["N8N_HOST"]
+    },
+    {
+      "id": "protocol",
+      "label": "Public protocol",
+      "kind": "string",
+      "path": ["N8N_PROTOCOL"],
+      "choices": ["http", "https"]
+    },
+    {
+      "id": "secure-cookie",
+      "label": "HTTPS-only session cookie",
+      "kind": "string",
+      "path": ["N8N_SECURE_COOKIE"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "proxy-hops",
+      "label": "Trusted proxy hops",
+      "kind": "string",
+      "path": ["N8N_PROXY_HOPS"],
+      "advanced": true
+    },
+    {
+      "id": "timezone",
+      "label": "Workflow timezone",
+      "kind": "string",
+      "path": ["GENERIC_TIMEZONE"]
+    },
+    {
+      "id": "database-type",
+      "label": "Database type",
+      "kind": "string",
+      "path": ["DB_TYPE"],
+      "choices": ["sqlite", "postgresdb"],
+      "advanced": true
+    },
+    {
+      "id": "database-host",
+      "label": "PostgreSQL host",
+      "kind": "string",
+      "path": ["DB_POSTGRESDB_HOST"],
+      "advanced": true
+    },
+    {
+      "id": "database-port",
+      "label": "PostgreSQL port",
+      "kind": "string",
+      "path": ["DB_POSTGRESDB_PORT"],
+      "advanced": true
+    },
+    {
+      "id": "database-name",
+      "label": "PostgreSQL database",
+      "kind": "string",
+      "path": ["DB_POSTGRESDB_DATABASE"],
+      "advanced": true
+    },
+    {
+      "id": "database-user",
+      "label": "PostgreSQL username",
+      "kind": "string",
+      "path": ["DB_POSTGRESDB_USER"],
+      "advanced": true
+    },
+    {
+      "id": "database-password",
+      "label": "PostgreSQL password",
+      "kind": "secret",
+      "path": ["DB_POSTGRESDB_PASSWORD"],
+      "advanced": true
+    },
+    {
+      "id": "execution-prune",
+      "label": "Prune execution history",
+      "kind": "string",
+      "path": ["EXECUTIONS_DATA_PRUNE"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "execution-age",
+      "label": "Execution retention in hours",
+      "kind": "string",
+      "path": ["EXECUTIONS_DATA_MAX_AGE"]
+    },
+    {
+      "id": "execution-limit",
+      "label": "Maximum stored executions",
+      "kind": "string",
+      "path": ["EXECUTIONS_DATA_PRUNE_MAX_COUNT"]
+    },
+    {
+      "id": "execution-timeout",
+      "label": "Workflow timeout in seconds",
+      "kind": "string",
+      "path": ["EXECUTIONS_TIMEOUT"],
+      "advanced": true
+    },
+    {
+      "id": "metrics",
+      "label": "Prometheus metrics",
+      "kind": "string",
+      "path": ["N8N_METRICS"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "log-level",
+      "label": "Log level",
+      "kind": "string",
+      "path": ["N8N_LOG_LEVEL"],
+      "choices": ["error", "warn", "info", "debug"]
+    },
+    {
+      "id": "smtp-host",
+      "label": "SMTP host",
+      "kind": "string",
+      "path": ["N8N_SMTP_HOST"]
+    },
+    {
+      "id": "smtp-port",
+      "label": "SMTP port",
+      "kind": "string",
+      "path": ["N8N_SMTP_PORT"]
+    },
+    {
+      "id": "smtp-user",
+      "label": "SMTP username",
+      "kind": "string",
+      "path": ["N8N_SMTP_USER"]
+    },
+    {
+      "id": "smtp-password",
+      "label": "SMTP password",
+      "kind": "secret",
+      "path": ["N8N_SMTP_PASS"]
+    },
+    {
+      "id": "smtp-sender",
+      "label": "SMTP sender",
+      "kind": "string",
+      "path": ["N8N_SMTP_SENDER"]
+    },
+    {
+      "id": "smtp-ssl",
+      "label": "SMTP TLS",
+      "kind": "string",
+      "path": ["N8N_SMTP_SSL"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "api-disabled",
+      "label": "Disable public API",
+      "kind": "string",
+      "path": ["N8N_PUBLIC_API_DISABLED"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "community-packages",
+      "label": "Allow community packages",
+      "kind": "string",
+      "path": ["N8N_COMMUNITY_PACKAGES_ENABLED"],
+      "choices": ["true", "false"],
+      "advanced": true
+    },
+    {
+      "id": "database-tls",
+      "label": "Database TLS",
+      "kind": "string",
+      "path": ["DB_POSTGRESDB_SSL_ENABLED"],
+      "choices": ["true", "false"],
+      "advanced": true
+    },
+    {
+      "id": "database-verify-certificate",
+      "label": "Verify database certificate",
+      "kind": "string",
+      "path": ["DB_POSTGRESDB_SSL_REJECT_UNAUTHORIZED"],
+      "choices": ["true", "false"],
+      "advanced": true
+    },
+    {
+      "id": "database-ca",
+      "label": "Database CA certificate",
+      "kind": "secret",
+      "path": ["DB_POSTGRESDB_SSL_CA"],
+      "advanced": true
+    }
+  ],
+  "actions": [
+    {
+      "id": "list-workflows",
+      "label": "List workflows",
+      "description": "List workflows stored in this instance.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "List workflows",
+          "command": {
+            "argv": ["n8n", "list:workflow"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "export-workflows",
+      "label": "Export workflows",
+      "description": "Export all workflows into the persistent data volume. Exports may contain credentials embedded in workflow parameters.",
+      "inputs": [],
+      "schedulable": true,
+      "steps": [
+        {
+          "label": "Export workflows",
+          "command": {
+            "argv": [
+              "n8n",
+              "export:workflow",
+              "--all",
+              "--output=/home/node/.n8n/selfhost-workflows.json"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "export-credentials",
+      "label": "Export encrypted credentials",
+      "description": "Export credentials encrypted with the instance encryption key. Back up that key separately.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Export encrypted credentials",
+          "command": {
+            "argv": [
+              "n8n",
+              "export:credentials",
+              "--all",
+              "--output=/home/node/.n8n/selfhost-credentials.json"
+            ]
+          }
+        }
+      ],
+      "advanced": true
+    },
+    {
+      "id": "version",
+      "label": "Show version",
+      "description": "Show the running n8n version.",
+      "inputs": [],
+      "schedulable": false,
+      "steps": [
+        {
+          "label": "Show version",
+          "command": {
+            "argv": ["n8n", "--version"]
+          }
+        }
+      ]
+    }
+  ]
+}

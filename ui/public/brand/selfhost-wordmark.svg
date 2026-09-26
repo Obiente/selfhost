@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 356 80" fill="none">
+  <title>selfhost custom wordmark</title>
+  <g stroke="#F1F0E9" stroke-width="7.5" stroke-linecap="square" stroke-linejoin="round">
+    <path d="M34 25H20C5 25 5 42 20 42H23C39 42 39 60 23 60H8" />
+    <path d="M55 43H82V39C82 19 51 19 51 40V45C51 61 65 66 81 57" />
+    <path d="M101 12V50Q101 60 111 60" />
+    <path d="M131 60V24Q131 11 145 12M122 30H148" />
+    <path d="M164 12V60M164 41C164 21 193 21 193 41V60" />
+    <path d="M211 40C211 19 242 19 242 40V45C242 66 211 66 211 45Z" />
+    <path d="M287 25H273C258 25 258 42 273 42H276C292 42 292 60 276 60H261" />
+    <path d="M316 15V48Q316 63 337 58M305 30H338" />
+  </g>
+</svg>

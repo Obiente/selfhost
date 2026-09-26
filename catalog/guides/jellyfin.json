@@ -1,0 +1,13 @@
+{
+  "setup": [
+    "Mount your media folders separately from the persistent /config volume.",
+    "Use Automatic app setup to create the selected administrator and finish the initial wizard."
+  ],
+  "integration_notes": [
+    "Advertised server URL and transcoding probe limits use Jellyfin native environment configuration."
+  ],
+  "limitations": [
+    "SSO requires a separately supported plugin; no core OIDC contract is assumed.",
+    "Media libraries and hardware acceleration need explicit host paths/device permissions."
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "setup": [
+    "Sign in using the generated administrator password from .env.",
+    "Create an application token in Gotify for each notification producer."
+  ],
+  "integration_notes": [
+    "OIDC setup preserves local login and uses standard provider discovery.",
+    "Database placement includes PostgreSQL, MySQL and MariaDB using app-specific connection settings. Select a fresh or already migrated database before first start; changing the engine does not convert existing data.",
+    "MySQL and MariaDB TLS uses server certificate verification whenever enabled. A source configured as require therefore still needs a certificate trusted by the app; private CA certificates must be installed in the app trust store."
+  ],
+  "limitations": [
+    "Application tokens are distinct from user/client tokens. Selfhost does not distribute an administrator token to other apps."
+  ]
+}

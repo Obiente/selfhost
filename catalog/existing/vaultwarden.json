@@ -1,0 +1,8 @@
+{
+  "id": "vaultwarden",
+  "name": "Vaultwarden",
+  "description": "Discover an existing Vaultwarden container without taking ownership of its deployment or storage.",
+  "image_repositories": ["vaultwarden/server", "docker.io/vaultwarden/server"],
+  "container_hint": "vaultwarden",
+  "actions": []
+}

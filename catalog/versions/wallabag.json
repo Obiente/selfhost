@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "tested": [
+    {
+      "image": "wallabag/wallabag:2.6.14",
+      "label": "2.6.14",
+      "notes": "Local SQLite deployment, separate article image volume, native initial password change and user creation, environment changes and persistent recreation passed. No native OIDC integration is advertised."
+    }
+  ],
+  "source": {
+    "repository": "wallabag/docker",
+    "tag_prefix": "",
+    "image_prefix": "",
+    "stream": "2.6",
+    "automatic": false,
+    "smoke_path": "/login",
+    "smoke_status": 200
+  }
+}

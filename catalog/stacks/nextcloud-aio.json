@@ -1,0 +1,60 @@
+{
+  "id": "nextcloud-aio",
+  "name": "Nextcloud AIO",
+  "category": "Productivity",
+  "description": "AIO manages Nextcloud, its database, backups and companion containers. Connect a TLS reverse proxy to the local Apache port after completing AIO setup.",
+  "inputs": {
+    "port": { "label": "Local AIO administration HTTPS port", "kind": "port", "default": 18081 },
+    "apache-port": {
+      "label": "Local Apache port for your reverse proxy",
+      "kind": "port",
+      "default": 11000
+    }
+  },
+  "secrets": {},
+  "requirements": [
+    {
+      "id": "docker-socket",
+      "label": "Allow the AIO manager to control this server's Docker engine. This provides root-equivalent access despite the read-only socket mount."
+    },
+    {
+      "id": "fixed-resources",
+      "label": "Use an engine with no existing AIO manager or master volume. AIO requires fixed names and one manager per engine."
+    },
+    {
+      "id": "aio-managed",
+      "label": "Use AIO for app installation, backups and upgrades. Selfhost manages only the AIO administration container."
+    }
+  ],
+  "compose": {
+    "x-selfhost": {
+      "host_resources": { "docker_socket": true },
+      "reserved_containers": ["nextcloud-aio-mastercontainer"],
+      "reserved_volumes": ["nextcloud_aio_mastercontainer"],
+      "external_lifecycle": true
+    },
+    "services": {
+      "aio": {
+        "image": "ghcr.io/nextcloud-releases/all-in-one:latest",
+        "container_name": "nextcloud-aio-mastercontainer",
+        "init": true,
+        "restart": "unless-stopped",
+        "network_mode": "bridge",
+        "ports": ["127.0.0.1:{{port}}:8080"],
+        "environment": { "APACHE_PORT": "{{apache-port}}", "APACHE_IP_BINDING": "127.0.0.1" },
+        "volumes": [
+          "nextcloud_aio_mastercontainer:/mnt/docker-aio-config",
+          "/var/run/docker.sock:/var/run/docker.sock:ro"
+        ]
+      }
+    },
+    "volumes": { "nextcloud_aio_mastercontainer": { "name": "nextcloud_aio_mastercontainer" } }
+  },
+  "instructions": [
+    "Review the project configuration, then start the AIO manager. The Docker socket must exist on the selected engine host.",
+    "Open https://localhost:18081 using the administration port you chose. For a remote server, use an SSH port forward. AIO uses its own self-signed administration certificate.",
+    "Complete AIO setup with your Nextcloud domain. Use a TLS reverse proxy on the same server connected to the Apache port, or a private tunnel from a remote proxy.",
+    "Use AIO to start, update and back up its Nextcloud stack. Stopping this Selfhost project stops only the AIO manager, not AIO's child containers.",
+    "Once Nextcloud is running, link its app container under Existing apps for status and optional management actions."
+  ]
+}

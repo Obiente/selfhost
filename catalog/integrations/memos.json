@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "name": "Memos",
+  "documentation": "https://github.com/usememos/memos/blob/v0.31.0/cmd/memos/main.go",
+  "driver": {
+    "kind": "compose_environment"
+  },
+  "fields": [
+    {
+      "id": "public-url",
+      "label": "Canonical instance URL",
+      "kind": "string",
+      "path": ["MEMOS_INSTANCE_URL"]
+    },
+    {
+      "id": "log-level",
+      "label": "Log level",
+      "kind": "string",
+      "path": ["MEMOS_LOG_LEVEL"],
+      "choices": ["debug", "info", "warn", "error"]
+    },
+    {
+      "id": "rate-limit",
+      "label": "Request rate limiting",
+      "kind": "string",
+      "path": ["MEMOS_RATE_LIMIT"],
+      "choices": ["true", "false"]
+    },
+    {
+      "id": "trusted-proxies",
+      "label": "Trusted forwarding proxies",
+      "kind": "string",
+      "path": ["MEMOS_TRUSTED_PROXIES"],
+      "description": "Comma-separated CIDRs or IPs; none disables forwarding headers."
+    },
+    {
+      "id": "private-webhooks",
+      "label": "Allowed private webhook destinations",
+      "kind": "string",
+      "path": ["MEMOS_WEBHOOK_PRIVATE_NETWORK_ALLOWLIST"],
+      "description": "Allow only the required exact hosts, IPs or CIDRs, instead of granting access to every private network."
+    }
+  ],
+  "warnings": [
+    "Memos identity-provider and instance-policy provisioning uses protobuf JSON files under /etc/secrets. Runtime environment fields do not provision OAuth accounts or grant roles."
+  ],
+  "actions": []
+}

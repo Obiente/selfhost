@@ -1,0 +1,11 @@
+[
+  {
+    "app": "wiki-js",
+    "id": "stack",
+    "name": "Complete local deployment with persistent dependencies",
+    "description": "Complete local deployment with persistent dependencies",
+    "recipe": null,
+    "blueprint": "wiki-js",
+    "default": true
+  }
+]
