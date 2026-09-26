@@ -5,6 +5,9 @@ installer=$(cd "$(dirname "$0")" && pwd -P)/install.sh
 version=$(node -p 'require("./packages/selfhost/package.json").version')
 test_root=$(mktemp -d)
 trap 'rm -rf "$test_root"' EXIT HUP INT TERM
+# macOS exposes temporary directories through /var -> /private/var. Compare
+# the same physical paths that the installer writes into shell startup files.
+test_root=$(cd "$test_root" && pwd -P)
 mkdir "$test_root/tools"
 cat > "$test_root/tools/curl" <<'SH'
 #!/bin/sh
