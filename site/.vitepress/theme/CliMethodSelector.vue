@@ -24,9 +24,7 @@ onMounted(loadCliMethod);
       <option value="pnpx">pnpx</option></select
     ><span aria-live="polite"
       >Examples use <code>{{ cliCommands[cliMethod] }}</code></span
-    ><small class="release-status"
-      >Docs for upcoming {{ release.version }}. This release is not published yet.</small
-    >
+    ><small class="release-status">Documentation for {{ release.version }}.</small>
   </aside>
 </template>
 <style scoped>

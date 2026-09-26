@@ -23,7 +23,15 @@ confirm = false
 id = "list-users"
 label = "List user accounts"
 description = "List local users without changing their accounts."
-command = ["/app/navidrome", "--configfile", "/config/navidrome.yaml", "user", "list", "--format", "json"]
+command = [
+  "/app/navidrome",
+  "--configfile",
+  "/config/navidrome.yaml",
+  "user",
+  "list",
+  "--format",
+  "json",
+]
 timeout_seconds = 60
 confirm = false
 

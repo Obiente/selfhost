@@ -13,7 +13,18 @@ icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/nextcloud.sv
 [database]
 engines = ["mysql", "mariadb"]
 engine = "postgres"
-unset_environment = ["SQLITE_DATABASE", "POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "PGSSLMODE", "MYSQL_HOST", "MYSQL_DATABASE", "MYSQL_USER", "MYSQL_PASSWORD"]
+unset_environment = [
+  "SQLITE_DATABASE",
+  "POSTGRES_HOST",
+  "POSTGRES_DB",
+  "POSTGRES_USER",
+  "POSTGRES_PASSWORD",
+  "PGSSLMODE",
+  "MYSQL_HOST",
+  "MYSQL_DATABASE",
+  "MYSQL_USER",
+  "MYSQL_PASSWORD",
+]
 
 [database.environment]
 POSTGRES_HOST = "${DATABASE_HOST}:${DATABASE_PORT}"
@@ -44,6 +55,6 @@ MYSQL_USER = "${DATABASE_USER}"
 MYSQL_PASSWORD = "${DATABASE_PASSWORD}"
 
 [database.engine_ssl_modes]
-postgres = ["disable","require","verify-full"]
+postgres = ["disable", "require", "verify-full"]
 mysql = ["disable"]
 mariadb = ["disable"]

@@ -7,11 +7,10 @@ Start with the [getting started guide](docs/getting-started.md), [dashboard guid
 
 ## Install
 
-**Upcoming release 0.1.1 is being prepared and is not published yet.** The commands
-below target that release. Existing registry packages do not include all the
-features documented in this checkout.
+These instructions target **0.1.1**. See the [release page](https://github.com/Obiente/selfhost/releases/tag/v0.1.1)
+for its publication status and release notes.
 
-After publication, run directly with Node.js 22+ or pnpm:
+Run directly with Node.js 22+ or pnpm:
 
 ```sh
 npx selfhost@0.1.1 --help

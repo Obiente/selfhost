@@ -1,9 +1,9 @@
 # Distribution and releases
 
-Selfhost uses one executable and matching versions on npm and crates.io. The
-upcoming version is **0.1.1**. It is prepared locally and has not been published.
-Current registry versions do not represent the complete application in this
-checkout. User installation commands are in [getting started](getting-started.md).
+Selfhost uses one executable and matching versions on npm and crates.io. This
+checkout targets **0.1.1**. See the [release page](https://github.com/Obiente/selfhost/releases/tag/v0.1.1)
+for publication status and release notes. User installation commands are in
+[getting started](getting-started.md).
 
 ## What users receive
 
@@ -106,8 +106,8 @@ and publication jobs.
 Registry publication is immutable and the two registries are not transactional.
 If only one succeeds, do not republish its version; rerun with only the remaining
 registry enabled. Check package metadata and perform fresh registry installations
-on supported platforms afterward. Only then remove the upcoming-release notices
-in the README, getting-started guide and documentation command selector.
+on supported platforms afterward. Confirm the release notes and installation
+instructions match the versions actually available on each registry.
 
 This workflow does not create a GitHub Release or publish the documentation site.
 Those are separate publication actions.

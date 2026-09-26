@@ -13,7 +13,7 @@ deployment_only = true
 
 [database]
 engine = "postgres"
-engines = [ "mariadb" ]
+engines = ["mariadb"]
 
 [database.environment]
 PAPERLESS_DBENGINE = "postgresql"
@@ -34,5 +34,5 @@ PAPERLESS_DBPASS = "${DATABASE_PASSWORD}"
 PAPERLESS_DB_OPTIONS = "ssl_mode=${DATABASE_MYSQL_SSL_MODE}"
 
 [database.engine_ssl_modes]
-postgres = [ "disable", "require", "verify-full" ]
-mariadb = [ "disable", "require", "verify-full" ]
+postgres = ["disable", "require", "verify-full"]
+mariadb = ["disable", "require", "verify-full"]

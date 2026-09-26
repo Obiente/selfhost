@@ -28,6 +28,6 @@ DATABASE_URL = "${DATABASE_URL}?ssl_mode=disabled"
 DATABASE_URL = "${DATABASE_URL}?ssl_mode=disabled"
 
 [database.engine_ssl_modes]
-postgres = ["disable","require","verify-full"]
+postgres = ["disable", "require", "verify-full"]
 mysql = ["disable"]
 mariadb = ["disable"]

@@ -10,7 +10,25 @@ readme = "README.md"
 license = "AGPL-3.0-or-later"
 keywords = ["selfhost", "docker", "homarr", "dashboard", "cli"]
 categories = ["command-line-utilities"]
-include = ["/src/**", "/catalog/**", "/docs/**", "!/docs/blog/**", "/ui/dist/**", "/ui/src/**", "/ui/public/**", "/ui/package.json", "/ui/package-lock.json", "/ui/tsconfig.json", "/ui/vite.config.ts", "/ui/index.html", "/Cargo.toml", "/Cargo.lock", "/README.md", "/CONTRIBUTING.md", "/LICENSE"]
+include = [
+  "/src/**",
+  "/catalog/**",
+  "/docs/**",
+  "!/docs/blog/**",
+  "/ui/dist/**",
+  "/ui/src/**",
+  "/ui/public/**",
+  "/ui/package.json",
+  "/ui/package-lock.json",
+  "/ui/tsconfig.json",
+  "/ui/vite.config.ts",
+  "/ui/index.html",
+  "/Cargo.toml",
+  "/Cargo.lock",
+  "/README.md",
+  "/CONTRIBUTING.md",
+  "/LICENSE",
+]
 
 [dependencies]
 anyhow = "1"
@@ -42,7 +60,12 @@ chrono = { version = "0.4", default-features = false, features = ["clock"] }
 tower = { version = "0.5", features = ["util"] }
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Win32_System_JobObjects", "Win32_System_Threading", "Win32_System_Console", "Win32_Security"] }
+windows-sys = { version = "0.61", features = [
+  "Win32_System_JobObjects",
+  "Win32_System_Threading",
+  "Win32_System_Console",
+  "Win32_Security",
+] }
 
 [profile.release]
 strip = "symbols"

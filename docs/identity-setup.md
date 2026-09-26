@@ -4,8 +4,8 @@ Open **Access** in the dashboard. **Connect an existing identity provider** come
 
 ## Use an existing client
 
-1. Choose Selfhost's address. `http://localhost:8797` or `http://127.0.0.1:8797` works on your computer. Use the port printed by your running dashboard. A domain address requires HTTPS.
-2. In your provider, create or select a Web OpenID Connect application using authorization code and PKCE S256. Register the exact displayed callback, for example `http://localhost:8797/auth/callback`. Avoid wildcard callbacks.
+1. Choose Selfhost's address. `http://localhost:8372` or `http://127.0.0.1:8372` works on your computer. Use the port printed by your running dashboard. A domain address requires HTTPS.
+2. In your provider, create or select a Web OpenID Connect application using authorization code and PKCE S256. Register the exact displayed callback, for example `http://localhost:8372/auth/callback`. Avoid wildcard callbacks.
 3. Copy the issuer URL, client ID and optional client secret into Selfhost. Name the connection as you want it to appear on the sign-in button.
 4. Enter the exact OIDC subject IDs of users allowed to administer Selfhost. Subject IDs are stable provider identifiers, not email addresses. For ZITADEL and a default Keycloak realm, use the exact user ID. For authentik, check the provider's subject mode.
 5. Review the connection, confirm the callback is registered, and save. Test sign-in while keeping your local recovery session open.
@@ -33,7 +33,7 @@ A registration intent is saved before each creation API call. If the connection 
 The commands are the same whether Selfhost was installed through Cargo or invoked through an available npm launcher. Check that your installed version contains `identity` commands; source changes do not publish new registry packages.
 
 ```sh
-selfhost identity inspect . --selfhost-url http://localhost:8797
+selfhost identity inspect . --selfhost-url http://localhost:8372
 ```
 
 Inspection reads Compose documents, `.env`, and declared native provider files as data. ZITADEL's `zitadel.yaml` and `zitadel.yml` can supply an issuer from explicit external domain, port and security settings. Inspection identifies supported image names, reports safe issuer hints and provider instructions, and redacts secrets. Supported providers include a registration template with the remaining required fields. It does not run shell scripts, expand variables, traverse outside the directory, or modify the provider.
@@ -44,7 +44,7 @@ Download a template from **Access > Use the CLI**, or create `selfhost-login.jso
 
 ```json
 {
-  "public_url": "http://localhost:8797",
+  "public_url": "http://localhost:8372",
   "providers": [
     {
       "id": "home",
@@ -77,7 +77,7 @@ Create a private `identity-registration.json`:
   "issuer": "https://identity.example.com",
   "create_project": true,
   "project_name": "Selfhost",
-  "selfhost_url": "http://localhost:8797",
+  "selfhost_url": "http://localhost:8372",
   "id": "home",
   "name": "Home identity",
   "admin_subjects": ["your-exact-user-subject-id"]

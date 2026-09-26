@@ -18,10 +18,10 @@ schedules. You can also schedule ordinary Compose or CLI commands yourself.
 
 ## Install or run directly
 
-::: info Upcoming release 0.1.1
-These commands are prepared for the next release. Version 0.1.1 has **not been
-published yet**. Existing registry versions do not contain the features in this
-guide. You do not need to clone the repository when installing a published release.
+::: info Version 0.1.1
+These commands target version 0.1.1. Check the [release page](https://github.com/Obiente/selfhost/releases/tag/v0.1.1)
+for publication status and release notes. You do not need to clone the repository
+when installing a published release.
 :::
 
 Choose one installation method. The dashboard and service catalog are included in

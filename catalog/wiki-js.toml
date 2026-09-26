@@ -13,7 +13,7 @@ deployment_only = true
 
 [database]
 engine = "postgres"
-engines = [ "mysql", "mariadb" ]
+engines = ["mysql", "mariadb"]
 
 [database.environment]
 DB_TYPE = "postgres"
@@ -43,6 +43,6 @@ DB_PASS = "${DATABASE_PASSWORD}"
 DB_SSL = "${DATABASE_SSL_ENABLED}"
 
 [database.engine_ssl_modes]
-postgres = [ "disable", "require", "verify-full" ]
-mysql = [ "disable", "require", "verify-full" ]
-mariadb = [ "disable", "require", "verify-full" ]
+postgres = ["disable", "require", "verify-full"]
+mysql = ["disable", "require", "verify-full"]
+mariadb = ["disable", "require", "verify-full"]

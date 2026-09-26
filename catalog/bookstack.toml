@@ -13,7 +13,7 @@ deployment_only = true
 
 [database]
 engine = "mariadb"
-engines = [ "mysql" ]
+engines = ["mysql"]
 
 [database.environment]
 DB_CONNECTION = "mysql"
@@ -32,5 +32,5 @@ DB_USERNAME = "${DATABASE_USER}"
 DB_PASSWORD = "${DATABASE_PASSWORD}"
 
 [database.engine_ssl_modes]
-mariadb = [ "disable" ]
-mysql = [ "disable" ]
+mariadb = ["disable"]
+mysql = ["disable"]
