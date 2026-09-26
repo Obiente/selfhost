@@ -10,44 +10,44 @@ Start with the [getting started guide](docs/getting-started.md), [dashboard guid
 Install a native binary without Node.js or Rust:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -fsSL https://github.com/Obiente/selfhost/releases/latest/download/install.sh | sh -s -- --version 0.1.2
+curl --proto '=https' --tlsv1.2 -fsSL https://github.com/Obiente/selfhost/releases/latest/download/install.sh | sh -s -- --version 0.1.3
 ```
 
 On Windows, use PowerShell:
 
 ```powershell
-& ([scriptblock]::Create((Invoke-RestMethod https://github.com/Obiente/selfhost/releases/latest/download/install.ps1))) -Version 0.1.2
+& ([scriptblock]::Create((Invoke-RestMethod https://github.com/Obiente/selfhost/releases/latest/download/install.ps1))) -Version 0.1.3
 ```
 
 The installers verify checksums, need no administrator privileges and refuse to
 replace an existing binary unless explicitly requested. You can inspect the
 scripts or manually download a binary from the
-[release assets](https://github.com/Obiente/selfhost/releases/tag/v0.1.2).
+[release assets](https://github.com/Obiente/selfhost/releases/tag/v0.1.3).
 See [installation options](docs/getting-started.md) for custom directories and PATH.
 
-These instructions target **0.1.2**. See the [release page](https://github.com/Obiente/selfhost/releases/tag/v0.1.2)
+These instructions target **0.1.3**. See the [release page](https://github.com/Obiente/selfhost/releases/tag/v0.1.3)
 for its publication status and release notes.
 
 Run directly with Node.js 22+ or pnpm:
 
 ```sh
-npx selfhost@0.1.2 --help
-pnpm dlx selfhost@0.1.2 --help
-# Also supported: pnpx selfhost@0.1.2 --help
+npx selfhost@0.1.3 --help
+pnpm dlx selfhost@0.1.3 --help
+# Also supported: pnpx selfhost@0.1.3 --help
 ```
 
 Or install a command globally:
 
 ```sh
-npm install --global selfhost@0.1.2
-# Alternatively: pnpm add --global selfhost@0.1.2
+npm install --global selfhost@0.1.3
+# Alternatively: pnpm add --global selfhost@0.1.3
 selfhost --help
 ```
 
 Cargo users need Rust 1.98+ and platform build tools:
 
 ```sh
-cargo install selfhost --locked --version 0.1.2
+cargo install selfhost --locked --version 0.1.3
 selfhost --help
 ```
 

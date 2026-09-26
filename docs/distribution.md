@@ -1,7 +1,7 @@
 # Distribution and releases
 
 Selfhost uses one executable and matching versions on npm and crates.io. This
-checkout targets **0.1.2**. See the [release page](https://github.com/Obiente/selfhost/releases/tag/v0.1.2)
+checkout targets **0.1.3**. See the [release page](https://github.com/Obiente/selfhost/releases/tag/v0.1.3)
 for publication status and release notes. User installation commands are in
 [getting started](getting-started.md).
 
@@ -87,7 +87,7 @@ launchers](https://pnpm.io/cli/dlx).
 Update `Cargo.toml`, `Cargo.lock`, `packages/selfhost/package.json`, the dashboard
 package version and installation examples together. Choose an unused version on
 both registries. Version 0.1.0 already exists on crates.io, so the prepared release
-uses 0.1.2.
+uses 0.1.3.
 
 Review source and staged diffs for private paths, credentials and local captures.
 Run **Release packages** from a reviewed branch with both publication inputs off.
@@ -97,7 +97,7 @@ five targets.
 
 ### Publish later
 
-After release approval, create the matching tag, such as `v0.1.2`. Run **Release
+After release approval, create the matching tag, such as `v0.1.3`. Run **Release
 packages** manually **on that tag**, selecting `publish_npm`, `publish_cargo`, or
 both. The workflow rejects a publication request from a branch or a mismatched
 tag. All build and installation gates run again before the environment approval

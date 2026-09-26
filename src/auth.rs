@@ -258,6 +258,7 @@ struct Session {
     client_key: String,
 }
 pub const SESSION_SECONDS: u64 = 8 * 3600;
+pub const SETUP_SESSION_SECONDS: u64 = 30 * 60;
 pub const IDLE_SECONDS: u64 = 30 * 60;
 #[derive(Clone, Serialize)]
 pub struct Account {
@@ -321,6 +322,23 @@ impl LoginState {
         }
     }
     pub fn recover(&self, supplied: &str, origin: &str) -> Result<(String, String)> {
+        self.recover_session(supplied, origin, SESSION_SECONDS, "Local administrator")
+    }
+    pub fn recover_setup(&self, supplied: &str, origin: &str) -> Result<(String, String)> {
+        self.recover_session(
+            supplied,
+            origin,
+            SETUP_SESSION_SECONDS,
+            "Setup administrator",
+        )
+    }
+    fn recover_session(
+        &self,
+        supplied: &str,
+        origin: &str,
+        lifetime: u64,
+        name: &str,
+    ) -> Result<(String, String)> {
         let mut recovery = self
             .recovery
             .lock()
@@ -342,10 +360,10 @@ impl LoginState {
             Session {
                 provider: String::new(),
                 subject: String::new(),
-                name: "Local administrator".into(),
+                name: name.into(),
                 created: now(),
                 last_active: now(),
-                expires: now() + SESSION_SECONDS,
+                expires: now() + lifetime,
                 config_revision: String::new(),
                 local_origin: Some(origin.into()),
                 client_key: client_key.clone(),
@@ -374,7 +392,7 @@ impl LoginState {
             }
         }
         let provider = if s.provider.is_empty() && origin.is_some() {
-            "Local recovery".into()
+            "One-use sign-in".into()
         } else {
             let config = config?;
             if s.config_revision != revision(config).ok()? {
@@ -801,6 +819,27 @@ mod tests {
         let expired = LoginState::with_recovery("expired".into());
         expired.recovery.lock().unwrap().as_mut().unwrap().1 = now() - 1;
         assert!(expired.recover("expired", origin).is_err());
+    }
+    #[test]
+    fn setup_session_expires_even_when_active() {
+        let state = LoginState::with_recovery("setup-link".into());
+        let origin = "http://192.0.2.10:8372";
+        let (id, proof) = state.recover_setup("setup-link", origin).unwrap();
+        let account = state.account(&id, None, Some(origin), &proof).unwrap();
+        assert_eq!(account.name, "Setup administrator");
+        assert_eq!(
+            account.expires_at - account.created_at,
+            SETUP_SESSION_SECONDS
+        );
+        assert!(state.recover_setup("setup-link", origin).is_err());
+        assert!(
+            state
+                .account(&id, None, Some("http://192.0.2.11:8372"), &proof)
+                .is_none()
+        );
+        state.sessions.lock().unwrap().get_mut(&id).unwrap().expires = now() - 1;
+        state.activity(&id);
+        assert!(state.account(&id, None, Some(origin), &proof).is_none());
     }
     #[test]
     fn idle_expiry_is_not_extended_by_reads_or_revived_by_activity() {

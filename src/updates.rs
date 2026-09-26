@@ -525,14 +525,19 @@ fn restart_catalog() -> Result<Option<PathBuf>> {
     Ok(None)
 }
 fn cargo_executable() -> Result<PathBuf> {
+    cargo_executable_on_path(&std::env::var_os("PATH").unwrap_or_default())
+}
+fn cargo_executable_on_path(search_path: &std::ffi::OsStr) -> Result<PathBuf> {
     let name = if cfg!(windows) { "cargo.exe" } else { "cargo" };
-    for directory in std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default()) {
+    for directory in std::env::split_paths(search_path) {
         if !directory.is_absolute() {
             continue;
         }
         let path = directory.join(name);
         if path.is_file() {
-            let path = fs::canonicalize(path)?;
+            // Rustup dispatches by argv[0]. Resolving its cargo symlink would
+            // execute `rustup install` instead of `cargo install`. Opening the
+            // original absolute path still verifies the native target bytes.
             native(&path)?;
             return Ok(path);
         }
@@ -654,9 +659,13 @@ fn stage(root: &Path, data_dir: &Path, approval: UpdateApproval) -> Result<Value
             use std::os::windows::process::CommandExt;
             cmd.creation_flags(0x08000000);
         }
+        let status = cmd
+            .status()
+            .context("Could not launch Cargo for the approved update")?;
         ensure!(
-            cmd.status()?.success(),
-            "Cargo could not build the approved release. The current executable is unchanged; see this job's private build.log"
+            status.success(),
+            "Cargo could not build the approved release ({status}). The current executable is unchanged. Build log: {}",
+            path.join("build.log").display()
         );
         let executable = stage.join("bin").join(EXE);
         native(&executable)?;
@@ -1121,6 +1130,27 @@ fn restart_dashboard(path: &Path, job: &mut Job) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(unix)]
+    #[test]
+    fn cargo_symlink_keeps_rustup_dispatch_name() {
+        let directory = tempfile::tempdir().unwrap();
+        let launcher = directory.path().join("cargo");
+        let target = fs::canonicalize(cargo_executable().unwrap()).unwrap();
+        std::os::unix::fs::symlink(target, &launcher).unwrap();
+        let found = cargo_executable_on_path(directory.path().as_os_str()).unwrap();
+        assert_eq!(
+            found, launcher,
+            "Do not resolve Cargo's multicall launcher name"
+        );
+        let output = Command::new(found).arg("--version").output().unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(String::from_utf8_lossy(&output.stdout).starts_with("cargo "));
+    }
+
     fn fixture() -> (tempfile::TempDir, PathBuf, Job) {
         fixture_binary(&std::env::current_exe().unwrap())
     }

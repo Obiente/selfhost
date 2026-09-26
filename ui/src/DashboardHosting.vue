@@ -31,6 +31,11 @@ onMounted(async () => {
       when you sign in.
     </p>
     <p v-if="error" role="alert">{{ error }}</p>
+    <p v-if="runtime?.setup" role="status">
+      Temporary setup is active. Configure HTTPS and your identity provider, test domain sign-in,
+      then stop this foreground process before installing the background service. The service
+      requires your configured sign-in and never enables temporary setup.
+    </p>
     <details v-if="runtime">
       <summary>Background service commands</summary>
       <p>

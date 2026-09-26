@@ -290,6 +290,9 @@ enum Commands {
         bind: std::net::IpAddr,
         #[arg(long, default_value_t = 8372)]
         port: u16,
+        /// Temporarily allow one-use sign-in on a concrete private/VPN IP without an identity provider
+        #[arg(long)]
+        setup: bool,
     },
     /// Browse and control projects in the terminal
     Tui,
@@ -532,8 +535,23 @@ enum UpdateCommands {
     Jobs,
 }
 
+fn confirm_update(
+    input: &mut impl std::io::BufRead,
+    output: &mut impl std::io::Write,
+    question: &str,
+) -> Result<bool> {
+    write!(output, "{question} [y/N]: ")?;
+    output.flush()?;
+    let mut answer = String::new();
+    input.read_line(&mut answer)?;
+    Ok(matches!(
+        answer.trim().to_ascii_lowercase().as_str(),
+        "y" | "yes"
+    ))
+}
+
 async fn interactive_update(store: &Store) -> Result<()> {
-    use std::io::{self, IsTerminal, Write};
+    use std::io::{self, IsTerminal};
     let status = store.update_status().await?;
     println!("{}", serde_json::to_string_pretty(&status)?);
     if status["update_available"] != true || status["can_stage"] != true {
@@ -550,11 +568,14 @@ async fn interactive_update(store: &Store) -> Result<()> {
     let expected = plan["confirmation"]
         .as_str()
         .context("Missing update confirmation")?;
-    print!("Type {expected} to stage this update, or press Enter to cancel: ");
-    io::stdout().flush()?;
-    let mut answer = String::new();
-    io::stdin().read_line(&mut answer)?;
-    if answer.trim() != expected {
+    if !confirm_update(
+        &mut io::stdin().lock(),
+        &mut io::stdout().lock(),
+        &format!(
+            "Build and stage Selfhost {}?",
+            plan["version"].as_str().unwrap_or("update")
+        ),
+    )? {
         println!("Update cancelled.");
         return Ok(());
     }
@@ -572,13 +593,14 @@ async fn interactive_update(store: &Store) -> Result<()> {
     let expected = staged["confirmation"]
         .as_str()
         .context("Missing activation confirmation")?;
-    print!(
-        "Type {expected} to activate after this process exits, or press Enter to leave it staged: "
-    );
-    io::stdout().flush()?;
-    answer.clear();
-    io::stdin().read_line(&mut answer)?;
-    if answer.trim() != expected {
+    if !confirm_update(
+        &mut io::stdin().lock(),
+        &mut io::stdout().lock(),
+        &format!(
+            "Activate Selfhost {} after this process exits?",
+            staged["version"].as_str().unwrap_or("update")
+        ),
+    )? {
         println!("Update remains staged. Use selfhost update jobs to review it later.");
         return Ok(());
     }
@@ -702,6 +724,7 @@ async fn run() -> Result<()> {
     match cli.command.unwrap_or(Commands::Serve {
         port: 8372,
         bind: std::net::Ipv4Addr::LOCALHOST.into(),
+        setup: false,
     }) {
         Commands::Task { command } => tasks::run(&store, command).await?,
         Commands::App { .. } => unreachable!("directory commands do not open a managed workspace"),
@@ -1279,7 +1302,9 @@ async fn run() -> Result<()> {
                 "Exported standalone setup. Archive includes credentials; volume data is not included."
             );
         }
-        Commands::Serve { port, bind } => Box::pin(server::serve(store, bind, port)).await?,
+        Commands::Serve { port, bind, setup } => {
+            Box::pin(server::serve(store, bind, port, setup)).await?
+        }
         Commands::Tui => Box::pin(tui::run(store)).await?,
         Commands::Catalog => unreachable!(),
         Commands::Versions { app, check } => {
@@ -1450,6 +1475,26 @@ async fn run() -> Result<()> {
 #[cfg(test)]
 mod cli_tests {
     use super::*;
+    #[test]
+    fn update_confirmation_requires_an_explicit_yes() {
+        for answer in ["y\n", "Y\n", "yes\n", " YES \n"] {
+            let mut output = Vec::new();
+            assert!(confirm_update(&mut answer.as_bytes(), &mut output, "Stage update?").unwrap());
+            assert_eq!(String::from_utf8(output).unwrap(), "Stage update? [y/N]: ");
+        }
+        for answer in [
+            "",
+            "\n",
+            "n\n",
+            "no\n",
+            "anything\n",
+            "UPDATE SELFHOST TO 0.1.2\n",
+        ] {
+            assert!(
+                !confirm_update(&mut answer.as_bytes(), &mut Vec::new(), "Stage update?").unwrap()
+            );
+        }
+    }
     #[test]
     fn windows_invocation_uses_portable_help_name() {
         for args in [

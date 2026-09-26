@@ -4,6 +4,7 @@ defineProps<{
   providers: { id: string; name: string; login_url: string }[];
   loading: boolean;
   error: string;
+  setup: boolean;
 }>();
 defineEmits<{ refresh: [] }>();
 const local = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
@@ -30,14 +31,24 @@ const local = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
           >
         </div></template
       >
-      <p v-else-if="!loading">
+      <p v-else-if="!loading && !setup">
         No sign-in provider is connected yet. An administrator can connect one from Access after
         signing in locally.
       </p>
       <button v-if="!loading" class="text-button" @click="$emit('refresh')">
         <RefreshCw :size="15" />Refresh sign-in options
       </button>
-      <details v-if="local && !loading" :open="!providers.length">
+      <div v-if="setup && !loading" class="sign-in-help">
+        <p>
+          Open the one-use setup link printed in the server terminal. It expires after 10 minutes;
+          your setup session lasts 30 minutes. Restart the same command for a fresh link if needed.
+        </p>
+        <p>
+          Use a trusted private network or encrypted VPN. After signing in, open Access to configure
+          HTTPS and your identity provider, then restart without <code>--setup</code>.
+        </p>
+      </div>
+      <details v-else-if="local && !loading" :open="!providers.length">
         <summary>Sign in with local recovery</summary>
         <p>
           Run <code>selfhost serve</code> and open the sign-in link shown in your terminal. The link

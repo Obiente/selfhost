@@ -32,6 +32,14 @@ try {
   assert.match(run(['identity', '--help']), /register-account/);
   assert.doesNotMatch(run(['identity', '--help']), /selfhost\.exe/);
   assert.match(run(['serve', '--help']), /--bind/);
+  assert.match(run(['serve', '--help']), /--setup/);
+  const wildcardSetup = spawnSync(
+    executable,
+    ['--data-dir', data, 'serve', '--bind', '0.0.0.0', '--setup'],
+    { cwd: data, env, encoding: 'utf8', timeout: 10000, windowsHide: true },
+  );
+  assert.equal(wildcardSetup.status, 1, 'Setup must require a concrete IP');
+  assert.match(wildcardSetup.stderr, /concrete private\/VPN IP/);
   const remoteWithoutIdentity = spawnSync(
     executable,
     ['--data-dir', data, 'serve', '--bind', '0.0.0.0', '--port', '18372'],

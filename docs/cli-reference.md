@@ -2064,6 +2064,7 @@ Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
       --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
       --port <PORT>                [default: 8372]
+      --setup                      Temporarily allow one-use sign-in on a concrete private/VPN IP without an identity provider
   -h, --help                       Print help
 ```
 

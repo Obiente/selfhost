@@ -32,7 +32,7 @@ selfhost --help
 
 Or use `pnpm add --global selfhost`. Run `selfhost tui` for guided terminal
 management and `selfhost --help` for all commands. Append an exact package version
-to pin a release, for example `npx selfhost@0.1.2 --help`.
+to pin a release, for example `npx selfhost@0.1.3 --help`.
 
 If you want the dashboard, run `selfhost serve` and open the one-use local sign-in
 link printed in your terminal.

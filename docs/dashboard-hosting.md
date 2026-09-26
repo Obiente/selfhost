@@ -119,6 +119,41 @@ is its own namespace, not the host's loopback.
 
 ### Proxy on another server, VM or LXC
 
+#### First-time setup on a headless server
+
+> **Available since 0.1.3:** `--setup` enables temporary private-IP setup.
+> With older releases, use the SSH tunnel described below to access the loopback
+> dashboard from your browser.
+
+On a firewalled server, VM or LXC without a local browser, start a temporary setup
+listener on its concrete private or VPN IP:
+
+```sh
+selfhost serve --bind 10.20.0.10 --setup
+```
+
+Replace `10.20.0.10` with an IP assigned to that machine. Open the full one-use
+link printed in the server terminal on your browser's machine. The link expires
+after ten minutes and the administrator session lasts thirty minutes. Restart
+the same command if you need a fresh link. API access still requires sign-in;
+knowing the IP alone does not grant access.
+
+Setup uses **HTTP**. Restrict the firewall to your browser's machine and use a
+trusted private network or an encrypted VPN such as WireGuard or NetBird. A
+firewall limits reachability but does not encrypt traffic. Never expose this
+setup listener to the internet. Wildcard addresses (`0.0.0.0` and `::`) are
+rejected in setup mode: choose one exact IP for the browser address.
+
+In **Access**, configure the HTTPS Selfhost address, identity provider and allowed
+administrators. Point your proxy at the private IP and port, preserve the public
+Host header, and test domain sign-in while the setup session remains open. Then
+stop the foreground process and restart without `--setup`, or install the
+background service below using the same data directory. Temporary setup is never
+saved in background service settings. Activate dashboard updates after leaving
+setup mode.
+
+#### Persistent remote hosting
+
 > **Available since 0.1.2:** `--bind` selects the listener address. Version 0.1.1
 > uses a loopback listener; use the SSH tunnel below with that release.
 
@@ -128,9 +163,9 @@ For direct access from a remote proxy, bind the backend to its **private or VPN 
 Binding does not configure DNS, TLS, routing or firewall rules.
 
 First configure an HTTPS Selfhost address, identity provider and explicitly allowed
-administrators using the loopback dashboard or identity CLI. Remote binding refuses
-to start without these settings. Verify domain sign-in through a tunnel before
-switching the listener. Then, on the Selfhost machine:
+administrators using temporary setup, the loopback dashboard or identity CLI.
+Normal remote binding refuses to start without these settings. Verify domain
+sign-in before switching the listener. Then, on the Selfhost machine:
 
 ```sh
 selfhost serve --bind 10.20.0.10 --port 8372
@@ -160,10 +195,24 @@ your router. `--bind` does not enforce a proxy source-IP allowlist for you.
 
 Remote clients must sign in through the configured HTTPS origin. Direct private-IP
 URLs and forged localhost/forwarded headers do not enable remote local recovery.
+Only an explicitly started temporary `--setup` listener permits one-use sign-in
+on its exact private-IP URL.
 If a private-IP listener needs recovery, stop it and run `selfhost serve --bind
 127.0.0.1` with the same data directory, then use the new local sign-in link.
 
 #### Keep the backend on loopback instead
+
+To open a headless server's loopback dashboard from your own browser, run this
+on your browser's machine and keep the SSH connection open:
+
+```sh
+ssh -N -o ExitOnForwardFailure=yes -L 8372:127.0.0.1:8372 user@selfhost-host
+```
+
+Run `selfhost serve` on the server, then open its printed
+`http://127.0.0.1:8372/#token=...` link in your local browser. Replace the SSH
+target with your server's account and address. Keep the local forwarded port the
+same as the Selfhost listener port so the browser's origin matches.
 
 Create an authenticated tunnel from the proxy's network namespace to the Selfhost
 host's loopback listener. For example, run this on the proxy host with a verified

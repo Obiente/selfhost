@@ -67,9 +67,7 @@ onUnmounted(() => {
       :aria-label="`Account: ${props.account.name}`"
       @click="toggle"
     >
-      <UserRound :size="18" /><span>{{
-        account.kind === 'local' ? 'Local admin' : account.name
-      }}</span
+      <UserRound :size="18" /><span>{{ account.name }}</span
       ><ChevronDown :size="14" />
     </button>
     <section v-if="open" id="account-panel" class="account-panel" aria-label="Your account">
@@ -94,8 +92,8 @@ onUnmounted(() => {
         <dd>After 30 minutes</dd>
       </dl>
       <p v-if="account.kind === 'local'" class="account-hint">
-        Signed in on this computer. After signing out, restart <code>selfhost serve</code> for a
-        fresh local link, or use your identity provider.
+        Signed in with a one-use link. After signing out, restart the same Selfhost command on the
+        server for a fresh link, or use your identity provider.
       </p>
       <p v-else class="account-hint">
         Signing out here ends your Selfhost session. Your identity provider may keep you signed in.

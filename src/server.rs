@@ -26,6 +26,7 @@ struct App {
     store: Store,
     port: u16,
     bind: IpAddr,
+    setup: bool,
     login: Arc<crate::auth::LoginState>,
     shutdown: tokio_util::sync::CancellationToken,
 }
@@ -57,6 +58,7 @@ async fn dashboard_runtime(State(app): State<AppState>) -> ApiResult<Value> {
     let mut value = crate::dashboard::summary(&app.store)?;
     value["port"] = json!(app.port);
     value["bind"] = json!(app.bind);
+    value["setup"] = json!(app.setup);
     Ok(Json(value))
 }
 async fn stacks(State(app): State<AppState>) -> ApiResult<Value> {
@@ -84,6 +86,12 @@ async fn update_activate(
     State(app): State<AppState>,
     Json(input): Json<crate::updates::UpdateActivation>,
 ) -> ApiResult<Value> {
+    if app.setup {
+        return Err(anyhow::anyhow!(
+            "Finish setup and restart without --setup before activating a dashboard update"
+        )
+        .into());
+    }
     let result = app
         .store
         .activate_update(input, Some(SocketAddr::new(app.bind, app.port)))?;
@@ -100,6 +108,12 @@ async fn update_recover(
     State(app): State<AppState>,
     Json(input): Json<crate::updates::UpdateActivation>,
 ) -> ApiResult<Value> {
+    if app.setup {
+        return Err(anyhow::anyhow!(
+            "Finish setup and restart without --setup before recovering a dashboard update"
+        )
+        .into());
+    }
     let result = app
         .store
         .recover_update(input, Some(SocketAddr::new(app.bind, app.port)))?;
@@ -167,6 +181,11 @@ async fn route_apply(
         Box::pin(app.store.route_apply(input.route, &input.revision)).await?,
     ))
 }
+fn setup_origin(app: &App) -> Option<String> {
+    app.setup
+        .then(|| format!("http://{}", SocketAddr::new(app.bind, app.port)))
+}
+
 fn request_origin(app: &App, headers: &axum::http::HeaderMap) -> Option<(String, bool)> {
     let host = headers.get(header::HOST)?.to_str().ok()?;
     // A configured HTTPS proxy may use a loopback name. Honor its configured
@@ -191,6 +210,13 @@ fn request_origin(app: &App, headers: &axum::http::HeaderMap) -> Option<(String,
     }
     if local_hosts.iter().any(|allowed| allowed == host) {
         return Some((format!("http://{host}"), true));
+    }
+    // Setup accepts only the exact bound IP and port. It is a remote origin:
+    // localhost aliases still require an actual loopback peer in middleware.
+    if let Some(origin) = setup_origin(app)
+        && origin.strip_prefix("http://") == Some(host)
+    {
+        return Some((origin, false));
     }
     None
 }
@@ -253,7 +279,7 @@ fn session_identity(app: &App, headers: &axum::http::HeaderMap) -> Option<Authen
             });
         }
     }
-    if !local {
+    if !local && setup_origin(app).as_deref() != Some(&origin) {
         return None;
     }
     let name = session_cookie(app, true);
@@ -364,7 +390,7 @@ async fn login_info(State(app): State<AppState>, headers: axum::http::HeaderMap)
         return StatusCode::FORBIDDEN.into_response();
     }
     let config = app.store.login_config().ok().flatten();
-    Json(json!({"providers":config.as_ref().map(|c|c.providers.iter().map(|p|json!({"id":p.id,"name":p.name,"login_url":format!("{}/auth/login/{}",c.origin(),p.id)})).collect::<Vec<_>>()).unwrap_or_default()})).into_response()
+    Json(json!({"setup":app.setup,"providers":config.as_ref().map(|c|c.providers.iter().map(|p|json!({"id":p.id,"name":p.name,"login_url":format!("{}/auth/login/{}",c.origin(),p.id)})).collect::<Vec<_>>()).unwrap_or_default()})).into_response()
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -376,21 +402,35 @@ async fn local_login(
     headers: axum::http::HeaderMap,
     Json(input): Json<Recovery>,
 ) -> Response {
-    let Some((origin, true)) = request_origin(&app, &headers) else {
+    let Some((origin, local)) = request_origin(&app, &headers) else {
         return StatusCode::FORBIDDEN.into_response();
     };
+    if !local && setup_origin(&app).as_deref() != Some(&origin) {
+        return StatusCode::FORBIDDEN.into_response();
+    }
     if !origin.starts_with("http://") {
         return StatusCode::FORBIDDEN.into_response();
     }
     if !same_origin(&headers, &origin, true) {
         return StatusCode::FORBIDDEN.into_response();
     }
-    match app.login.recover(&input.token, &origin) {
+    let (session, lifetime) = if app.setup {
+        (
+            app.login.recover_setup(&input.token, &origin),
+            crate::auth::SETUP_SESSION_SECONDS,
+        )
+    } else {
+        (
+            app.login.recover(&input.token, &origin),
+            crate::auth::SESSION_SECONDS,
+        )
+    };
+    match session {
         Ok((id, client_key)) => {
             let mut response = Json(json!({"client_key":client_key})).into_response();
-            // Local HTTP cookies have no port isolation. A second, origin-scoped key
-            // prevents another loopback service from replaying an observed cookie.
-            response.headers_mut().insert(header::SET_COOKIE, format!("{}={id}; Path=/; HttpOnly; SameSite=Strict; Max-Age={}", session_cookie(&app, true), crate::auth::SESSION_SECONDS).parse().unwrap());
+            // HTTP cookies have no port isolation. A second, origin-scoped key
+            // prevents another service on this host from replaying an observed cookie.
+            response.headers_mut().insert(header::SET_COOKIE, format!("{}={id}; Path=/; HttpOnly; SameSite=Strict; Max-Age={lifetime}", session_cookie(&app, true)).parse().unwrap());
             response
         }
         Err(_) => (StatusCode::UNAUTHORIZED, Json(json!({"error":"Recovery link expired or already used. Restart selfhost serve for a new link."}))).into_response(),
@@ -1539,7 +1579,7 @@ pub(crate) fn validate_bind(store: &Store, bind: IpAddr) -> Result<()> {
     );
     if !bind.is_loopback() {
         let config = store.login_config()?.ok_or_else(|| anyhow::anyhow!(
-            "Before binding remotely, configure an HTTPS Selfhost address and an identity provider with authorized administrators using the loopback dashboard or identity CLI"
+            "Before binding remotely, configure an HTTPS Selfhost address and an identity provider with authorized administrators. For first-time setup on a headless server, run selfhost serve --bind YOUR_PRIVATE_OR_VPN_IP --setup and open the one-use link in your browser"
         ))?;
         anyhow::ensure!(
             !config.is_loopback() && config.origin().starts_with("https://"),
@@ -1576,8 +1616,24 @@ fn recovery_address(
     Some(address)
 }
 
-pub async fn serve(store: Store, bind: IpAddr, port: u16) -> Result<()> {
-    validate_bind(&store, bind)?;
+fn validate_setup_bind(bind: IpAddr) -> Result<()> {
+    anyhow::ensure!(
+        !bind.is_unspecified()
+            && !bind.is_multicast()
+            && !peer_is_loopback(bind)
+            && bind != IpAddr::V4(std::net::Ipv4Addr::BROADCAST)
+            && !matches!(bind, IpAddr::V6(ip) if ip.to_ipv4_mapped().is_some()),
+        "Setup requires a concrete private/VPN IP assigned to this server. Use --bind YOUR_PRIVATE_OR_VPN_IP --setup, not 0.0.0.0 or ::. For localhost, omit --setup."
+    );
+    Ok(())
+}
+
+pub async fn serve(store: Store, bind: IpAddr, port: u16, setup: bool) -> Result<()> {
+    if setup {
+        validate_setup_bind(bind)?;
+    } else {
+        validate_bind(&store, bind)?;
+    }
     let listener = tokio::net::TcpListener::bind((bind, port)).await?;
     let recovery = core::token(32)?;
     let app = Arc::new(App {
@@ -1585,6 +1641,7 @@ pub async fn serve(store: Store, bind: IpAddr, port: u16) -> Result<()> {
         login: Arc::new(crate::auth::LoginState::with_recovery(recovery.clone())),
         port: listener.local_addr()?.port(),
         bind,
+        setup,
         shutdown: tokio_util::sync::CancellationToken::new(),
     });
     let router = router(app.clone());
@@ -1592,7 +1649,20 @@ pub async fn serve(store: Store, bind: IpAddr, port: u16) -> Result<()> {
     if let Some(config) = app.store.login_config()? {
         println!("Dashboard sign-in: {}", config.origin());
     }
-    if let Some(address) = recovery_address(bind, app.port, app.store.login_config()?.as_ref()) {
+    if let Some(origin) = setup_origin(&app) {
+        println!(
+            "Temporary setup uses HTTP. Use a trusted private network or encrypted VPN, and restrict the firewall to your browser's machine. Do not expose this listener to the internet."
+        );
+        println!("selfhost setup: {origin}/#token={recovery}");
+        println!(
+            "This sign-in link expires in 10 minutes and works once. The administrator session lasts 30 minutes."
+        );
+        println!(
+            "In Access, configure your HTTPS Selfhost address and identity provider. Test domain sign-in, then restart without --setup. Setup mode is not saved in background services."
+        );
+    } else if let Some(address) =
+        recovery_address(bind, app.port, app.store.login_config()?.as_ref())
+    {
         println!("selfhost dashboard: http://{address}/#token={recovery}");
         println!("This local sign-in link expires in 10 minutes and can be used once.");
     } else {
@@ -1668,6 +1738,7 @@ mod tests {
             store: Store::open(directory.path().into()).unwrap(),
             port: 8797,
             bind: std::net::Ipv4Addr::LOCALHOST.into(),
+            setup: false,
             shutdown: tokio_util::sync::CancellationToken::new(),
             login: Arc::new(crate::auth::LoginState::with_recovery("test-link".into())),
         });
@@ -1816,6 +1887,188 @@ mod tests {
                 .await
                 .unwrap();
             assert_eq!(response.status(), expected);
+        }
+    }
+    #[tokio::test]
+    async fn setup_allows_remote_one_use_sign_in_without_weakening_origin_checks() {
+        let (_dir, mut app) = app();
+        let state = Arc::get_mut(&mut app).unwrap();
+        state.bind = "192.0.2.10".parse().unwrap();
+        state.setup = true;
+        let origin = "http://192.0.2.10:8797";
+        let remote = |method: &str, path: &str, host: &str| {
+            Request::builder()
+                .method(method)
+                .uri(path)
+                .extension(ConnectInfo(
+                    "192.0.2.20:12345".parse::<SocketAddr>().unwrap(),
+                ))
+                .header("host", host)
+                .header("content-type", "application/json")
+        };
+        let router = router(app.clone());
+        for (host, expected) in [
+            ("192.0.2.10:8797", StatusCode::UNAUTHORIZED),
+            (HOST, StatusCode::FORBIDDEN),
+            ("evil.example:8797", StatusCode::FORBIDDEN),
+            ("192.0.2.11:8797", StatusCode::FORBIDDEN),
+        ] {
+            let response = router
+                .clone()
+                .oneshot(
+                    remote("GET", "/api/account", host)
+                        .header("x-forwarded-for", "127.0.0.1")
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(response.status(), expected, "{host}");
+        }
+        for (request_origin, token, expected) in [
+            (ORIGIN, "test-link", StatusCode::FORBIDDEN),
+            (origin, "wrong", StatusCode::UNAUTHORIZED),
+        ] {
+            let response = router
+                .clone()
+                .oneshot(
+                    remote("POST", "/auth/local", "192.0.2.10:8797")
+                        .header("origin", request_origin)
+                        .body(Body::from(json!({"token":token}).to_string()))
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(response.status(), expected);
+        }
+        let exchange_request = || {
+            remote("POST", "/auth/local", "192.0.2.10:8797")
+                .header("origin", origin)
+                .body(Body::from(r#"{"token":"test-link"}"#))
+                .unwrap()
+        };
+        let response = router.clone().oneshot(exchange_request()).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let set_cookie = response.headers()[header::SET_COOKIE]
+            .to_str()
+            .unwrap()
+            .to_owned();
+        assert!(set_cookie.contains("HttpOnly; SameSite=Strict; Max-Age=1800"));
+        let cookie = set_cookie.split(';').next().unwrap();
+        let value: Value = serde_json::from_slice(
+            &axum::body::to_bytes(response.into_body(), 8192)
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+        let proof = value["client_key"].as_str().unwrap();
+        assert_eq!(
+            router
+                .clone()
+                .oneshot(exchange_request())
+                .await
+                .unwrap()
+                .status(),
+            StatusCode::UNAUTHORIZED
+        );
+        for (key, expected) in [
+            ("", StatusCode::UNAUTHORIZED),
+            ("wrong", StatusCode::UNAUTHORIZED),
+            (proof, StatusCode::OK),
+        ] {
+            let response = router
+                .clone()
+                .oneshot(
+                    remote("GET", "/api/login/settings", "192.0.2.10:8797")
+                        .header("cookie", cookie)
+                        .header("x-selfhost-client", key)
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(response.status(), expected);
+        }
+        for request_origin in ["http://evil.example:8797", ORIGIN] {
+            let response = router
+                .clone()
+                .oneshot(
+                    remote("POST", "/api/account/activity", "192.0.2.10:8797")
+                        .header("cookie", cookie)
+                        .header("x-selfhost-client", proof)
+                        .header("origin", request_origin)
+                        .body(Body::from("{}"))
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::FORBIDDEN);
+        }
+        // Completing identity setup keeps this short-lived recovery session available
+        // while the administrator tests HTTPS sign-in, without exposing it on that origin.
+        app.store.save_login_config(remote_config()).unwrap();
+        for (host, expected) in [
+            ("192.0.2.10:8797", StatusCode::OK),
+            ("selfhost.example.test", StatusCode::UNAUTHORIZED),
+        ] {
+            let response = router
+                .clone()
+                .oneshot(
+                    remote("GET", "/api/account", host)
+                        .header("cookie", cookie)
+                        .header("x-selfhost-client", proof)
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(response.status(), expected);
+        }
+        let response = router
+            .clone()
+            .oneshot(
+                remote("POST", "/api/login/logout", "192.0.2.10:8797")
+                    .header("cookie", cookie)
+                    .header("x-selfhost-client", proof)
+                    .header("origin", origin)
+                    .body(Body::from("{}"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            router
+                .clone()
+                .oneshot(
+                    remote("GET", "/api/account", "192.0.2.10:8797")
+                        .header("cookie", cookie)
+                        .header("x-selfhost-client", proof)
+                        .body(Body::empty())
+                        .unwrap()
+                )
+                .await
+                .unwrap()
+                .status(),
+            StatusCode::UNAUTHORIZED
+        );
+    }
+    #[test]
+    fn setup_requires_a_concrete_remote_address() {
+        for ip in [
+            "0.0.0.0",
+            "::",
+            "127.0.0.1",
+            "::1",
+            "224.0.0.1",
+            "ff02::1",
+            "255.255.255.255",
+            "::ffff:192.0.2.10",
+        ] {
+            assert!(validate_setup_bind(ip.parse().unwrap()).is_err(), "{ip}");
+        }
+        for ip in ["10.20.0.10", "192.168.1.10", "100.64.0.10", "fd00::10"] {
+            assert!(validate_setup_bind(ip.parse().unwrap()).is_ok(), "{ip}");
         }
     }
     #[tokio::test]

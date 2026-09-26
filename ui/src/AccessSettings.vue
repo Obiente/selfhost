@@ -5,8 +5,10 @@ import { KeyRound, Plus, Download, ChevronRight } from 'lucide-vue-next';
 import IdentityRegister from './IdentityRegister.vue';
 const props = defineProps<{
   api: (path: string, method?: string, body?: unknown) => Promise<any>;
+  setup?: boolean;
 }>();
-const config = ref<any>({ public_url: location.origin, providers: [] }),
+const defaultAddress = props.setup ? '' : location.origin;
+const config = ref<any>({ public_url: defaultAddress, providers: [] }),
   busy = ref(false),
   message = ref(''),
   error = ref(''),
@@ -28,7 +30,7 @@ function add() {
 }
 function hydrate(value: any) {
   config.value = {
-    public_url: value.public_url || location.origin,
+    public_url: value.public_url || defaultAddress,
     providers: (value.providers || []).map((p: any) => ({
       ...p,
       client_secret: p.client_secret || '',
@@ -154,9 +156,11 @@ function download() {
       >
       <TabsContent value="automatic"
         ><label
-          >Selfhost address<input v-model="config.public_url" type="url" required /><small
-            >Start on localhost or use your HTTPS domain.</small
-          ></label
+          >Selfhost address<input v-model="config.public_url" type="url" required /><small>{{
+            setup
+              ? 'Enter the HTTPS address you will use after setup.'
+              : 'Start on localhost or use your HTTPS domain.'
+          }}</small></label
         ><IdentityRegister
           :api="api"
           :selfhost-url="config.public_url"
@@ -172,19 +176,23 @@ function download() {
       <TabsContent value="manual"
         ><form @submit.prevent="prepare">
           <h3>1. Choose your Selfhost address</h3>
-          <p>Start on this computer and switch to a domain whenever you are ready.</p>
+          <p v-if="setup">
+            Enter your intended HTTPS address. The temporary HTTP setup address cannot be used for
+            remote identity-provider sign-in.
+          </p>
+          <p v-else>Start on this computer and switch to a domain whenever you are ready.</p>
           <label
             >Selfhost address<input
               v-model="config.public_url"
               type="url"
-              placeholder="http://localhost:8372"
+              :placeholder="setup ? 'https://selfhost.example.com' : 'http://localhost:8372'"
               required
             /><small
               >HTTP is allowed only on localhost or a loopback IP. Domain names require
               HTTPS.</small
             ></label
           >
-          <div class="callback">
+          <div v-if="config.public_url" class="callback">
             <span>Register this callback with your provider</span><code>{{ callback }}</code>
           </div>
           <h3>2. Connect your provider</h3>
@@ -303,7 +311,7 @@ function download() {
           Run Selfhost where you manage the provider's configuration. Inspection reads Compose and
           environment files without running them.
         </p>
-        <pre><code>selfhost identity inspect . --selfhost-url {{config.public_url||'http://localhost:8372'}}</code></pre>
+        <pre><code>selfhost identity inspect . --selfhost-url {{config.public_url || (setup ? 'https://selfhost.example.com' : 'http://localhost:8372')}}</code></pre>
         <p>Use the detected provider guidance to fill in a connection template.</p>
         <button type="button" class="button" @click="download">
           <Download :size="16" /> Download connection template

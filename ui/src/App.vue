@@ -263,11 +263,14 @@ const account = ref<Account | null>(null);
 const accountBusy = ref(false),
   accountError = ref('');
 const loginProviders = ref<{ id: string; name: string; login_url: string }[]>([]);
+const setupMode = ref(false);
 async function refreshLoginProviders() {
   try {
     const response = await fetch('/auth/info');
     if (!response.ok) throw new Error('Unable to load sign-in options. Try again.');
-    loginProviders.value = (await response.json()).providers;
+    const info = await response.json();
+    loginProviders.value = info.providers;
+    setupMode.value = info.setup === true;
   } catch (e) {
     accountError.value = (e as Error).message;
   }
@@ -728,6 +731,7 @@ onUnmounted(() => {
   <SignIn
     v-if="!authenticated"
     :providers="loginProviders"
+    :setup="setupMode"
     :loading="loading"
     :error="accountError"
     @refresh="loadLogin"
@@ -896,6 +900,17 @@ onUnmounted(() => {
       </header>
 
       <main id="main-content" tabindex="-1">
+        <section v-if="setupMode" class="engine-notice" aria-label="Temporary setup">
+          <div>
+            <strong>Temporary setup</strong>
+            <p>
+              The temporary IP address uses HTTP. Stay on your trusted private network or encrypted
+              VPN. Setup sessions last 30 minutes. Configure HTTPS and sign-in in Access, test your
+              domain, then restart Selfhost without <code>--setup</code>.
+            </p>
+            <button class="text-button" @click="go('Access')">Open Access settings</button>
+          </div>
+        </section>
         <template v-if="authenticated">
           <div
             v-if="(!project || projectTab !== 'Services') && page !== 'Existing apps'"
@@ -1021,7 +1036,10 @@ onUnmounted(() => {
           />
           <Networking v-else-if="page === 'Networking'" :api="api" :projects="data.projects" />
           <section v-else-if="page === 'Access'">
-            <DashboardHosting :api="api" /><AccessSettings :api="api" /><StackInstall
+            <DashboardHosting :api="api" /><AccessSettings
+              :api="api"
+              :setup="setupMode"
+            /><StackInstall
               category="Identity"
               :api="api"
               @created="
