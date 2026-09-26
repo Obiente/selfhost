@@ -10,20 +10,24 @@ A home for the services you run
 Usage: selfhost [OPTIONS] [COMMAND]
 
 Commands:
+  guide                   Guided setup for apps, servers, databases, proxies and recurring tasks
+  server-add              Connect a Docker or Proxmox server interactively
+  ssh                     Create and authorize dedicated SSH keys for servers and proxies
   task                    Review and run automatic app tasks and service-link triggers
   app                     Set up and reuse apps in ordinary Compose directories, without a dashboard
   dashboard               Keep the dashboard running and configure access through a reverse proxy
   update                  Check for and install a reviewed Selfhost update
   deployments             List contributor-defined deployment methods
-  deploy                  Create a stopped project using a reviewed deployment JSON file
+  deploy                  Choose an app and deployment method; an input file is optional for automation
   identity                Connect an identity provider or inspect its existing configuration directory
   existing                Link, inspect and grant specific actions on independently managed apps
   removal                 Review removal, choose backups and restore archived project records
   stacks                  List installable multi-service stacks
   stack-create            Create a portable stack from an installation JSON file, without starting it
   networking              List connected proxies, networks and provider capabilities
-  proxy-add               Register a proxy from a private JSON file
+  proxy-add               Connect a reverse proxy with guided questions
   proxy-edit              Update a saved proxy connection from a private JSON file containing its ID
+  route-setup             Choose a proxy and service, then review and apply its route
   network-add             Register an existing private network and its access-policy reference
   route-plan              Preview native proxy configuration for a route JSON file
   route-apply             Apply a reviewed route on a writable proxy
@@ -32,6 +36,8 @@ Commands:
   app-backups             List saved native app configuration changes
   app-restore             Preview a native configuration restore, then apply with the returned revision
   app-setup               Inspect available automatic application setup and saved progress
+  app-sync                Choose service links and add them to a configured app dashboard
+  app-update              Select app versions, review backups and upgrade a project
   app-setup-plan          Preview declarative first-run setup or existing API-key connection
   app-setup-apply         Apply reviewed app setup; secrets may be supplied through environment variables
   app-connect-account     Find the authenticated human account before choosing an app administrator
@@ -49,6 +55,9 @@ Commands:
   databases               List database sources (credentials are omitted)
   database-engines        List database engines and their default connection ports
   database-add            Add a database source from a private JSON file
+  database-setup          Choose, connect and prepare a project's database
+  database-edit           Edit a saved database connection
+  database-remove         Remove an unused database source after review
   database-start          Start a managed shared database server
   database-attach         Attach a dedicated, external or shared database to a project
   database-provision      Create this project's isolated database and role on its shared source
@@ -81,6 +90,201 @@ Options:
       --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
   -h, --help                       Print help
   -V, --version                    Print version
+```
+
+## guide
+
+```text
+Guided setup for apps, servers, databases, proxies and recurring tasks
+
+Usage: selfhost guide [OPTIONS]
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+## server-add
+
+```text
+Connect a Docker or Proxmox server interactively
+
+Usage: selfhost server-add [OPTIONS]
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+## ssh
+
+```text
+Create and authorize dedicated SSH keys for servers and proxies
+
+Usage: selfhost ssh [OPTIONS] <COMMAND>
+
+Commands:
+  setup   Guide or resume a dedicated SSH connection, including host trust and authorization
+  list    List dedicated Selfhost SSH connections (public information only)
+  create  Generate a dedicated Ed25519 automation key without a passphrase
+  show    Show the public key, authorization command and connection instructions
+  scan    Discover an untrusted server host key; verify its fingerprint separately
+  trust   Pin a server key after comparing its fingerprint through a trusted channel
+  enable  Enable an OpenSSH alias on this machine, preserving the existing config
+  test    Test pinned host trust and the dedicated key; does not change the server
+  remove  Disable the alias and delete the local key after revoking remote access
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+### ssh setup
+
+```text
+Guide or resume a dedicated SSH connection, including host trust and authorization
+
+Usage: selfhost ssh setup [OPTIONS]
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --purpose <PURPOSE>          [possible values: docker, proxmox, proxy]
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+### ssh list
+
+```text
+List dedicated Selfhost SSH connections (public information only)
+
+Usage: selfhost ssh list [OPTIONS]
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+### ssh create
+
+```text
+Generate a dedicated Ed25519 automation key without a passphrase
+
+Usage: selfhost ssh create [OPTIONS] --name <NAME> --host <HOST> --user <USER>
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --name <NAME>
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+      --host <HOST>
+      --user <USER>
+      --port <PORT>                [default: 22]
+      --purpose <PURPOSE>          [default: docker] [possible values: docker, proxmox, proxy]
+  -h, --help                       Print help
+```
+
+### ssh show
+
+```text
+Show the public key, authorization command and connection instructions
+
+Usage: selfhost ssh show [OPTIONS] <ID>
+
+Arguments:
+  <ID>
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+### ssh scan
+
+```text
+Discover an untrusted server host key; verify its fingerprint separately
+
+Usage: selfhost ssh scan [OPTIONS] <ID>
+
+Arguments:
+  <ID>
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+### ssh trust
+
+```text
+Pin a server key after comparing its fingerprint through a trusted channel
+
+Usage: selfhost ssh trust [OPTIONS] --public-key <PUBLIC_KEY> --fingerprint <FINGERPRINT> <ID>
+
+Arguments:
+  <ID>
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --public-key <PUBLIC_KEY>
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+      --fingerprint <FINGERPRINT>
+  -h, --help                       Print help
+```
+
+### ssh enable
+
+```text
+Enable an OpenSSH alias on this machine, preserving the existing config
+
+Usage: selfhost ssh enable [OPTIONS] <ID>
+
+Arguments:
+  <ID>
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+### ssh test
+
+```text
+Test pinned host trust and the dedicated key; does not change the server
+
+Usage: selfhost ssh test [OPTIONS] <ID>
+
+Arguments:
+  <ID>
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+### ssh remove
+
+```text
+Disable the alias and delete the local key after revoking remote access
+
+Usage: selfhost ssh remove [OPTIONS] <ID>
+
+Arguments:
+  <ID>
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --revoked
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
 ```
 
 ## task
@@ -155,10 +359,10 @@ Options:
 ```text
 Save a reviewed task; no remote writes until its first run
 
-Usage: selfhost task create [OPTIONS] --revision <REVISION> <FILE>
+Usage: selfhost task create [OPTIONS] [FILE]
 
 Arguments:
-  <FILE>
+  [FILE]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
@@ -255,7 +459,7 @@ Commands:
   start            Start the directory's current Compose configuration
   stop             Stop containers and retain every volume
   restart          Restart the directory's containers
-  update           Snapshot configuration, pull configured tags and recreate as needed; does not back up app data
+  update           Choose versions, review, snapshot configuration and update after confirmation
   status           Show Docker Compose status
   versions         List the recorded recipe's version choices
   version-plan     Review an image change without touching running containers
@@ -265,15 +469,15 @@ Commands:
   action           Run a declared recipe action or app workflow
   config           Read supported native settings with secret fields omitted
   plan             Preview a JSON map of typed native app settings
-  apply            Apply a reviewed native settings file, preserving user-owned Compose and env files
-  setup            Inspect available automatic app setup and saved progress
+  apply            Change native settings interactively, or apply an explicit reviewed file
+  setup            Set up the app interactively; --inspect only reports saved progress
   setup-plan       Preview first-run setup or an existing API-key connection
   setup-apply      Apply reviewed app setup without a dashboard or daemon
   connect-account  Find the authenticated human account before choosing an app administrator
   sync-plan        Review an explicit JSON array of new dashboard links using its saved API key
-  sync             Add reviewed links to the saved private board without a daemon
+  sync             Add application links interactively using the saved private board
   connect-plan     Preview an app's OIDC client registration from a JSON request
-  connect          Create a reviewed OIDC client and configure the app
+  connect          Connect an identity provider interactively, or apply a reviewed request file
   connection       Show the connection receipt, or resume configuring its existing client
   backups          List native configuration backups for a service
   restore          Preview a native configuration restore; apply only with the returned revision
@@ -355,7 +559,7 @@ Options:
 ### app update
 
 ```text
-Snapshot configuration, pull configured tags and recreate as needed; does not back up app data
+Choose versions, review, snapshot configuration and update after confirmation
 
 Usage: selfhost app update [OPTIONS]
 
@@ -502,6 +706,7 @@ Arguments:
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
       --directory <DIRECTORY>      [default: .]
+      --edit
       --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
   -h, --help                       Print help
 ```
@@ -527,13 +732,13 @@ Options:
 ### app apply
 
 ```text
-Apply a reviewed native settings file, preserving user-owned Compose and env files
+Change native settings interactively, or apply an explicit reviewed file
 
-Usage: selfhost app apply [OPTIONS] --revision <REVISION> <SERVICE> <FILE>
+Usage: selfhost app apply [OPTIONS] <SERVICE> [FILE]
 
 Arguments:
   <SERVICE>
-  <FILE>
+  [FILE]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
@@ -546,7 +751,7 @@ Options:
 ### app setup
 
 ```text
-Inspect available automatic app setup and saved progress
+Set up the app interactively; --inspect only reports saved progress
 
 Usage: selfhost app setup [OPTIONS] <SERVICE>
 
@@ -556,6 +761,7 @@ Arguments:
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
       --directory <DIRECTORY>      [default: .]
+      --inspect
       --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
   -h, --help                       Print help
 ```
@@ -583,11 +789,11 @@ Options:
 ```text
 Apply reviewed app setup without a dashboard or daemon
 
-Usage: selfhost app setup-apply [OPTIONS] --revision <REVISION> <SERVICE> <FILE>
+Usage: selfhost app setup-apply [OPTIONS] <SERVICE> [FILE]
 
 Arguments:
   <SERVICE>
-  <FILE>
+  [FILE]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
@@ -637,13 +843,13 @@ Options:
 ### app sync
 
 ```text
-Add reviewed links to the saved private board without a daemon
+Add application links interactively using the saved private board
 
-Usage: selfhost app sync [OPTIONS] --revision <REVISION> <SERVICE> <FILE>
+Usage: selfhost app sync [OPTIONS] <SERVICE> [FILE]
 
 Arguments:
   <SERVICE>
-  <FILE>
+  [FILE]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
@@ -674,13 +880,13 @@ Options:
 ### app connect
 
 ```text
-Create a reviewed OIDC client and configure the app
+Connect an identity provider interactively, or apply a reviewed request file
 
-Usage: selfhost app connect [OPTIONS] --revision <REVISION> <SERVICE> <FILE>
+Usage: selfhost app connect [OPTIONS] <SERVICE> [FILE]
 
 Arguments:
   <SERVICE>
-  <FILE>
+  [FILE]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
@@ -753,15 +959,47 @@ Keep the dashboard running and configure access through a reverse proxy
 Usage: selfhost dashboard [OPTIONS] <COMMAND>
 
 Commands:
-  install    Install a private copy as a user service (starts at sign-in); does not start it now
-  start      Start the installed dashboard in the background
-  stop       Stop only this workspace's background dashboard
-  restart    Restart the user service and issue a new local sign-in link
-  status     Inspect the user service and its private log location
-  uninstall  Remove the user service, preserving projects, configuration and logs
-  logs       Read private dashboard logs, including the local sign-in link
-  domain     Review a domain and proxy instructions; apply an existing login configuration with its revision
-  help       Print this message or the help of the given subcommand(s)
+  setup        Set up and start the background dashboard with guided questions
+  docker-mode  Choose whether this dashboard needs a local Docker engine
+  install      Install a private copy as a user service (starts at sign-in); does not start it now
+  start        Start the installed dashboard in the background
+  stop         Stop only this workspace's background dashboard
+  restart      Restart the user service and issue a new local sign-in link
+  status       Inspect the user service and its private log location
+  diagnose     Check local listening, server SSH forwarding policy and possible firewall blocks
+  uninstall    Remove the user service, preserving projects, configuration and logs
+  logs         Read private dashboard logs, including the local sign-in link
+  domain       Review a domain change and apply it with guided confirmation
+  help         Print this message or the help of the given subcommand(s)
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+### dashboard setup
+
+```text
+Set up and start the background dashboard with guided questions
+
+Usage: selfhost dashboard setup [OPTIONS]
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+### dashboard docker-mode
+
+```text
+Choose whether this dashboard needs a local Docker engine
+
+Usage: selfhost dashboard docker-mode [OPTIONS] [MODE]
+
+Arguments:
+  [MODE]  [possible values: auto, disabled, required]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
@@ -837,6 +1075,26 @@ Options:
   -h, --help                       Print help
 ```
 
+### dashboard diagnose
+
+```text
+Check local listening, server SSH forwarding policy and possible firewall blocks
+
+Usage: selfhost dashboard diagnose [OPTIONS]
+
+Options:
+      --bind <BIND>                Listener IP to check (defaults to the installed service setting or loopback)
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+      --port <PORT>
+      --ssh-host <SSH_HOST>        SSH hostname or alias reachable from your computer (defaults to the SSH session's server IP)
+      --ssh-user <SSH_USER>
+      --ssh-port <SSH_PORT>
+      --client-ip <CLIENT_IP>      Client address for evaluating server-side SSH Match rules outside an SSH session
+      --json
+  -h, --help                       Print help
+```
+
 ### dashboard uninstall
 
 ```text
@@ -867,12 +1125,12 @@ Options:
 ### dashboard domain
 
 ```text
-Review a domain and proxy instructions; apply an existing login configuration with its revision
+Review a domain change and apply it with guided confirmation
 
-Usage: selfhost dashboard domain [OPTIONS] <URL>
+Usage: selfhost dashboard domain [OPTIONS] [URL]
 
 Arguments:
-  <URL>
+  [URL]
 
 Options:
       --bind <BIND>                Listener IP used in proxy examples; wildcard listeners need a reachable host IP instead [default: 127.0.0.1]
@@ -1007,9 +1265,9 @@ Options:
 ## deploy
 
 ```text
-Create a stopped project using a reviewed deployment JSON file
+Choose an app and deployment method; an input file is optional for automation
 
-Usage: selfhost deploy [OPTIONS] --file <FILE>
+Usage: selfhost deploy [OPTIONS]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
@@ -1026,6 +1284,8 @@ Connect an identity provider or inspect its existing configuration directory
 Usage: selfhost identity [OPTIONS] <COMMAND>
 
 Commands:
+  setup             Guided setup from your provider directory; no JSON file required
+  connect           Paste and review a private setup code on the dashboard host
   inspect           Read provider hints without executing scripts or printing credentials
   plan              Review a login manifest and its exact callback URLs
   apply             Save reviewed settings after provider callbacks are configured
@@ -1033,6 +1293,35 @@ Commands:
   register-account  Look up the credential's account for explicit administrator selection
   register          Register the reviewed client; provider credential is read from the environment
   help              Print this message or the help of the given subcommand(s)
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+### identity setup
+
+```text
+Guided setup from your provider directory; no JSON file required
+
+Usage: selfhost identity setup [OPTIONS] [DIRECTORY]
+
+Arguments:
+  [DIRECTORY]  [default: .]
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+### identity connect
+
+```text
+Paste and review a private setup code on the dashboard host
+
+Usage: selfhost identity connect [OPTIONS]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
@@ -1155,7 +1444,8 @@ Usage: selfhost existing [OPTIONS] <COMMAND>
 Commands:
   list         List independently managed connections
   profiles     List supported connection profiles and their declared actions
-  link         Save a read-only app connection from a JSON file
+  link         Discover and connect an existing application
+  reconnect    Review a replacement container for an existing connection
   inspect      Inspect the pinned container without making changes
   stats        Read resource usage for the pinned container
   permissions  Explicitly allow selected write actions using a reviewed JSON file
@@ -1198,13 +1488,29 @@ Options:
 ### existing link
 
 ```text
-Save a read-only app connection from a JSON file
+Discover and connect an existing application
 
-Usage: selfhost existing link [OPTIONS] --file <FILE>
+Usage: selfhost existing link [OPTIONS]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
       --file <FILE>
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+### existing reconnect
+
+```text
+Review a replacement container for an existing connection
+
+Usage: selfhost existing reconnect [OPTIONS] [ID]
+
+Arguments:
+  [ID]
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
       --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
   -h, --help                       Print help
 ```
@@ -1246,7 +1552,7 @@ Options:
 ```text
 Explicitly allow selected write actions using a reviewed JSON file
 
-Usage: selfhost existing permissions [OPTIONS] --file <FILE> <ID>
+Usage: selfhost existing permissions [OPTIONS] <ID>
 
 Arguments:
   <ID>
@@ -1419,10 +1725,10 @@ Options:
 ```text
 Create a portable stack from an installation JSON file, without starting it
 
-Usage: selfhost stack-create [OPTIONS] <FILE>
+Usage: selfhost stack-create [OPTIONS] [FILE]
 
 Arguments:
-  <FILE>
+  [FILE]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
@@ -1446,12 +1752,12 @@ Options:
 ## proxy-add
 
 ```text
-Register a proxy from a private JSON file
+Connect a reverse proxy with guided questions
 
-Usage: selfhost proxy-add [OPTIONS] <FILE>
+Usage: selfhost proxy-add [OPTIONS] [FILE]
 
 Arguments:
-  <FILE>
+  [FILE]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
@@ -1464,10 +1770,23 @@ Options:
 ```text
 Update a saved proxy connection from a private JSON file containing its ID
 
-Usage: selfhost proxy-edit [OPTIONS] <FILE>
+Usage: selfhost proxy-edit [OPTIONS] [FILE]
 
 Arguments:
-  <FILE>
+  [FILE]
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+## route-setup
+
+```text
+Choose a proxy and service, then review and apply its route
+
+Usage: selfhost route-setup [OPTIONS]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
@@ -1480,10 +1799,10 @@ Options:
 ```text
 Register an existing private network and its access-policy reference
 
-Usage: selfhost network-add [OPTIONS] <FILE>
+Usage: selfhost network-add [OPTIONS] [FILE]
 
 Arguments:
-  <FILE>
+  [FILE]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
@@ -1605,6 +1924,40 @@ Arguments:
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --inspect
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+## app-sync
+
+```text
+Choose service links and add them to a configured app dashboard
+
+Usage: selfhost app-sync [OPTIONS] <PROJECT> <SERVICE>
+
+Arguments:
+  <PROJECT>
+  <SERVICE>
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+## app-update
+
+```text
+Select app versions, review backups and upgrade a project
+
+Usage: selfhost app-update [OPTIONS] <PROJECT>
+
+Arguments:
+  <PROJECT>
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
       --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
   -h, --help                       Print help
 ```
@@ -1632,12 +1985,12 @@ Options:
 ```text
 Apply reviewed app setup; secrets may be supplied through environment variables
 
-Usage: selfhost app-setup-apply [OPTIONS] --revision <REVISION> <PROJECT> <SERVICE> <FILE>
+Usage: selfhost app-setup-apply [OPTIONS] <PROJECT> <SERVICE> [FILE]
 
 Arguments:
   <PROJECT>
   <SERVICE>
-  <FILE>
+  [FILE]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
@@ -1688,12 +2041,12 @@ Options:
 ```text
 Create the reviewed client and configure the app; read the token from an environment variable
 
-Usage: selfhost app-connect [OPTIONS] --revision <REVISION> <PROJECT> <SERVICE> <FILE>
+Usage: selfhost app-connect [OPTIONS] <PROJECT> <SERVICE> [FILE]
 
 Arguments:
   <PROJECT>
   <SERVICE>
-  <FILE>
+  [FILE]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
@@ -1734,6 +2087,7 @@ Arguments:
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --edit
       --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
   -h, --help                       Print help
 ```
@@ -1761,12 +2115,12 @@ Options:
 ```text
 Apply a reviewed settings JSON file with the preview revision
 
-Usage: selfhost app-apply [OPTIONS] --revision <REVISION> <PROJECT> <SERVICE> <FILE>
+Usage: selfhost app-apply [OPTIONS] <PROJECT> <SERVICE> [FILE]
 
 Arguments:
   <PROJECT>
   <SERVICE>
-  <FILE>
+  [FILE]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
@@ -1897,10 +2251,58 @@ Options:
 ```text
 Add a database source from a private JSON file
 
-Usage: selfhost database-add [OPTIONS] <FILE>
+Usage: selfhost database-add [OPTIONS] [FILE]
 
 Arguments:
-  <FILE>
+  [FILE]
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+## database-setup
+
+```text
+Choose, connect and prepare a project's database
+
+Usage: selfhost database-setup [OPTIONS] [PROJECT]
+
+Arguments:
+  [PROJECT]
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+## database-edit
+
+```text
+Edit a saved database connection
+
+Usage: selfhost database-edit [OPTIONS] [SOURCE]
+
+Arguments:
+  [SOURCE]
+
+Options:
+      --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
+      --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+  -h, --help                       Print help
+```
+
+## database-remove
+
+```text
+Remove an unused database source after review
+
+Usage: selfhost database-remove [OPTIONS] [SOURCE]
+
+Arguments:
+  [SOURCE]
 
 Options:
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots

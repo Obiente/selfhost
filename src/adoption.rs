@@ -136,6 +136,116 @@ fn app_url(value: &str) -> Result<()> {
     Ok(())
 }
 impl Store {
+    /// Discover only non-sensitive Docker list fields and recipe matches.
+    pub async fn discover_existing(&self, server: &str, profile: &str) -> Result<Vec<Value>> {
+        let profiles = self.existing_profiles()?;
+        if !profile.is_empty() {
+            ensure!(
+                profiles.contains_key(profile),
+                "Existing app profile not found"
+            );
+        }
+        let mut command = self.server(server)?.docker_command(false)?;
+        command.args(["ps","-a","--no-trunc","--format",r#"{"id":{{json .ID}},"name":{{json .Names}},"image":{{json .Image}},"status":{{json .Status}},"ports":{{json .Ports}}}"#]);
+        let output = run(command, 30).await?;
+        let mut candidates = Vec::new();
+        for line in output.lines().filter(|l| !l.trim().is_empty()) {
+            let mut row: Value = serde_json::from_str(line)?;
+            let image = row["image"].as_str().context("Container image missing")?;
+            let matches = profiles
+                .values()
+                .filter(|p| p.accepts(image))
+                .map(|p| p.id.clone())
+                .collect::<Vec<_>>();
+            if !profile.is_empty() && !matches.iter().any(|id| id == profile) {
+                continue;
+            }
+            ensure!(
+                row["id"]
+                    .as_str()
+                    .is_some_and(|id| id.len() == 64 && id.bytes().all(|b| b.is_ascii_hexdigit())),
+                "Invalid container identity"
+            );
+            row["profiles"] = serde_json::json!(matches);
+            candidates.push(row);
+        }
+        Ok(candidates)
+    }
+    pub async fn reconnect_existing_plan(
+        &self,
+        id: &str,
+        server: &str,
+        container: &str,
+    ) -> Result<Value> {
+        let app = self.existing_app(id)?;
+        let info = self.inspect_existing_container(server, container).await?;
+        ensure!(
+            app.profile
+                .accepts(info["image"].as_str().unwrap_or_default()),
+            "Replacement image does not match this app profile"
+        );
+        ensure!(
+            !self
+                .existing_apps()?
+                .iter()
+                .any(|a| a.id != id && a.server_id == server && a.container_id == info["id"]),
+            "Replacement is already linked"
+        );
+        let revision = reconnect_revision(&app, server, &info)?;
+        Ok(
+            serde_json::json!({"app":app.name,"url":app.url,"previous_server":app.server_id,"previous_container":app.container_id,"server":server,"replacement":info,"reset_management_permissions":true,"revision":revision}),
+        )
+    }
+    pub async fn reconnect_existing(
+        &self,
+        id: &str,
+        server: &str,
+        container: &str,
+        revision: &str,
+    ) -> Result<ExistingApp> {
+        let old = self.existing_app(id)?;
+        let info = self.inspect_existing_container(server, container).await?;
+        ensure!(
+            old.profile
+                .accepts(info["image"].as_str().unwrap_or_default()),
+            "Replacement image does not match this app profile"
+        );
+        ensure!(
+            reconnect_revision(&old, server, &info)? == revision,
+            "The app or replacement changed; review it again"
+        );
+        self.change_existing(|apps| {
+            ensure!(
+                !apps
+                    .iter()
+                    .any(|a| a.id != id && a.server_id == server && a.container_id == info["id"]),
+                "Replacement is already linked"
+            );
+            let app = apps
+                .iter_mut()
+                .find(|a| a.id == id)
+                .context("Linked app not found")?;
+            ensure!(
+                reconnect_revision(app, server, &info)? == revision,
+                "Linked app changed; review it again"
+            );
+            app.server_id = server.into();
+            app.container_id = info["id"].as_str().context("Missing identity")?.into();
+            app.container_name = info["name"]
+                .as_str()
+                .unwrap_or_default()
+                .trim_start_matches('/')
+                .into();
+            app.image = info["image"].as_str().context("Missing image")?.into();
+            app.image_id = info["image_id"]
+                .as_str()
+                .context("Missing image identity")?
+                .into();
+            app.allowed_actions.clear();
+            app.linked_at = now();
+            Ok(app.clone())
+        })
+    }
     pub fn existing_profiles(&self) -> Result<BTreeMap<String, ExistingProfile>> {
         let mut profiles = BTreeMap::new();
         for name in crate::catalog::BuiltinCatalog::iter()
@@ -401,6 +511,21 @@ impl Store {
         Ok(serde_json::from_str(&run(command, 30).await?)?)
     }
 }
+fn reconnect_revision(app: &ExistingApp, server: &str, info: &Value) -> Result<String> {
+    use sha2::{Digest, Sha256};
+    // Running/status are intentionally excluded: ordinary lifecycle transitions do not alter identity.
+    Ok(format!(
+        "{:x}",
+        Sha256::digest(serde_json::to_vec(&(
+            app,
+            server,
+            &info["id"],
+            &info["image"],
+            &info["image_id"],
+            &info["name"]
+        ))?)
+    ))
+}
 fn verify_identity(app: &ExistingApp, info: &Value) -> Result<()> {
     ensure!(
         info["id"] == app.container_id && info["image_id"] == app.image_id,
@@ -443,6 +568,30 @@ mod tests {
             allowed_actions: vec![],
             linked_at: now(),
         };
+        let info = json!({"id":"b".repeat(64),"name":"/replacement","image":"nextcloud:stable","image_id":"sha256:replacement","running":true});
+        let revision = reconnect_revision(&app, "local", &info).unwrap();
+        let mut changed = info.clone();
+        changed["image_id"] = json!("sha256:another");
+        assert_ne!(
+            revision,
+            reconnect_revision(&app, "local", &changed).unwrap()
+        );
+        let mut stopped = info.clone();
+        stopped["running"] = json!(false);
+        assert_eq!(
+            revision,
+            reconnect_revision(&app, "local", &stopped).unwrap()
+        );
+        assert_ne!(
+            revision,
+            reconnect_revision(&app, "another-host", &info).unwrap()
+        );
+        let mut allowed = app.clone();
+        allowed.allowed_actions.push("update-apps".into());
+        assert_ne!(
+            revision,
+            reconnect_revision(&allowed, "local", &info).unwrap()
+        );
         store
             .change_existing(|apps| {
                 apps.push(app.clone());

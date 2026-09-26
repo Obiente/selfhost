@@ -15,6 +15,13 @@ use std::{
 
 #[derive(Subcommand)]
 pub enum DashboardCommand {
+    /// Set up and start the background dashboard with guided questions
+    Setup,
+    /// Choose whether this dashboard needs a local Docker engine
+    DockerMode {
+        #[arg(value_enum)]
+        mode: Option<LocalDockerMode>,
+    },
     /// Install a private copy as a user service (starts at sign-in); does not start it now
     Install {
         /// Listener IP; use a private/VPN address for a remote proxy
@@ -34,6 +41,16 @@ pub enum DashboardCommand {
     Restart,
     /// Inspect the user service and its private log location
     Status,
+    /// Check local listening, server SSH forwarding policy and possible firewall blocks
+    Diagnose {
+        /// Listener IP to check (defaults to the installed service setting or loopback)
+        #[arg(long)]
+        bind: Option<IpAddr>,
+        #[arg(long, value_parser = clap::value_parser!(u16).range(1..))]
+        port: Option<u16>,
+        #[command(flatten)]
+        options: crate::access_diagnostics::Options,
+    },
     /// Remove the user service, preserving projects, configuration and logs
     Uninstall,
     /// Read private dashboard logs, including the local sign-in link
@@ -41,9 +58,9 @@ pub enum DashboardCommand {
         #[arg(long, default_value_t = 50, value_parser = clap::value_parser!(u16).range(1..=1000))]
         lines: u16,
     },
-    /// Review a domain and proxy instructions; apply an existing login configuration with its revision
+    /// Review a domain change and apply it with guided confirmation
     Domain {
-        url: String,
+        url: Option<String>,
         /// Listener IP used in proxy examples; wildcard listeners need a reachable host IP instead
         #[arg(long, default_value = "127.0.0.1")]
         bind: IpAddr,
@@ -61,6 +78,55 @@ pub enum DashboardCommand {
         #[arg(long)]
         port: u16,
     },
+}
+
+#[derive(Clone, Copy, Default, clap::ValueEnum, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LocalDockerMode {
+    #[default]
+    Auto,
+    Disabled,
+    Required,
+}
+impl Store {
+    pub fn local_docker_mode(&self) -> Result<LocalDockerMode> {
+        let path = self.root.join("local-docker.json");
+        if !path.exists() {
+            return Ok(LocalDockerMode::Auto);
+        }
+        Ok(serde_json::from_slice(&fs::read(path)?)?)
+    }
+    pub fn set_local_docker_mode(&self, mode: LocalDockerMode) -> Result<LocalDockerMode> {
+        if matches!(mode, LocalDockerMode::Disabled) {
+            anyhow::ensure!(
+                !self.read()?.projects.iter().any(|p| p.server_id == "local"),
+                "Move or remove local projects before disabling local Docker monitoring"
+            );
+        }
+        atomic_write(
+            &self.root.join("local-docker.json"),
+            &serde_json::to_vec(&mode)?,
+        )?;
+        Ok(mode)
+    }
+    pub fn monitor_local_docker(&self) -> Result<bool> {
+        Ok(match self.local_docker_mode()? {
+            LocalDockerMode::Required => true,
+            LocalDockerMode::Disabled => false,
+            LocalDockerMode::Auto => self.read()?.projects.iter().any(|p| p.server_id == "local"),
+        })
+    }
+    pub async fn dashboard_docker_status(&self, id: &str) -> serde_json::Value {
+        if id == "local" && self.monitor_local_docker().is_ok_and(|v| !v) {
+            return json!({"available":false,"optional":true,"containers":[],"message":"Local Docker is not in use. Remote hosts are managed independently."});
+        }
+        match self.server_statuses(id).await {
+            Ok(value) => value,
+            Err(error) => {
+                json!({"available":false,"optional":false,"containers":[],"message":format!("{error:#}")})
+            }
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -564,12 +630,99 @@ fn proxy_help(url: &reqwest::Url, bind: IpAddr, port: u16) -> Value {
     json!({"upstream":format!("http://{upstream}"),"preserve_host":url.authority(),"caddy":format!("{} {{\n  reverse_proxy {upstream}\n}}",url.authority()),"nginx":format!("location / {{\n  proxy_pass http://{upstream};\n  proxy_set_header Host $http_host;\n  proxy_set_header X-Forwarded-Proto https;\n}}"),"notes":["Configure DNS and a valid TLS certificate on your proxy. Keep the original public Host header.","Use --bind with a private/VPN IP for a remote proxy, and restrict backend traffic to that proxy. A loopback listener instead needs a secured tunnel from the proxy's namespace. This command does not change the listener.","Forwarded headers cannot grant access. Configure the exact Selfhost HTTPS origin and an identity provider before remote binding. Use an encrypted tunnel or VPN between hosts."]})
 }
 
+fn guided_setup(store: &Store, catalog: Option<&Path>) -> Result<()> {
+    use crate::guided as g;
+    g::interactive()?;
+    if let Some(current) = settings(store)? {
+        println!(
+            "Dashboard service already configured on {}:{}.",
+            current.bind, current.port
+        );
+        if g::confirm("Start the existing dashboard service?", false)? {
+            g::review(&manager(store, "start")?);
+        }
+        return Ok(());
+    }
+    let mode = g::choose(
+        "Where will your apps run?",
+        &[
+            "Local and remote Docker hosts".into(),
+            "Remote hosts only".into(),
+        ],
+    )?;
+    let bind = loop {
+        let input = g::input("Dashboard listen address", "127.0.0.1")?;
+        if let Ok(bind) = input.parse::<IpAddr>() {
+            match crate::server::validate_bind(store, bind) {
+                Ok(()) => break bind,
+                Err(error) => println!("{error}"),
+            };
+        } else {
+            println!("Enter an IP address.");
+        }
+    };
+    let port = loop {
+        if let Ok(port) = g::input("Dashboard port", "8372")?.parse::<u16>()
+            && port > 0
+        {
+            break port;
+        }
+        println!("Enter a port between 1 and 65535.");
+    };
+    println!(
+        "The dashboard will run under this account and use this workspace. Applications continue independently when the dashboard stops."
+    );
+    if cfg!(target_os = "linux") {
+        println!(
+            "Linux uses a user service. Startup without signing in requires lingering for this account."
+        );
+    }
+    g::review(
+        &json!({"bind":bind,"port":port,"local_docker":if mode==1 {"disabled"} else {"automatic"},"start_after_install":true}),
+    );
+    if !g::confirm("Install and start this dashboard service?", false)? {
+        println!("Cancelled. No service installed.");
+        return Ok(());
+    }
+    let previous_mode = store.local_docker_mode()?;
+    store.set_local_docker_mode(if mode == 1 {
+        LocalDockerMode::Disabled
+    } else {
+        LocalDockerMode::Auto
+    })?;
+    if let Err(error) = install(store, catalog, bind, port, false) {
+        store.set_local_docker_mode(previous_mode)?;
+        return Err(error);
+    }
+    if cfg!(target_os = "linux")
+        && g::confirm(
+            "Enable startup at boot and keep running after logout for this account?",
+            false,
+        )?
+    {
+        checked("loginctl", &["enable-linger"])?;
+    }
+    let result = manager(store, "start")?;
+    ensure!(
+        result["success"] == true,
+        "Service installed but could not start. Run selfhost dashboard status for the manager's reason"
+    );
+    println!(
+        "Dashboard started. Open http://{bind}:{port}/. Use selfhost dashboard logs for its private local sign-in link."
+    );
+    Ok(())
+}
+
 pub async fn execute(
     store: &Store,
     catalog: Option<&Path>,
     command: DashboardCommand,
 ) -> Result<()> {
     let result = match command {
+        DashboardCommand::Setup => {
+            guided_setup(store, catalog)?;
+            return Ok(());
+        }
         DashboardCommand::Install {
             port,
             bind,
@@ -611,20 +764,87 @@ pub async fn execute(
             }
             return Ok(());
         }
+        DashboardCommand::DockerMode { mode } => {
+            let value = match mode {
+                Some(mode) => store.set_local_docker_mode(mode)?,
+                None => store.local_docker_mode()?,
+            };
+            println!("{}", serde_json::to_string_pretty(&value)?);
+            return Ok(());
+        }
+        DashboardCommand::Diagnose {
+            bind,
+            port,
+            options,
+        } => {
+            let saved = settings(store)?;
+            let bind = bind
+                .or_else(|| saved.as_ref().map(|s| s.bind))
+                .unwrap_or_else(default_bind);
+            let port = port
+                .or_else(|| saved.as_ref().map(|s| s.port))
+                .unwrap_or(8372);
+            let report = crate::access_diagnostics::diagnose(
+                bind,
+                port,
+                &options,
+                false,
+                store.login_config()?.as_ref(),
+            )
+            .await?;
+            if options.json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                report.print();
+            }
+            return Ok(());
+        }
         DashboardCommand::Domain {
             url,
             bind,
             port,
             revision,
             confirm_callbacks,
-        } => domain(
-            store,
-            &url,
-            bind,
-            port,
-            revision.as_deref(),
-            confirm_callbacks,
-        )?,
+        } => {
+            let url = match url {
+                Some(url) => url,
+                None => crate::guided::input("Selfhost HTTPS address", "")?,
+            };
+            let plan = domain(
+                store,
+                &url,
+                bind,
+                port,
+                revision.as_deref(),
+                confirm_callbacks,
+            )?;
+            if revision.is_none() && std::io::IsTerminal::is_terminal(&std::io::stdin()) {
+                crate::guided::review(&plan);
+                if let Some(revision) = plan["revision"].as_str() {
+                    println!(
+                        "Keep the old sign-in address available until you have tested the new one."
+                    );
+                    if crate::guided::confirm(
+                        "Are DNS, HTTPS routing and the exact callback ready at every connected provider?",
+                        false,
+                    )? && crate::guided::confirm("Switch Selfhost to this address?", false)?
+                    {
+                        crate::guided::review(&domain(
+                            store,
+                            &url,
+                            bind,
+                            port,
+                            Some(revision),
+                            true,
+                        )?);
+                    } else {
+                        println!("Address unchanged.");
+                    }
+                }
+                return Ok(());
+            }
+            plan
+        }
         DashboardCommand::Run { port, bind } => {
             let dir = directory(store);
             private_dir(&dir)?;
@@ -676,6 +896,53 @@ pub async fn execute(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[tokio::test]
+    async fn remote_only_hosting_skips_local_docker_and_preserves_remote_errors() {
+        let temp = tempfile::tempdir().unwrap();
+        let store = Store::open(temp.path().into()).unwrap();
+        assert!(!store.monitor_local_docker().unwrap());
+        assert_eq!(
+            store.dashboard_docker_status("local").await["optional"],
+            true
+        );
+        store
+            .set_local_docker_mode(LocalDockerMode::Disabled)
+            .unwrap();
+        assert!(store.server("local").is_err());
+        assert_eq!(
+            store.infrastructure_inventory("local").await.unwrap()["optional"],
+            true
+        );
+        assert_eq!(
+            store.dashboard_docker_status("unknown-remote").await["optional"],
+            false
+        );
+        store
+            .set_local_docker_mode(LocalDockerMode::Required)
+            .unwrap();
+        assert!(store.monitor_local_docker().unwrap());
+        store
+            .mutate(|data| {
+                data.projects.push(crate::core::Project {
+                    id: "p-test".into(),
+                    name: "Test".into(),
+                    server_id: "local".into(),
+                    custom: false,
+                    services: vec![],
+                    access: "local".into(),
+                    created_at: 0,
+                });
+                Ok(())
+            })
+            .unwrap();
+        assert!(
+            store
+                .set_local_docker_mode(LocalDockerMode::Disabled)
+                .is_err()
+        );
+        store.set_local_docker_mode(LocalDockerMode::Auto).unwrap();
+        assert!(store.monitor_local_docker().unwrap());
+    }
     #[test]
     fn service_settings_upgrade_preserves_loopback_and_explicit_bind_arguments() {
         let mut config: Settings =

@@ -6,11 +6,24 @@ While `selfhost serve` is running, it checks for due tasks. A dashboard link tas
 
 ## Keep dashboard links current
 
+For guided CLI setup, run:
+
+```sh
+selfhost task create
+```
+
+Choose a configured destination, all current and future sources or specific
+projects/apps, and an interval. Review the proposed links and confirm. Selfhost
+keeps the review revision internally. This guided flow is available in the next
+release; no request file is needed.
+
 Complete [app onboarding](./app-onboarding.md) first. Only profiles that declare a `sync` mode appear as link destinations. Homarr supports this flow.
 
 In the dashboard or TUI, choose the destination and source scope, review the proposed links, and enable the task. Empty source ID lists mean **all current and future** sources of that selected kind. Select explicit IDs to restrict access to a fixed set.
 
-From the CLI, list available destinations:
+### Advanced automation
+
+For scripted requests, list available destinations:
 
 ```sh
 selfhost task destinations

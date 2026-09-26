@@ -9,7 +9,36 @@ The default dashboard/API port is **8372**, from **SH** in ASCII: **S = 83** and
 **H = 72**, joined as **8372**. Use `--port` for another port; existing explicitly
 configured services keep their chosen port.
 
+## Run without local Docker
+
+> Available since 0.1.4.
+
+A dashboard host can be an LXC or other machine without a Docker engine. Local
+Docker monitoring defaults to **Automatic**: it is checked when the workspace
+contains local projects. Remote hosts keep their own connection status and errors.
+
+In **Infrastructure > Docker on this machine**, choose automatic monitoring,
+remote hosts only, or always monitor local Docker. The CLI uses:
+
+```sh
+selfhost dashboard docker-mode disabled
+selfhost dashboard docker-mode auto
+selfhost dashboard docker-mode required
+```
+
+With no argument, the command prints the current preference. Remote-only mode
+skips local probes and blocks local Docker operations. Move or remove local
+projects before enabling it. Remote Docker operations still need the Docker CLI
+and OpenSSH client on the dashboard host, but not a local Docker daemon.
+See [dedicated SSH keys](ssh-keys.md) for connection setup.
+
 ## Install and start
+
+For guided setup, run `selfhost dashboard setup`. Choose
+local/remote Docker usage, the listen address and port, then approve installation
+and startup together. On Linux it can also enable lingering after a separate
+confirmation. Existing service settings are reused when a service is installed.
+The individual commands below remain available for scripts and administration.
 
 Use a release CLI installed through Cargo or npm. A temporary npx/pnpx invocation
 also works: installation copies the native executable into your private data
@@ -206,13 +235,67 @@ To open a headless server's loopback dashboard from your own browser, run this
 on your browser's machine and keep the SSH connection open:
 
 ```sh
-ssh -N -o ExitOnForwardFailure=yes -L 8372:127.0.0.1:8372 user@selfhost-host
+ssh -N -o ClearAllForwardings=no -o ExitOnForwardFailure=yes -L 127.0.0.1:8372:127.0.0.1:8372 user@selfhost-host
 ```
 
 Run `selfhost serve` on the server, then open its printed
 `http://127.0.0.1:8372/#token=...` link in your local browser. Replace the SSH
 target with your server's account and address. Keep the local forwarded port the
 same as the Selfhost listener port so the browser's origin matches.
+
+#### Diagnose remote browser access
+
+> Automatic SSH-session guidance and `dashboard diagnose` are available since 0.1.4.
+
+When started inside an SSH session, Selfhost prints a tunnel command using the
+session's server IP, account and SSH port. Run it on **your computer**, leave the
+terminal open, then open the server's local sign-in link in your computer's
+browser. The tunnel listens only on local loopback. A successful SSH login alone
+does not prove that forwarding is permitted.
+
+Bounded, read-only access checks run while Selfhost accepts requests. Repeat them
+on the server:
+
+```sh
+selfhost dashboard diagnose
+selfhost dashboard diagnose --bind 127.0.0.1 --port 8372
+selfhost dashboard diagnose --ssh-host server.example.com --ssh-user operator --ssh-port 2222
+```
+
+Defaults come from the installed dashboard service, or `127.0.0.1:8372`. For a
+foreground instance, pass its actual bind and port. `--json` returns structured
+results. Override the SSH destination for an alias, domain or translated port.
+Keep any jump-host options your connection needs. Selfhost does not inspect your
+computer's SSH configuration. Outside SSH, `--client-ip` and a numeric
+`--ssh-host` provide the connection addresses for server-side policy evaluation;
+use the SSH port as seen by the server in that case.
+
+- **Listener:** tests local TCP listening, without claiming that another machine
+  can reach it or that the listener belongs to Selfhost. Loopback requires a tunnel.
+- **SSH forwarding:** inspects readable `sshd -T -C` policy. Disabled local
+  forwarding and restrictive `PermitOpen` rules are reported as blockers. An
+  administrator can scope `AllowTcpForwarding local` and
+  `PermitOpen 127.0.0.1:8372` to the account and source address. Key/certificate
+  restrictions, hostname-based Match rules and nonstandard daemon configuration
+  still require inspection or a real tunnel test.
+- **Host firewall:** reads nftables, falling back to IPv4 iptables. Default-drop
+  input/output policies are possible blockers, not proof of a block. SSH tunnel
+  access needs the local connection permitted; it does not require opening the
+  dashboard port to the network. IPv6 and explicit filtering may need further
+  inspection even when no default-drop rule appears.
+
+Missing tools, insufficient permissions and inconclusive checks are unknown.
+Selfhost does not elevate privileges or change firewall/SSH settings. An LXC cannot
+inspect its Proxmox host's firewall, and these checks cannot inspect cloud/router
+policies or your computer's routing and firewall.
+
+If the local port is occupied, choose another `--port` on the server and use that
+same port in the tunnel and browser. Keep the same data directory. A concrete
+private-IP listener needs restarting on loopback for tunnel sign-in; its `--setup`
+URL is the direct browser option while temporary setup runs. Recovery URL guidance
+also preserves configured HTTPS localhost sign-in origins.
+
+#### Use a tunnel as the proxy backend
 
 Create an authenticated tunnel from the proxy's network namespace to the Selfhost
 host's loopback listener. For example, run this on the proxy host with a verified

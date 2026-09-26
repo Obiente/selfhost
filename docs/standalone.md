@@ -51,11 +51,10 @@ selfhost app --directory ./cloud start
 ```
 
 These are individual operations, not a persistent management process. `update`
-pulls the image references in your current Compose file and recreates services as
-needed. It does not select a newer version tag, change a recipe, rotate secrets,
-or replace your configuration with a newer catalogue entry. Review the app's
-upgrade instructions before editing a pinned image tag. Updates can interrupt
-service; a configuration backup is not an application-data backup.
+asks which version to use for each recorded service, shows compatibility and
+migration warnings, then asks for confirmation before saving and restarting.
+It also allows keeping the current image references and refreshing those tags.
+Configuration snapshots do not back up application data or database contents.
 
 ## Edit your own configuration
 
@@ -69,70 +68,47 @@ public repositories. Review output before sharing logs. Changing an initial
 administrator password variable does not necessarily change an account that the
 app has already created.
 
-Recipes with native integration profiles also support reviewed setting changes.
-For Nextcloud, save this as `changes.json`:
-
-```json
-{ "default-phone-region": "NL", "maintenance-window": 3 }
-```
+Recipes with native integration profiles support guided setting changes:
 
 ```sh
-selfhost app --directory ./cloud config nextcloud
+selfhost app --directory ./cloud config nextcloud --edit
 selfhost app --directory ./cloud actions nextcloud
-selfhost app --directory ./cloud plan nextcloud changes.json
-selfhost app --directory ./cloud apply nextcloud changes.json --revision REVIEWED_REVISION
 selfhost app --directory ./cloud action nextcloud update-apps
 ```
 
-Replace `REVIEWED_REVISION` with the value returned by the plan. Native commands
-run in the selected app container; they do not require the Selfhost API or browser.
-Supported fields and actions come from that app's profile. Other configuration can
-still be changed through the app's own tools.
+Choose a setting, answer its typed prompts and review the changes. Passwords are
+hidden. Lists and command arguments are entered one item at a time. Selfhost
+keeps the revision internally and asks for y/n confirmation before applying.
+The same settings wizard is available through `apply nextcloud` without a file.
 
-Use `backups SERVICE` to list saved native configuration backups and
-`restore SERVICE BACKUP` to preview a restore. Applying that restore requires its
-returned `--revision`. These backups cover the profile's native settings, not
-uploads, database contents or entire Docker volumes.
+Use `backups SERVICE` to list native configuration backups, then
+`restore SERVICE BACKUP` for a guided review and confirmation. These backups cover
+native settings, not uploads, database contents or Docker volumes.
 
 ## Connect an app to an identity provider
 
 App sign-in is separate from signing in to a Selfhost dashboard. You can configure
 an app's supported identity connection entirely through the CLI.
 
-For Nextcloud or Grafana with ZITADEL, save a connection request privately:
-
-```json
-{
-  "provider": "zitadel",
-  "issuer": "https://identity.example.com",
-  "app_url": "https://files.example.com",
-  "name": "Cloud login"
-}
-```
+Run the connection wizard:
 
 ```sh
-# Supply SELFHOST_IDP_TOKEN through your shell or secret manager.
-selfhost app --directory ./cloud connect-account nextcloud connection.json
-selfhost app --directory ./cloud connect-plan nextcloud connection.json
-selfhost app --directory ./cloud connect nextcloud connection.json --revision REVIEWED_REVISION
-selfhost app --directory ./cloud connection nextcloud
+selfhost app --directory ./cloud connect nextcloud
 ```
 
-The default creates a dedicated provider project named **Selfhost**, then its
-client and the app configuration. To reuse a project, set `create_project` to
-`false` and supply `provider_project`. Its
-receipt and client credentials stay in the private `.selfhost/` metadata for
-recovery. The provider access token is not persisted. If client creation succeeded
-but app configuration failed, `connection nextcloud --resume` reuses the recorded
-client. An uncertain provider response requires inspection before retrying.
+Choose the provider and enter the provider and app URLs. The temporary provider
+API token is entered privately. Where the provider supports it, Selfhost creates
+a dedicated project and client. Advanced options allow an existing project,
+organization, private CA and deliberate replacement of existing login settings.
+Where the app supports administrator mapping, Selfhost can look up the token's
+human account and ask you to authorize it explicitly. No subject ID needs to be
+copied from a separate command when that lookup succeeds.
 
-`connect-account` only looks up the credential's account. For Grafana, you may
-copy its verified human `suggested_subject` into `administrator_subject` in the
-request, then review a new plan. This grants Grafana organization Admin to that
-exact subject; other users admitted through the connection receive Viewer.
-Machine accounts cannot be selected, and Nextcloud has no automatic administrator
-mapping. Grafana's Compose changes require service recreation; connecting does
-not restart it automatically.
+Review the callback, administrator and changes, then confirm. Recovery receipts
+stay in the private `.selfhost/` directory; the provider token is not persisted.
+Run the same command again to inspect and resume a saved connection. An uncertain
+provider response still requires inspection before retrying. App configuration
+may need service recreation; Selfhost reports it rather than silently restarting.
 
 These workflows cover the declared Nextcloud and Grafana connections to ZITADEL.
 They do not imply automatic registration for every app or provider. Keep the app's
@@ -151,23 +127,18 @@ existing administrator API key.
 ```sh
 selfhost app --directory ./home init homarr --start
 selfhost app --directory ./home setup homarr
-selfhost app --directory ./home setup-plan homarr onboarding.json
-selfhost app --directory ./home setup-apply homarr onboarding.json --revision REVIEWED_REVISION
 ```
 
-See [automatic app setup](app-onboarding.md) for the `onboarding.json` format,
-environment-backed passwords and setup modes. Standalone setup uses this
-directory's private metadata and the explicit links in your request. It does not
-need or discover an unrelated global Selfhost workspace. Run the CLI on the Docker
-host for HTTP onboarding; remote onboarding through an authenticated tunnel is
-not yet available.
+The wizard asks for setup mode, administrator details, board name and app links.
+See [automatic app setup](app-onboarding.md). Standalone setup uses this directory's
+private metadata and does not discover an unrelated global workspace. Run it on
+the Docker host for HTTP onboarding; remote onboarding through an authenticated
+tunnel is not yet available.
 
-To add more links later, save an array of link objects as `links.json`, then use
-the saved API connection and board:
+Add more links using the saved private API connection:
 
 ```sh
-selfhost app --directory ./home sync-plan homarr links.json
-selfhost app --directory ./home sync homarr links.json --revision REVIEWED_REVISION
+selfhost app --directory ./home sync homarr
 ```
 
 This adds the reviewed apps and items to the private board. Previously linked or
@@ -185,10 +156,17 @@ selfhost app --help
 ```
 
 Use `init APP --method METHOD` for an app deployment choice, or
-`init BLUEPRINT --stack` for a multi-service stack. Supply declared values through
-`--inputs inputs.json` and explicitly acknowledge any listed requirements with
-`--ack REQUIREMENT_ID`. The same profiles supply these options to the CLI and
-dashboard. See [deployment choices](existing-apps.md).
+`init BLUEPRINT --stack` for a multi-service stack. Without an explicit method,
+the wizard lists deployment choices. It asks for each declared input and explains
+requirements before asking for confirmation. The same contributor profiles supply
+these options to the CLI and dashboard. See [deployment choices](existing-apps.md).
+
+### Automation
+
+Explicit input files remain available for scripts: `--inputs`, `plan`/`apply`,
+`setup-plan`/`setup-apply`, `connect-plan`/`connect`, and `sync-plan`/`sync`. File-based
+apply commands require the matching reviewed `--revision`; interactive commands
+keep that bookkeeping internal. Use `setup SERVICE --inspect` for read-only status.
 
 Nextcloud AIO manages its child containers, backups and upgrades itself. Its
 master-container Compose file does not replace AIO's own lifecycle controls.

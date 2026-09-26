@@ -1,4 +1,5 @@
-//! Reviewed updates for official Cargo installations. No client supplies a URL or executable path.
+//! Reviewed updates for official Cargo and standalone installations. No client supplies a URL or executable path.
+mod binary;
 use crate::core::{Store, atomic_write, now, private_dir, token};
 use anyhow::{Context, Result, bail, ensure};
 use fs2::FileExt;
@@ -45,6 +46,8 @@ struct Installation {
 }
 #[derive(Clone, Serialize, Deserialize)]
 struct Plan {
+    #[serde(default)]
+    release_hash: Option<String>,
     id: String,
     revision: String,
     version: String,
@@ -188,6 +191,7 @@ fn instructions(method: &str, version: Option<&str>) -> Vec<String> {
         "cargo"=>vec!["Review the update, build it in a private staging directory, then activate it. Activation restarts this dashboard only when requested from the dashboard.".into()],
         "npm"=>vec![version.map(|v| format!("Use an explicitly released launcher version: npx --yes --package=selfhost@{v} selfhost")).unwrap_or("Check the npm package for a released CLI launcher before changing your invocation.".into()),"This copy may be in an npx cache or a local package. Selfhost does not overwrite npm-managed binaries.".into()],
         "source"=>vec!["This is a development, source, or unverified Cargo build. Update your checkout, review its changes, and rebuild using your existing workflow.".into()],
+        "standalone"=>vec!["Run selfhost update, or review and download the update here. Selfhost verifies the official release checksum, retains the previous executable, and replaces this binary without requiring Cargo or npm.".into()],
         _=>vec!["This executable is not an identified official Cargo installation or verified npm bundle. Update it using its original installation method.".into()]
     }
 }
@@ -225,7 +229,22 @@ fn recovery_instructions(job: &Job) -> String {
     )
 }
 fn job_view(job: &Job) -> Value {
-    json!({"job_id":job.job_id,"status":job.status,"version":job.version,"restart_log":restart_log(job),"recovery_instructions":recovery_instructions(job),"confirmation":job.confirmation,"error":job.error,"restart_status":job.restart_status,"can_activate":job.status=="staged","can_recover":matches!(job.status.as_str(),"replacing"|"failed"|"rollback_required"),"recovery_confirmation":format!("RECOVER SELFHOST {}",job.plan.installation.key.as_deref().unwrap_or("unknown").split_whitespace().nth(1).unwrap_or("unknown"))})
+    let recovery_confirmation = if job.plan.installation.method == "standalone" {
+        "RECOVER SELFHOST ORIGINAL BINARY".into()
+    } else {
+        format!(
+            "RECOVER SELFHOST {}",
+            job.plan
+                .installation
+                .key
+                .as_deref()
+                .unwrap_or("unknown")
+                .split_whitespace()
+                .nth(1)
+                .unwrap_or("unknown")
+        )
+    };
+    json!({"job_id":job.job_id,"status":job.status,"version":job.version,"restart_log":restart_log(job),"recovery_instructions":recovery_instructions(job),"confirmation":job.confirmation,"error":job.error,"restart_status":job.restart_status,"can_activate":job.status=="staged","can_recover":matches!(job.status.as_str(),"replacing"|"failed"|"rollback_required"),"recovery_confirmation":recovery_confirmation})
 }
 
 impl Store {
@@ -246,8 +265,12 @@ impl Store {
             .zip(stable_version(VERSION).ok())
             .is_some_and(|(new, old)| new > old);
         cached["update_available"] = json!(newer);
-        cached["can_stage"] =
-            json!(newer && current.method == "cargo" && cached["check_error"].is_null());
+        cached["can_stage"] = json!(
+            newer
+                && (current.method == "cargo"
+                    || (current.method == "standalone" && binary::asset().is_ok()))
+                && cached["check_error"].is_null()
+        );
         cached["instructions"] = json!(instructions(
             &current.method,
             cached["latest_version"].as_str()
@@ -329,8 +352,28 @@ impl Store {
             .as_str()
             .context("Missing update version")?
             .to_owned();
-        let revision = format!("{:x}", Sha256::digest(serde_json::to_vec(&installation)?));
-        let plan=Plan{id:token(16)?,revision,confirmation:format!("UPDATE SELFHOST TO {version}"),version,expires_at:now()+900,installation,scope:vec!["Build the exact approved crates.io release using Cargo in private staging.".into(),"Activation replaces only this Cargo-installed Selfhost executable and its two Cargo installation records.".into()],warnings:vec!["Cargo runs the release's build scripts and uses your trusted Rust toolchain. Review the release before approval.".into(),"The SHA-256 check detects changes to staged files; it is not a publisher signature.".into(),"Activation briefly stops this dashboard. Services and their containers keep running. Back up Selfhost's data directory before updating; executable rollback does not reverse data migrations.".into()]};
+        let release_hash = if installation.method == "standalone" {
+            ensure!(
+                binary::release_hash(VERSION).await? == installation.hash,
+                "This executable does not match the official release for this platform. Update it using its original installation method"
+            );
+            Some(binary::release_hash(&version).await?)
+        } else {
+            None
+        };
+        let revision = format!(
+            "{:x}",
+            Sha256::digest(serde_json::to_vec(&(
+                &installation,
+                &version,
+                &release_hash
+            ))?)
+        );
+        let mut plan=Plan{release_hash,id:token(16)?,revision,confirmation:format!("UPDATE SELFHOST TO {version}"),version,expires_at:now()+900,installation,scope:vec!["Build the exact approved crates.io release using Cargo in private staging.".into(),"Activation replaces only this Cargo-installed Selfhost executable and its two Cargo installation records.".into()],warnings:vec!["Cargo runs the release's build scripts and uses your trusted Rust toolchain. Review the release before approval.".into(),"The SHA-256 check detects changes to staged files; it is not a publisher signature.".into(),"Activation briefly stops this dashboard. Services and their containers keep running. Back up Selfhost's data directory before updating; executable rollback does not reverse data migrations.".into()]};
+        if plan.installation.method == "standalone" {
+            plan.scope=vec!["Download the exact approved native binary from Obiente/selfhost on GitHub and verify its SHA-256 checksum.".into(),"Replace only this standalone executable and retain its previous copy for recovery.".into()];
+            plan.warnings=vec!["Release checksums are fetched over HTTPS from the same release; they are integrity checks, not independent publisher signatures.".into(),"Dashboard activation restarts Selfhost. App containers keep running. Back up the data directory before updating; executable recovery does not undo data migrations.".into()];
+        }
         save(
             &self.updates_dir()?.join(format!("plan-{}.json", plan.id)),
             &plan,
@@ -421,11 +464,8 @@ impl Store {
                 && let Ok(job) = serde_json::from_value::<Job>(value)
             {
                 let mut view = job_view(&job);
-                view["can_recover"] = json!(
-                    view["can_recover"] == true
-                        && entry.path().join("cargo-v1.before").is_file()
-                        && entry.path().join("cargo-v2.before").is_file()
-                );
+                view["can_recover"] =
+                    json!(view["can_recover"] == true && recovery_started(&entry.path(), &job));
                 jobs.push(view);
             }
         }
@@ -452,7 +492,7 @@ impl Store {
             "Review this job and type its exact recovery confirmation"
         );
         ensure!(
-            path.join("cargo-v1.before").is_file() && path.join("cargo-v2.before").is_file(),
+            recovery_started(&path, &job),
             "This job did not start replacing the installation; no recovery is needed"
         );
         let helper = path.join(if cfg!(windows) {
@@ -498,10 +538,22 @@ impl Store {
         )
     }
 }
+fn recovery_started(path: &Path, job: &Job) -> bool {
+    if job.plan.installation.method == "standalone" {
+        job.plan
+            .installation
+            .executable
+            .with_file_name(format!(".selfhost-{}.backup", job.job_id))
+            .is_file()
+    } else {
+        path.join("cargo-v1.before").is_file() && path.join("cargo-v2.before").is_file()
+    }
+}
 fn validate_current(expected: &Installation) -> Result<()> {
     let current = installation()?;
     ensure!(
-        current.method == "cargo"
+        matches!(current.method.as_str(), "cargo" | "standalone")
+            && current.method == expected.method
             && current.executable == expected.executable
             && current.hash == expected.hash
             && current.key == expected.key
@@ -610,6 +662,9 @@ fn stage(root: &Path, data_dir: &Path, approval: UpdateApproval) -> Result<Value
     };
     save(&path.join("job.json"), &job)?;
     let result: Result<()> = (|| {
+        if job.plan.installation.method == "standalone" {
+            return binary::stage(&path, &mut job);
+        }
         let stage = path.join("stage");
         private_dir(&stage)?;
         let log = File::create(path.join("build.log"))?;
@@ -803,6 +858,9 @@ fn read_locked(file: &mut File) -> Result<Vec<u8>> {
     Ok(bytes)
 }
 fn recover_installation(path: &Path, job: &mut Job) -> Result<()> {
+    if job.plan.installation.method == "standalone" {
+        return binary::recover(path, job);
+    }
     let installation = &job.plan.installation;
     let root = installation
         .cargo_root
@@ -872,6 +930,9 @@ fn recover_installation(path: &Path, job: &mut Job) -> Result<()> {
     Ok(())
 }
 fn replace_installation(path: &Path, job: &mut Job) -> Result<()> {
+    if job.plan.installation.method == "standalone" {
+        return binary::replace(path, job);
+    }
     let installation = &job.plan.installation;
     let cargo_root = installation
         .cargo_root
@@ -1220,6 +1281,7 @@ mod tests {
             metadata: Some(metadata),
         };
         let plan = Plan {
+            release_hash: None,
             id: job_id.clone(),
             revision: "synthetic".into(),
             version: "99.0.0".into(),
@@ -1246,6 +1308,62 @@ mod tests {
             error: None,
         };
         (dir, path, job)
+    }
+    #[test]
+    #[ignore = "Downloads an official release binary from GitHub and runs its version check"]
+    fn official_standalone_release_stages_without_touching_installation() {
+        let (_dir, path, mut job) = fixture();
+        let original = hash(&job.plan.installation.executable).unwrap();
+        job.version = "0.1.3".into();
+        job.plan.version = job.version.clone();
+        job.plan.installation.method = "standalone".into();
+        job.plan.release_hash = Some(
+            tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(binary::release_hash(&job.version))
+                .unwrap(),
+        );
+        binary::stage(&path, &mut job).unwrap();
+        assert_eq!(job.status, "staged");
+        assert_eq!(job.staged_hash, job.plan.release_hash);
+        assert_eq!(hash(&job.plan.installation.executable).unwrap(), original);
+    }
+    #[test]
+    fn standalone_replacement_and_recovery_leave_package_records_untouched() {
+        let (_dir, path, mut job) = fixture();
+        let cargo = job.plan.installation.cargo_root.clone().unwrap();
+        let before = fs::read(cargo.join(".crates2.json")).unwrap();
+        job.plan.installation.method = "standalone".into();
+        job.plan.installation.cargo_root = None;
+        job.plan.installation.key = None;
+        job.plan.installation.metadata = None;
+        job.plan.release_hash = job.staged_hash.clone();
+        replace_installation(&path, &mut job).unwrap();
+        assert_eq!(job.status, "completed");
+        assert_eq!(
+            hash(&job.plan.installation.executable).unwrap(),
+            job.staged_hash.clone().unwrap()
+        );
+        assert_eq!(fs::read(cargo.join(".crates2.json")).unwrap(), before);
+        job.status = "rollback_required".into();
+        recover_installation(&path, &mut job).unwrap();
+        assert_eq!(job.status, "recovered");
+        assert_eq!(
+            hash(&job.plan.installation.executable).unwrap(),
+            job.plan.installation.hash
+        );
+        assert_eq!(fs::read(cargo.join(".crates2.json")).unwrap(), before);
+    }
+    #[test]
+    fn standalone_rejects_changed_staging_before_replacing_current_binary() {
+        let (_dir, path, mut job) = fixture();
+        job.plan.installation.method = "standalone".into();
+        job.plan.release_hash = Some("0".repeat(64));
+        assert!(replace_installation(&path, &mut job).is_err());
+        assert_eq!(
+            hash(&job.plan.installation.executable).unwrap(),
+            job.plan.installation.hash
+        );
     }
     #[test]
     fn native_replacement_and_recovery_preserve_unrelated_cargo_records() {

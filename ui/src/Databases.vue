@@ -1,11 +1,40 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
+import DatabaseSourceManager from './DatabaseSourceManager.vue';
 import { Database, Plus, Play } from 'lucide-vue-next';
 const props = defineProps<{
   api: (path: string, method?: string, body?: unknown) => Promise<any>;
   servers: { id: string; name: string; provider: string }[];
 }>();
 const emit = defineEmits<{ changed: [] }>();
+const selected = ref<any>(null),
+  mode = ref<'edit' | 'rename' | 'remove'>('edit'),
+  status = ref('');
+function manage(source: any, action: 'edit' | 'rename' | 'remove') {
+  selected.value = source;
+  mode.value = action;
+}
+async function tested(source: any) {
+  busy.value = true;
+  error.value = '';
+  status.value = '';
+  try {
+    await props.api(`/databases/${source.id}/test`, 'POST', {});
+    status.value = `Connected to ${source.name}.`;
+  } catch (e) {
+    error.value = (e as Error).message;
+  } finally {
+    busy.value = false;
+  }
+}
+async function reload() {
+  try {
+    await load();
+    emit('changed');
+  } catch (e) {
+    error.value = (e as Error).message;
+  }
+}
 const sources = ref<any[]>([]),
   engines = ref<any[]>([]),
   adding = ref(false),
@@ -152,6 +181,7 @@ onMounted(() =>
       </p>
       <button class="button primary" :disabled="busy">Save source</button>
     </form>
+    <p v-if="status" role="status">{{ status }}</p>
     <div class="catalog-grid">
       <article v-for="source in sources" :key="source.id" class="catalog-card">
         <div class="catalog-card-top">
@@ -167,6 +197,21 @@ onMounted(() =>
           {{ source.host }}:{{ source.port }}
         </p>
         <p v-if="source.managed_project">Managed as its own project</p>
+        <div class="source-actions">
+          <button class="button" :disabled="busy" @click="tested(source)">Test connection</button>
+          <button
+            v-if="!source.managed_project"
+            class="button"
+            :disabled="busy"
+            @click="manage(source, 'edit')"
+          >
+            Edit connection
+          </button>
+          <button class="button" :disabled="busy" @click="manage(source, 'rename')">Rename</button>
+          <button class="button danger" :disabled="busy" @click="manage(source, 'remove')">
+            Remove source
+          </button>
+        </div>
         <button
           v-if="source.managed_project"
           class="button"
@@ -182,6 +227,23 @@ onMounted(() =>
       <h3>No database sources yet</h3>
       <p>Add a server here or choose a dedicated database in a project’s setup.</p>
     </div>
+    <DatabaseSourceManager
+      v-if="selected"
+      :source="selected"
+      :mode="mode"
+      :api="api"
+      @close="selected = null"
+      @saved="reload"
+    />
     <p v-if="error" role="alert">{{ error }}</p>
   </section>
 </template>
+
+<style scoped>
+.source-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+</style>

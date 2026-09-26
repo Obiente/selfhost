@@ -495,21 +495,123 @@ async fn app_onboarding(store: &Store, id: &str, app: &str) -> Result<()> {
     if info["supported"] != true {
         return Ok(());
     }
-    if take!(menu(
-        "Automatic app setup",
-        &[
-            "View setup details only",
-            "Review and apply a setup request"
-        ]
-    )) == 0
-    {
+    if !info["state"]["pending"].is_null() {
+        view(
+            "Setup needs inspection",
+            "An earlier write is unresolved. Inspect its recorded progress before retrying.",
+        )?;
         return Ok(());
     }
-    let file = take!(required(
-        "Setup request JSON path (use env:VARIABLE for secrets)",
-        ""
-    ));
-    let request = crate::onboarding::read_request(std::path::Path::new(&file))?;
+    let modes: Vec<String> = info["profile"]["modes"]
+        .as_array()
+        .context("Missing setup modes")?
+        .iter()
+        .filter_map(Value::as_str)
+        .filter(|mode| {
+            if info["state"]["completed"] == true {
+                *mode == "sync"
+            } else {
+                *mode != "sync"
+            }
+        })
+        .map(str::to_owned)
+        .collect();
+    if modes.is_empty() {
+        return view(
+            "App setup",
+            "No setup operation is available for this installation.",
+        );
+    }
+    let labels: Vec<String> = modes
+        .iter()
+        .map(|mode| match mode.as_str() {
+            "bootstrap" => "Initialize a fresh installation".into(),
+            "connect" => "Connect an existing installation".into(),
+            "sync" => "Add links to the connected dashboard".into(),
+            value => value.into(),
+        })
+        .collect();
+    let mode = modes[take!(select("App setup", &labels))].clone();
+    let mut inputs = BTreeMap::new();
+    for field in info["profile"]["fields"]
+        .as_array()
+        .context("Missing setup fields")?
+    {
+        if !field["modes"]
+            .as_array()
+            .is_some_and(|modes| modes.iter().any(|m| m == &mode))
+        {
+            continue;
+        }
+        let label = field["label"].as_str().unwrap_or("Value");
+        let initial = field["default"].as_str().unwrap_or("");
+        let secret = matches!(field["kind"].as_str(), Some("secret" | "password"));
+        let value = loop {
+            let value = take!(prompt(
+                label,
+                if secret {
+                    "Hidden input"
+                } else {
+                    "Enter the app setting"
+                },
+                initial,
+                secret
+            ));
+            if field["required"] == true && value.is_empty() {
+                view("Value required", "Enter this setting before continuing.")?;
+                continue;
+            }
+            if !value.is_empty()
+                && (value.len() < field["minimum_length"].as_u64().unwrap_or(0) as usize
+                    || value.len() > field["maximum_length"].as_u64().unwrap_or(4096) as usize)
+            {
+                view(
+                    "Invalid length",
+                    "The value does not meet this app's length limits.",
+                )?;
+                continue;
+            }
+            break value;
+        };
+        inputs.insert(
+            field["id"].as_str().context("Missing field ID")?.to_owned(),
+            value,
+        );
+    }
+    let mut apps: Vec<crate::onboarding::AppLink> = Vec::new();
+    if info["profile"]["accepts_apps"] == true {
+        let linked = info["state"]["linked_urls"].as_array();
+        let suggestions: Vec<crate::onboarding::AppLink> =
+            serde_json::from_value(info["suggestions"].clone())?;
+        let suggestions: Vec<_> = suggestions
+            .into_iter()
+            .filter(|app| !linked.is_some_and(|urls| urls.iter().any(|url| url == &app.url)))
+            .collect();
+        if !suggestions.is_empty() {
+            let choices: Vec<_> = suggestions
+                .iter()
+                .map(|app| format!("{}: {}", app.name, app.url))
+                .collect();
+            for index in take!(multi(
+                "Select services to link (review addresses from the dashboard's network)",
+                &choices,
+                &[]
+            )) {
+                let mut app = suggestions[index].clone();
+                app.url = take!(required(&format!("Address for {}", app.name), &app.url));
+                apps.push(app);
+            }
+        }
+        while yes("Add another service link?")? {
+            apps.push(crate::onboarding::AppLink {
+                name: take!(required("Service name", "")),
+                url: take!(required("Service URL reachable by dashboard users", "")),
+                icon: String::new(),
+                description: String::new(),
+            });
+        }
+    }
+    let request = crate::onboarding::OnboardingRequest { mode, inputs, apps };
     let plan = wait(
         "Reviewing app setup",
         store.onboarding_plan(id, app, request.clone()),

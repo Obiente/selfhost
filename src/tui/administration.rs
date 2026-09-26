@@ -284,18 +284,139 @@ pub(super) async fn databases(store: &Store) -> Result<()> {
             }
             _ => {
                 let source = &sources[choice - 2];
-                show("Database source (credentials hidden)", source)?;
-                if source["managed_project"].is_string()
-                    && yes("Start this managed shared database server?")?
-                {
-                    wait(
-                        "Starting database server",
-                        store.start_database_source(
-                            source["id"].as_str().context("Source ID missing")?,
-                        ),
-                    )
-                    .await?;
-                    view("Database started", "Managed PostgreSQL server started.")?;
+                let id = source["id"].as_str().context("Source ID missing")?;
+                match take!(menu(
+                    "Database source",
+                    &[
+                        "Connection details",
+                        "Test connection",
+                        "Rename",
+                        "Edit external connection",
+                        "Start hosted database",
+                        "Remove connection record"
+                    ]
+                )) {
+                    0 => show("Database source (credentials hidden)", source)?,
+                    1 => {
+                        wait(
+                            "Testing database connection",
+                            store.test_database_source(id),
+                        )
+                        .await?;
+                        view(
+                            "Connection verified",
+                            "The database accepted the saved credentials.",
+                        )?;
+                    }
+                    2 => {
+                        let name = take!(required(
+                            "Source name",
+                            source["name"].as_str().unwrap_or("")
+                        ));
+                        store.rename_database_source(id, &name)?;
+                        view("Source renamed", "The database connection is unchanged.")?;
+                    }
+                    3 => {
+                        if source["managed_project"].is_string() {
+                            view(
+                                "Hosted database",
+                                "Use Rename for its display name. Change hosted database settings through its project.",
+                            )?;
+                            continue;
+                        }
+                        let refs = store.database_source_references(id)?;
+                        let mut edited = store.database_source(id)?;
+                        if !refs.is_empty() {
+                            view(
+                                "Projects using this source",
+                                &format!(
+                                    "{}\n\nDestination changes require migrating these projects first.",
+                                    refs.join("\n")
+                                ),
+                            )?;
+                        }
+                        edited.name = take!(required("Source name", &edited.name));
+                        if refs.is_empty() {
+                            edited.host = take!(required("Database host", &edited.host));
+                            edited.port =
+                                take!(number("Database port", edited.port.into())).try_into()?;
+                            edited.database = take!(required("Database name", &edited.database));
+                            if !edited.auth_database.is_empty() {
+                                edited.auth_database = take!(required(
+                                    "Authentication database",
+                                    &edited.auth_database
+                                ));
+                            }
+                            let tls = take!(menu(
+                                "Database TLS",
+                                &[
+                                    "Require encryption",
+                                    "Verify hostname and certificate",
+                                    "Disable TLS (private network only)"
+                                ]
+                            ));
+                            edited.ssl_mode = ["require", "verify-full", "disable"][tls].into();
+                        }
+                        edited.password.clear();
+                        if refs.is_empty() || edited.kind == "shared" {
+                            edited.username =
+                                take!(required("Database username", &edited.username));
+                            edited.password = take!(prompt(
+                                "Database password",
+                                "Leave blank to keep the saved password.",
+                                "",
+                                true
+                            ));
+                        }
+                        if yes(
+                            "Test and save this connection? Existing projects are not migrated.",
+                        )? {
+                            wait(
+                                "Testing and saving connection",
+                                store.edit_database_source(id, edited),
+                            )
+                            .await?;
+                            view(
+                                "Connection saved",
+                                "The database accepted the connection before it was saved.",
+                            )?;
+                        }
+                    }
+                    4 => {
+                        if source["managed_project"].is_string() {
+                            wait("Starting database server", store.start_database_source(id))
+                                .await?;
+                            view("Database started", "The hosted database server is running.")?;
+                        } else {
+                            view(
+                                "External database",
+                                "Start this database using its existing host or provider.",
+                            )?;
+                        }
+                    }
+                    _ => {
+                        let refs = store.database_source_references(id)?;
+                        if !refs.is_empty() {
+                            view(
+                                "Source is in use",
+                                &format!(
+                                    "Move or remove these project bindings before removing this connection:\n{}",
+                                    refs.join("\n")
+                                ),
+                            )?;
+                            continue;
+                        }
+                        if confirm_name(
+                            "Remove connection only; database projects and data remain",
+                            source["name"].as_str().unwrap_or(""),
+                        )? {
+                            store.remove_database_source(id)?;
+                            view(
+                                "Connection removed",
+                                "The database server and its data remain available.",
+                            )?;
+                        }
+                    }
                 }
             }
         }
@@ -703,25 +824,33 @@ pub(super) async fn networking(store: &Store) -> Result<()> {
                     "SSH alias of proxy host or guest (optional)",
                     &proxy.ssh_alias
                 ));
-                proxy.admin_url = take!(field("Proxy administration URL", &proxy.admin_url));
-                proxy.config_directory = take!(field(
-                    "Proxy dynamic config directory (file providers)",
-                    &proxy.config_directory
-                ));
-                proxy.api_token = take!(prompt(
-                    "Proxy API credential",
-                    "Leave empty to preserve the saved credential on the same target",
-                    "",
-                    true
-                ));
-                if yes("Configure a private certificate authority for the proxy API?")? {
-                    proxy.ca_certificate = take!(editor(
-                        "CA certificate PEM (public certificate only)",
-                        &proxy.ca_certificate
+                let file_provider = profiles
+                    .get(&proxy.provider)
+                    .is_some_and(|p| p.driver == "file_watch");
+                if file_provider {
+                    proxy.config_directory = take!(required(
+                        "Proxy dynamic config directory",
+                        &proxy.config_directory
                     ));
+                } else {
+                    proxy.admin_url = take!(required("Proxy administration URL", &proxy.admin_url));
+                    proxy.api_token = take!(prompt(
+                        "Proxy API credential",
+                        "Leave empty to preserve the saved credential on the same target",
+                        "",
+                        true
+                    ));
+                    if yes("Configure a private certificate authority for the proxy API?")? {
+                        proxy.ca_certificate = take!(editor(
+                            "CA certificate PEM (public certificate only)",
+                            &proxy.ca_certificate
+                        ));
+                    }
                 }
                 if let Some(profile) = profiles.get(&proxy.provider) {
-                    for (key, rule) in &profile.settings_schema {
+                    let mut fields: Vec<_> = profile.settings_schema.iter().collect();
+                    fields.sort_by_key(|(_, rule)| rule.required_when.is_some());
+                    for (key, rule) in fields {
                         if let Some((other, expected)) = &rule.required_when
                             && proxy.settings.get(other) != Some(expected)
                         {
@@ -768,10 +897,7 @@ pub(super) async fn networking(store: &Store) -> Result<()> {
                 )?;
                 let name = take!(required("Connection name", "Private network"));
                 let description = take!(field("Description", ""));
-                let endpoints = strings(&take!(field(
-                    "Peer identities or endpoints (comma separated)",
-                    ""
-                )));
+                let endpoints = take!(string_list_edit("Peer identities or endpoints", &[], false));
                 let policy_reference =
                     take!(required("Scoped firewall or access-policy reference", ""));
                 let id = store.add_network(crate::networking::PrivateNetwork {
@@ -895,10 +1021,11 @@ pub(super) async fn identity(store: &Store) -> Result<()> {
                     "",
                     true
                 ));
-                let subjects = strings(&take!(required(
-                    "Administrator subject IDs (comma separated, not email addresses)",
-                    ""
-                )));
+                let subjects = take!(string_list_edit(
+                    "Administrator subject IDs (not email addresses)",
+                    &[],
+                    false
+                ));
                 let ca_certificate =
                     if yes("Does the provider use a private certificate authority?")? {
                         take!(editor("CA certificate PEM", ""))
@@ -1024,10 +1151,11 @@ pub(super) async fn identity(store: &Store) -> Result<()> {
                     }
                 }
                 if request.admin_subjects.is_empty() {
-                    request.admin_subjects = strings(&take!(required(
-                        "Administrator subject IDs (comma separated, not email addresses)",
-                        ""
-                    )));
+                    request.admin_subjects = take!(string_list_edit(
+                        "Administrator subject IDs (not email addresses)",
+                        &[],
+                        false
+                    ));
                 }
                 let plan = crate::identity_setup::registration_plan(store, &request)?;
                 if review("Review client registration", &plan)? {
@@ -1069,10 +1197,11 @@ pub(super) async fn identity(store: &Store) -> Result<()> {
                             provider.client_secret =
                                 take!(prompt("Client secret", "Hidden input", "", true));
                         }
-                        provider.admin_subjects = strings(&take!(required(
-                            "Administrator subject IDs (comma separated)",
-                            &provider.admin_subjects.join(",")
-                        )));
+                        provider.admin_subjects = take!(string_list_edit(
+                            "Administrator subject IDs",
+                            &provider.admin_subjects,
+                            false
+                        ));
                     }
                     1 => {
                         if !yes("Advanced provider settings include a client secret. Open editor?")?

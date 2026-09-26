@@ -47,7 +47,7 @@ pub enum AppCommand {
     Stop,
     /// Restart the directory's containers
     Restart,
-    /// Snapshot configuration, pull configured tags and recreate as needed; does not back up app data
+    /// Choose versions, review, snapshot configuration and update after confirmation
     Update,
     /// Show Docker Compose status
     Status,
@@ -81,26 +81,34 @@ pub enum AppCommand {
         inputs: Option<PathBuf>,
     },
     /// Read supported native settings with secret fields omitted
-    Config { service: String },
+    Config {
+        service: String,
+        #[arg(long)]
+        edit: bool,
+    },
     /// Preview a JSON map of typed native app settings
     Plan { service: String, file: PathBuf },
-    /// Apply a reviewed native settings file, preserving user-owned Compose and env files
+    /// Change native settings interactively, or apply an explicit reviewed file
     Apply {
         service: String,
-        file: PathBuf,
+        file: Option<PathBuf>,
         #[arg(long)]
-        revision: String,
+        revision: Option<String>,
     },
-    /// Inspect available automatic app setup and saved progress
-    Setup { service: String },
+    /// Set up the app interactively; --inspect only reports saved progress
+    Setup {
+        service: String,
+        #[arg(long)]
+        inspect: bool,
+    },
     /// Preview first-run setup or an existing API-key connection
     SetupPlan { service: String, file: PathBuf },
     /// Apply reviewed app setup without a dashboard or daemon
     SetupApply {
         service: String,
-        file: PathBuf,
+        file: Option<PathBuf>,
         #[arg(long)]
-        revision: String,
+        revision: Option<String>,
     },
     /// Find the authenticated human account before choosing an app administrator
     ConnectAccount {
@@ -111,21 +119,21 @@ pub enum AppCommand {
     },
     /// Review an explicit JSON array of new dashboard links using its saved API key
     SyncPlan { service: String, file: PathBuf },
-    /// Add reviewed links to the saved private board without a daemon
+    /// Add application links interactively using the saved private board
     Sync {
         service: String,
-        file: PathBuf,
+        file: Option<PathBuf>,
         #[arg(long)]
-        revision: String,
+        revision: Option<String>,
     },
     /// Preview an app's OIDC client registration from a JSON request
     ConnectPlan { service: String, file: PathBuf },
-    /// Create a reviewed OIDC client and configure the app
+    /// Connect an identity provider interactively, or apply a reviewed request file
     Connect {
         service: String,
-        file: PathBuf,
+        file: Option<PathBuf>,
         #[arg(long)]
-        revision: String,
+        revision: Option<String>,
         #[arg(long, default_value = "SELFHOST_IDP_TOKEN")]
         token_env: String,
     },
@@ -606,24 +614,36 @@ pub async fn execute(path: &Path, catalog: Option<&Path>, command: AppCommand) -
     if let AppCommand::Init {
         app,
         stack,
-        method,
+        mut method,
         inputs,
-        ack,
+        mut ack,
         start,
         image,
         allow_untested,
     } = command
     {
+        let values = if let Some(file) = &inputs {
+            read_json(file)?
+        } else {
+            let temp = tempfile::tempdir()?;
+            let prompt_store = Store::with_catalog(temp.path().join("data"), catalog)?;
+            crate::app_assist::init_inputs(&prompt_store, &app, stack, &mut method, &mut ack)?
+        };
+        if inputs.is_none() {
+            crate::guided::review(
+                &json!({"application":app,"deployment":method,"inputs":values,"start_after_creation":start}),
+            );
+            if !crate::guided::confirm("Create this application directory?", false)? {
+                println!("Cancelled. No application files were created.");
+                return Ok(());
+            }
+        }
         let instructions = create_versioned_files(
             path,
             &app,
             stack,
             method.as_deref(),
-            inputs
-                .as_deref()
-                .map(read_json)
-                .transpose()?
-                .unwrap_or_default(),
+            values,
             ack,
             catalog,
             image.map(|image| crate::versions::Selection {
@@ -638,6 +658,33 @@ pub async fn execute(path: &Path, catalog: Option<&Path>, command: AppCommand) -
         if start {
             store.action(&project.id, "start").await?;
             println!("Application started. No Selfhost process needs to stay running.");
+            if inputs.is_none() {
+                for service in &project.services {
+                    if service.definition.onboarding.is_some()
+                        && crate::guided::confirm(
+                            &format!("Set up {} now?", service.definition.name),
+                            true,
+                        )?
+                    {
+                        crate::app_assist::setup(&store, &project.id, &service.app).await?;
+                    }
+                    if service
+                        .definition
+                        .integration
+                        .as_ref()
+                        .is_some_and(|profile| profile.oidc_client.is_some())
+                        && crate::guided::confirm(
+                            &format!(
+                                "Connect {} to an identity provider?",
+                                service.definition.name
+                            ),
+                            false,
+                        )?
+                    {
+                        crate::app_assist::connect(&store, &project.id, &service.app).await?;
+                    }
+                }
+            }
         }
         return Ok(());
     }
@@ -679,7 +726,8 @@ pub async fn execute(path: &Path, catalog: Option<&Path>, command: AppCommand) -
             },
             &revision,
         )?)?,
-        AppCommand::Start | AppCommand::Stop | AppCommand::Restart | AppCommand::Update => {
+        AppCommand::Update => crate::app_assist::update(&store, id).await?,
+        AppCommand::Start | AppCommand::Stop | AppCommand::Restart => {
             let action = match command {
                 AppCommand::Start => "start",
                 AppCommand::Stop => "stop",
@@ -713,6 +761,9 @@ pub async fn execute(path: &Path, catalog: Option<&Path>, command: AppCommand) -
             action,
             inputs,
         } => {
+            if inputs.is_none() {
+                return crate::app_assist::action(&store, id, &service, &action).await;
+            }
             if project
                 .services
                 .iter()
@@ -733,8 +784,12 @@ pub async fn execute(path: &Path, catalog: Option<&Path>, command: AppCommand) -
                 ensure!(result["ok"] == true, "App workflow did not complete");
             }
         }
-        AppCommand::Config { service } => {
-            print(&Box::pin(store.integration_state(id, &service)).await?)?
+        AppCommand::Config { service, edit } => {
+            if edit {
+                crate::app_assist::settings(&store, id, &service).await?;
+            } else {
+                print(&Box::pin(store.integration_state(id, &service)).await?)?;
+            }
         }
         AppCommand::Plan { service, file } => {
             print(&Box::pin(store.integration_plan(id, &service, &read_json(&file)?)).await?)?
@@ -743,10 +798,24 @@ pub async fn execute(path: &Path, catalog: Option<&Path>, command: AppCommand) -
             service,
             file,
             revision,
-        } => print(
-            &Box::pin(store.integration_apply(id, &service, read_json(&file)?, &revision)).await?,
-        )?,
-        AppCommand::Setup { service } => print(&store.onboarding_info(id, &service)?)?,
+        } => {
+            if let Some(file) = file {
+                let revision = revision.context("File automation requires --revision")?;
+                print(
+                    &Box::pin(store.integration_apply(id, &service, read_json(&file)?, &revision))
+                        .await?,
+                )?;
+            } else {
+                crate::app_assist::settings(&store, id, &service).await?;
+            }
+        }
+        AppCommand::Setup { service, inspect } => {
+            if inspect {
+                print(&store.onboarding_info(id, &service)?)?;
+            } else {
+                crate::app_assist::setup(&store, id, &service).await?;
+            }
+        }
         AppCommand::SetupPlan { service, file } => print(
             &Box::pin(store.onboarding_plan(id, &service, crate::onboarding::read_request(&file)?))
                 .await?,
@@ -755,15 +824,22 @@ pub async fn execute(path: &Path, catalog: Option<&Path>, command: AppCommand) -
             service,
             file,
             revision,
-        } => print(
-            &Box::pin(store.onboarding_apply(
-                id,
-                &service,
-                crate::onboarding::read_request(&file)?,
-                &revision,
-            ))
-            .await?,
-        )?,
+        } => {
+            if let Some(file) = file {
+                let revision = revision.context("File automation requires --revision")?;
+                print(
+                    &Box::pin(store.onboarding_apply(
+                        id,
+                        &service,
+                        crate::onboarding::read_request(&file)?,
+                        &revision,
+                    ))
+                    .await?,
+                )?;
+            } else {
+                crate::app_assist::setup(&store, id, &service).await?;
+            }
+        }
         AppCommand::ConnectAccount {
             service,
             file,
@@ -791,6 +867,10 @@ pub async fn execute(path: &Path, catalog: Option<&Path>, command: AppCommand) -
             file,
             revision,
         } => {
+            let Some(file) = file else {
+                return crate::app_assist::sync(&store, id, &service).await;
+            };
+            let revision = revision.context("File automation requires --revision")?;
             let request = crate::onboarding::OnboardingRequest {
                 mode: "sync".into(),
                 inputs: BTreeMap::new(),
@@ -807,6 +887,10 @@ pub async fn execute(path: &Path, catalog: Option<&Path>, command: AppCommand) -
             revision,
             token_env,
         } => {
+            let Some(file) = file else {
+                return crate::app_assist::connect(&store, id, &service).await;
+            };
+            let revision = revision.context("File automation requires --revision")?;
             let mut request: crate::connections::ConnectRequest = read_json(&file)?;
             ensure!(
                 request.credential.is_empty(),
@@ -841,10 +925,30 @@ pub async fn execute(path: &Path, catalog: Option<&Path>, command: AppCommand) -
             service,
             backup,
             revision,
-        } => print(
-            &Box::pin(store.integration_restore(id, &service, &backup, revision.as_deref()))
-                .await?,
-        )?,
+        } => {
+            if let Some(revision) = revision {
+                print(
+                    &Box::pin(store.integration_restore(id, &service, &backup, Some(&revision)))
+                        .await?,
+                )?;
+            } else {
+                crate::guided::interactive()?;
+                let plan = Box::pin(store.integration_restore(id, &service, &backup, None)).await?;
+                crate::guided::review(&crate::app_assist::settings_review(
+                    &plan,
+                    &store.integration(id, &service)?,
+                ));
+                if crate::guided::confirm("Restore these application settings?", false)? {
+                    let revision = plan["revision"]
+                        .as_str()
+                        .context("Restore plan has no revision")?;
+                    crate::guided::review(
+                        &Box::pin(store.integration_restore(id, &service, &backup, Some(revision)))
+                            .await?,
+                    );
+                }
+            }
+        }
     }
     Ok(())
 }

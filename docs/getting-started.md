@@ -18,8 +18,8 @@ schedules. You can also schedule ordinary Compose or CLI commands yourself.
 
 ## Install or run directly
 
-::: info Version 0.1.3
-These commands target version 0.1.3. Check the [release page](https://github.com/Obiente/selfhost/releases/tag/v0.1.3)
+::: info Version 0.1.4
+These commands target version 0.1.4. Check the [release page](https://github.com/Obiente/selfhost/releases/tag/v0.1.4)
 for publication status and release notes. You do not need to clone the repository
 when installing a published release.
 :::
@@ -33,32 +33,50 @@ containers; generating a standalone setup does not require a running engine.
 No Node.js, npm, Cargo or compiler is required. Linux, macOS and Windows are
 supported on x64 and ARM64.
 
-Linux or macOS:
+Linux or macOS, using Bash, Zsh or a POSIX shell:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -fsSL https://github.com/Obiente/selfhost/releases/latest/download/install.sh | sh -s -- --version 0.1.3
+curl --proto '=https' --tlsv1.2 -fsSL https://github.com/Obiente/selfhost/releases/latest/download/install.sh | sh -s -- --version 0.1.4 && export PATH="$HOME/.local/bin:$PATH"
 ```
 
 Windows PowerShell:
 
 ```powershell
-& ([scriptblock]::Create((Invoke-RestMethod https://github.com/Obiente/selfhost/releases/latest/download/install.ps1))) -Version 0.1.3
+& ([scriptblock]::Create((Invoke-RestMethod https://github.com/Obiente/selfhost/releases/latest/download/install.ps1))) -Version 0.1.4
 ```
 
 The installer checks the download's SHA-256 checksum and reported version before
 installing. It uses `~/.local/bin` on Linux/macOS or `%LOCALAPPDATA%\Selfhost\bin`
-on Windows. It needs no administrator access and starts no services. The shell
-installer prints PATH guidance; the Windows installer adds its directory to your
-user PATH. Open a new terminal if needed, then run `selfhost --help`.
+on Windows. It needs no administrator access and starts no services. The final
+`export` in the Unix command updates your current shell immediately, without a
+separate source command. A piped installer runs in a child process and cannot
+change its parent's environment. The Windows installer updates the current
+PowerShell session and your persistent user PATH.
+
+**Since 0.1.4:** Unix PATH setup is also saved automatically for new
+shells in `.profile`, `.bashrc`, existing Bash login profiles, Zsh's `.zshenv`
+(respecting `ZDOTDIR`), and Fish's `conf.d/selfhost.fish` when that shell is
+available. Existing profile contents are preserved; repeated installs do not add
+duplicate source lines. A generated environment file lives under
+`${XDG_DATA_HOME:-$HOME/.local/share}/selfhost/env`. The installer bundled with
+0.1.3 and earlier prints persistent PATH instructions instead.
+
+In Fish, run the install pipeline followed by
+`and fish_add_path --path --prepend --move "$HOME/.local/bin"` instead of the
+POSIX `&& export ...` suffix. If you run only the pipeline with the revised
+installer, open a new terminal to load its persistent PATH setup.
 
 You can download and inspect the installer before running it, or download the
-binary directly from [the release assets](https://github.com/Obiente/selfhost/releases/tag/v0.1.3)
+binary directly from [the release assets](https://github.com/Obiente/selfhost/releases/tag/v0.1.4)
 and verify it against `BINARY-SHA256SUMS`. Rename it to `selfhost` on Linux/macOS
 or keep the platform's executable extension on Windows. On Linux/macOS, make it
 executable with `chmod +x selfhost` and put it on PATH.
 
 For a custom location use `--bin-dir DIRECTORY` or PowerShell `-BinDir DIRECTORY`.
-PowerShell `-NoModifyPath` leaves PATH unchanged. See [updates](updates.md#direct-binary-installations)
+Use the same custom directory in the current-shell PATH command. The revised Unix
+installer's `--no-modify-path` and PowerShell's `-NoModifyPath` leave PATH
+configuration unchanged; omit the command's PATH suffix when opting out.
+See [updates](updates.md#direct-binary-installations)
 for replacement and rollback. These downloads have checksums but are not yet
 signed or notarized; checksums from the same release do not independently
 authenticate its publisher.
@@ -68,33 +86,33 @@ authenticate its publisher.
 With Node.js 22 or newer:
 
 ```sh
-npx selfhost@0.1.3 --help
+npx selfhost@0.1.4 --help
 ```
 
 ### pnpm or pnpx
 
 ```sh
-pnpm dlx selfhost@0.1.3 --help
+pnpm dlx selfhost@0.1.4 --help
 ```
 
-The equivalent short command is `pnpx selfhost@0.1.3 --help`. No install scripts
+The equivalent short command is `pnpx selfhost@0.1.4 --help`. No install scripts
 or separate Rust installation are required. The npm package includes native
 executables for Windows, Linux and macOS, on x64 and ARM64.
 
 ### Install with npm or pnpm
 
 ```sh
-npm install --global selfhost@0.1.3
+npm install --global selfhost@0.1.4
 ```
 
-Or use `pnpm add --global selfhost@0.1.3`. Use `selfhost --help` to choose a command.
+Or use `pnpm add --global selfhost@0.1.4`. Use `selfhost --help` to choose a command.
 
 ### Install with Cargo
 
 With Rust 1.98 or newer and your platform's native build tools:
 
 ```sh
-cargo install selfhost --locked --version 0.1.3
+cargo install selfhost --locked --version 0.1.4
 ```
 
 Use `selfhost --help` to choose a command. Cargo compiles the CLI locally. Its source package

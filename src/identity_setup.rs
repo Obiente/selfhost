@@ -751,7 +751,7 @@ pub fn inspect(directory: &Path, selfhost_url: &str) -> Result<Value> {
         None => None,
     };
     Ok(
-        json!({"sources":sources,"detected":detected,"callback":format!("{}/auth/callback",url.origin().ascii_serialization()),"manifest":manifest,"next_steps":["Use an existing OIDC client or register a Web application with authorization code and PKCE S256.","Set the exact callback shown here. For loopback HTTP, enable your provider's local development option if required.","Create selfhost-login.json with public_url and providers. Supply exact administrator subject IDs; emails and display names do not grant access.","Run identity plan and identity apply against the same Selfhost data directory used by selfhost serve. Review the plan before confirming."]}),
+        json!({"sources":sources,"detected":detected,"callback":format!("{}/auth/callback",url.origin().ascii_serialization()),"manifest":manifest,"next_steps":["Use an existing OIDC client or register a Web application with authorization code and PKCE S256.","Set the exact callback shown here. For loopback HTTP, enable your provider's local development option if required.","Run selfhost identity setup in this directory for guided registration or connection details; no JSON file is required.","Apply on this host using the dashboard data directory, or paste the private setup code into Access or selfhost identity connect on the dashboard host. Review exact administrator subject IDs before confirming."]}),
     )
 }
 

@@ -51,43 +51,18 @@ It does not verify the public certificate, a container's network namespace, or
 the network provider's access policy. Route update, removal, adoption and automatic
 recovery of interrupted writes are not yet implemented.
 
+### Guided terminal setup
+
 ```sh
-selfhost networking
-selfhost proxy-add proxy.json
-selfhost proxy-edit proxy.json
-selfhost network-add network.json
-selfhost route-plan route.json
-selfhost route-apply route.json --revision REVIEWED_REVISION
-selfhost route-probe route.json
+selfhost proxy-add
+selfhost proxy-edit
+selfhost route-setup
+selfhost network-add
 ```
 
-An example proxy file:
+Choose a proxy provider and answer its profile-defined questions. Dedicated SSH key setup runs inside the same flow when requested; existing SSH aliases and direct verified HTTPS APIs are also supported. Certificate choices, CA file paths and lists have individual prompts; no JSON syntax is needed. API tokens are entered without echo. Editing keeps a saved token unless you choose to replace it. Existing routes prevent silently retargeting their proxy connection.
 
-```json
-{
-  "id": "",
-  "name": "Home proxy",
-  "provider": "caddy",
-  "ssh_alias": "proxy-lxc",
-  "admin_url": "http://127.0.0.1:2019",
-  "read_only": true,
-  "settings": { "server": "srv0" }
-}
-```
-
-An example route file:
-
-```json
-{
-  "id": "cloud",
-  "proxy_id": "PROXY_ID",
-  "project_id": "PROJECT_ID",
-  "service": "nextcloud",
-  "domain": "cloud.example.com",
-  "upstream": "https://cloud.internal.example.com:8443",
-  "network_id": null
-}
-```
+`route-setup` selects a saved proxy, project and service, then asks for the hostname and upstream URL. It checks the live proxy configuration, shows the proposed route, and applies it after confirmation. The revision is carried internally and checked again immediately before the write. File inputs and separate plan/apply commands remain available for automation.
 
 ## Private networks
 
@@ -108,7 +83,7 @@ Network registration is not proof that these controls are active.
 Connect issuer without requiring a brand-specific login adapter. Configure Selfhost's address, a client and exact
 provider subject IDs allowed to administer the workspace. Register the callback
 `https://selfhost.example.com/auth/callback` at the provider, or the exact local
-callback such as `http://localhost:8797/auth/callback`. Use the actual dashboard
+callback such as `http://localhost:8372/auth/callback`. Use the actual dashboard
 port. Non-loopback addresses require HTTPS. Public clients and
 clients using a secret are supported. Providers must support Authorization Code
 with S256 PKCE and the token authentication method used by the client.
@@ -273,3 +248,13 @@ Provider references: [Caddy API](https://caddyserver.com/docs/api),
 [authentik automated install](https://docs.goauthentik.io/install-config/automated-install),
 [ZITADEL Compose deployment](https://zitadel.com/docs/self-hosting/deploy/compose),
 [NetBird access control](https://docs.netbird.io/manage/access-control).
+
+## View and edit proxy connections
+
+Open **Networking > Proxies > View and edit** next to a saved connection. Review
+its target, SSH alias, API address, CA, provider settings and read-only mode before
+saving. An empty token field preserves the stored token for an unchanged target;
+existing tokens are not returned to the browser. A target with saved routes cannot
+be changed in place: create a separate connection to avoid retargeting those routes.
+
+Use [dedicated SSH keys](ssh-keys.md) to prepare an alias for the proxy host or LXC.

@@ -677,6 +677,50 @@ async fn existing_profiles(State(app): State<AppState>) -> ApiResult<Value> {
 async fn existing_apps(State(app): State<AppState>) -> ApiResult<Value> {
     Ok(Json(json!(app.store.existing_apps()?)))
 }
+#[derive(Deserialize, Default)]
+struct ExistingDiscovery {
+    #[serde(default)]
+    profile: String,
+}
+async fn existing_discovery(
+    State(app): State<AppState>,
+    Path(id): Path<String>,
+    axum::extract::Query(query): axum::extract::Query<ExistingDiscovery>,
+) -> ApiResult<Value> {
+    Ok(Json(json!(
+        app.store.discover_existing(&id, &query.profile).await?
+    )))
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExistingReconnect {
+    server_id: String,
+    container: String,
+    #[serde(default)]
+    revision: String,
+}
+async fn existing_reconnect_plan(
+    State(app): State<AppState>,
+    Path(id): Path<String>,
+    Json(input): Json<ExistingReconnect>,
+) -> ApiResult<Value> {
+    Ok(Json(
+        app.store
+            .reconnect_existing_plan(&id, &input.server_id, &input.container)
+            .await?,
+    ))
+}
+async fn existing_reconnect_apply(
+    State(app): State<AppState>,
+    Path(id): Path<String>,
+    Json(input): Json<ExistingReconnect>,
+) -> ApiResult<Value> {
+    Ok(Json(json!(
+        app.store
+            .reconnect_existing(&id, &input.server_id, &input.container, &input.revision)
+            .await?
+    )))
+}
 async fn existing_link(
     State(app): State<AppState>,
     Json(input): Json<crate::adoption::LinkExisting>,
@@ -753,10 +797,85 @@ async fn state(State(app): State<AppState>) -> ApiResult<Value> {
     ))
 }
 async fn docker(State(app): State<AppState>) -> Json<Value> {
-    Json(match app.store.statuses().await {
-        Ok(v) => v,
-        Err(e) => json!({"available": false, "message": format!("{e:#}"), "containers": []}),
-    })
+    Json(app.store.dashboard_docker_status("local").await)
+}
+async fn docker_mode(State(app): State<AppState>) -> ApiResult<Value> {
+    Ok(Json(json!(app.store.local_docker_mode()?)))
+}
+async fn set_docker_mode(
+    State(app): State<AppState>,
+    Json(mode): Json<crate::dashboard::LocalDockerMode>,
+) -> ApiResult<Value> {
+    Ok(Json(json!(app.store.set_local_docker_mode(mode)?)))
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct IdentityHandoff {
+    code: String,
+    #[serde(default)]
+    revision: String,
+    #[serde(default)]
+    callbacks_confirmed: bool,
+}
+async fn handoff_plan(
+    State(app): State<AppState>,
+    Json(input): Json<IdentityHandoff>,
+) -> ApiResult<Value> {
+    Ok(Json(crate::identity_assist::handoff_plan(
+        &app.store,
+        &input.code,
+    )?))
+}
+async fn handoff_apply(
+    State(app): State<AppState>,
+    Json(input): Json<IdentityHandoff>,
+) -> ApiResult<Value> {
+    Ok(Json(crate::identity_assist::handoff_apply(
+        &app.store,
+        &input.code,
+        &input.revision,
+        input.callbacks_confirmed,
+    )?))
+}
+async fn ssh_profiles(State(app): State<AppState>) -> ApiResult<Value> {
+    Ok(Json(json!(app.store.ssh_profiles()?)))
+}
+async fn ssh_create(
+    State(app): State<AppState>,
+    Json(input): Json<crate::ssh_keys::Create>,
+) -> ApiResult<Value> {
+    Ok(Json(app.store.ssh_create(input).await?))
+}
+async fn ssh_show(State(app): State<AppState>, Path(id): Path<String>) -> ApiResult<Value> {
+    Ok(Json(app.store.ssh_show(&id)?))
+}
+async fn ssh_scan(State(app): State<AppState>, Path(id): Path<String>) -> ApiResult<Value> {
+    Ok(Json(app.store.ssh_scan(&id).await?))
+}
+async fn ssh_trust(
+    State(app): State<AppState>,
+    Path(id): Path<String>,
+    Json(input): Json<crate::ssh_keys::Trust>,
+) -> ApiResult<Value> {
+    Ok(Json(app.store.ssh_trust(&id, input).await?))
+}
+async fn ssh_enable(State(app): State<AppState>, Path(id): Path<String>) -> ApiResult<Value> {
+    Ok(Json(app.store.ssh_enable(&id)?))
+}
+async fn ssh_test(State(app): State<AppState>, Path(id): Path<String>) -> ApiResult<Value> {
+    Ok(Json(app.store.ssh_test(&id).await?))
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RemoveSsh {
+    revoked: bool,
+}
+async fn ssh_remove(
+    State(app): State<AppState>,
+    Path(id): Path<String>,
+    Json(input): Json<RemoveSsh>,
+) -> ApiResult<Value> {
+    Ok(Json(app.store.ssh_remove(&id, input.revoked)?))
 }
 async fn servers(State(app): State<AppState>) -> ApiResult<Value> {
     Ok(Json(json!(app.store.servers()?)))
@@ -778,11 +897,9 @@ async fn inventory(State(app): State<AppState>, Path(id): Path<String>) -> ApiRe
     Ok(Json(app.store.infrastructure_inventory(&id).await?))
 }
 async fn server_docker(State(app): State<AppState>, Path(id): Path<String>) -> Json<Value> {
-    Json(match app.store.server_statuses(&id).await {
-        Ok(v) => v,
-        Err(e) => json!({"available":false,"message":format!("{e:#}"),"containers":[]}),
-    })
+    Json(app.store.dashboard_docker_status(&id).await)
 }
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Destination {
@@ -983,6 +1100,56 @@ async fn parse_compose(Json(input): Json<ComposeText>) -> ApiResult<Value> {
 }
 async fn databases(State(app): State<AppState>) -> ApiResult<Value> {
     Ok(Json(json!(app.store.database_sources()?)))
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RenameDatabase {
+    name: String,
+}
+async fn rename_database(
+    State(app): State<AppState>,
+    Path(id): Path<String>,
+    Json(input): Json<RenameDatabase>,
+) -> ApiResult<Value> {
+    app.store.rename_database_source(&id, &input.name)?;
+    Ok(Json(json!({"saved":true})))
+}
+async fn database_references(
+    State(app): State<AppState>,
+    Path(id): Path<String>,
+) -> ApiResult<Value> {
+    Ok(Json(json!(app.store.database_source_references(&id)?)))
+}
+async fn test_database(State(app): State<AppState>, Path(id): Path<String>) -> ApiResult<Value> {
+    app.store.test_database_source(&id).await?;
+    Ok(Json(json!({"connected":true})))
+}
+async fn edit_database(
+    State(app): State<AppState>,
+    Path(id): Path<String>,
+    Json(input): Json<crate::database::Source>,
+) -> ApiResult<Value> {
+    app.store.edit_database_source(&id, input).await?;
+    Ok(Json(json!({"saved":true})))
+}
+async fn remove_database(
+    State(app): State<AppState>,
+    Path(id): Path<String>,
+    Json(input): Json<Confirmation>,
+) -> ApiResult<Value> {
+    let sources = app.store.database_sources()?;
+    let source = sources
+        .iter()
+        .find(|s| s["id"] == id)
+        .ok_or_else(|| anyhow::anyhow!("Database source not found"))?;
+    if source["name"].as_str() != Some(input.confirmation.as_str()) {
+        return Err(anyhow::anyhow!(
+            "Confirm the database source name before removing its connection"
+        )
+        .into());
+    }
+    app.store.remove_database_source(&id)?;
+    Ok(Json(json!({"removed":true,"database_preserved":true})))
 }
 async fn database_engines() -> ApiResult<Value> {
     Ok(Json(json!(crate::catalog::database_drivers()?)))
@@ -1383,6 +1550,15 @@ fn router(app: AppState) -> Router {
         .route("/existing/{id}", axum::routing::delete(existing_unlink))
         .route("/existing/{id}/status", get(existing_status))
         .route("/existing/{id}/stats", get(existing_stats))
+        .route(
+            "/existing/{id}/reconnect/plan",
+            post(existing_reconnect_plan),
+        )
+        .route(
+            "/existing/{id}/reconnect/apply",
+            post(existing_reconnect_apply),
+        )
+        .route("/servers/{id}/existing", get(existing_discovery))
         .route("/existing/{id}/permissions", put(existing_consent))
         .route("/existing/{id}/actions/{action}", post(existing_action))
         .route("/projects/{id}/removal/plan", post(removal_plan))
@@ -1401,6 +1577,13 @@ fn router(app: AppState) -> Router {
         .route("/login/settings", get(login_settings))
         .route("/login/logout", post(login_logout))
         .route("/databases", get(databases).post(add_database))
+        .route(
+            "/databases/{id}",
+            put(edit_database).delete(remove_database),
+        )
+        .route("/databases/{id}/test", post(test_database))
+        .route("/databases/{id}/rename", post(rename_database))
+        .route("/databases/{id}/references", get(database_references))
         .route("/database-engines", get(database_engines))
         .route("/databases/{id}/start", post(start_database))
         .route("/projects/{id}/database", post(select_database))
@@ -1420,6 +1603,19 @@ fn router(app: AppState) -> Router {
         .route("/servers/{id}/guest-move-plan", post(guest_plan))
         .route("/servers/{id}/guest-move", post(guest_move))
         .route("/servers/{id}/guest-task", post(guest_task))
+        .route(
+            "/dashboard/docker-mode",
+            get(docker_mode).put(set_docker_mode),
+        )
+        .route("/login/handoff/plan", post(handoff_plan))
+        .route("/login/handoff/apply", post(handoff_apply))
+        .route("/ssh", get(ssh_profiles).post(ssh_create))
+        .route("/ssh/{id}", get(ssh_show))
+        .route("/ssh/{id}/scan", post(ssh_scan))
+        .route("/ssh/{id}/trust", post(ssh_trust))
+        .route("/ssh/{id}/enable", post(ssh_enable))
+        .route("/ssh/{id}/test", post(ssh_test))
+        .route("/ssh/{id}/remove", post(ssh_remove))
         .route("/servers", get(servers).post(add_server))
         .route("/servers/{id}", put(edit_server))
         .route("/servers/{id}/inventory", get(inventory))
@@ -1589,7 +1785,7 @@ pub(crate) fn validate_bind(store: &Store, bind: IpAddr) -> Result<()> {
     Ok(())
 }
 
-fn recovery_address(
+pub(crate) fn recovery_address(
     bind: IpAddr,
     port: u16,
     config: Option<&crate::auth::LoginConfig>,
@@ -1671,6 +1867,16 @@ pub async fn serve(store: Store, bind: IpAddr, port: u16, setup: bool) -> Result
         );
     }
     println!("Schedules run while this process is open. Press Ctrl+C to stop.");
+    let diagnostic_login = app.store.login_config()?;
+    let access_checks = crate::access_diagnostics::Remote::detect().map(|_| {
+        let port = app.port;
+        tokio::spawn(async move {
+            match crate::access_diagnostics::diagnose(bind, port, &Default::default(), true, diagnostic_login.as_ref()).await {
+                Ok(report) => report.print(),
+                Err(_) => eprintln!("Access checks could not complete. Run selfhost dashboard diagnose on this server."),
+            }
+        })
+    });
     let scheduler_shutdown = app.shutdown.clone();
     let scheduler = tokio::spawn(async move {
         let mut timer = tokio::time::interval(Duration::from_secs(30));
@@ -1722,6 +1928,10 @@ pub async fn serve(store: Store, bind: IpAddr, port: u16, setup: bool) -> Result
         shutdown.cancel();
     })
     .await?;
+    if let Some(task) = access_checks {
+        task.abort();
+        let _ = task.await;
+    }
     scheduler.await?;
     Ok(())
 }

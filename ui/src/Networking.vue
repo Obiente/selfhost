@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import SshConnections from './SshConnections.vue';
+import ProfileField from './components/ProfileField.vue';
+import StringListInput from './components/StringListInput.vue';
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
 const props = defineProps<{
   api: (path: string, method?: string, body?: unknown) => Promise<any>;
@@ -31,7 +34,7 @@ const network = reactive({
   name: '',
   provider: '',
   description: '',
-  endpoints: '',
+  endpoints: [] as string[],
   policy_reference: '',
 });
 const route = reactive({
@@ -44,11 +47,19 @@ const route = reactive({
   network_id: '',
 });
 const profile = computed(() => inventory.value.proxy_profiles[proxy.provider]);
+const proxyFields = computed(() =>
+  Object.entries(profile.value?.settings_schema || {})
+    .filter(
+      ([, rule]: any) =>
+        !rule.required_when || proxy.settings[rule.required_when[0]] === rule.required_when[1],
+    )
+    .map(([id, rule]: any) => ({ id, ...rule })),
+);
 const selectedProject = computed(() => props.projects.find((p) => p.id === route.project_id));
 watch(
   () => proxy.provider,
   () => {
-    proxy.settings = { ...profile.value?.defaults };
+    proxy.settings = JSON.parse(JSON.stringify(profile.value?.defaults || {}));
   },
 );
 watch(route, () => (plan.value = null), { deep: true });
@@ -101,8 +112,12 @@ async function saveProxy() {
       string,
       any,
     ][]) {
-      if (rule.kind === 'certificate' && settings[key] !== 'new')
-        settings[key] = Number(settings[key]);
+      if (rule.kind === 'certificate' && settings[key] !== 'new') {
+        const value = Number(settings[key]);
+        if (!Number.isSafeInteger(value) || value < 1)
+          throw Error('Choose an existing certificate ID or request a new certificate.');
+        settings[key] = value;
+      }
     }
     await props.api(
       proxy.id ? `/networking/proxies/${proxy.id}` : '/networking/proxies',
@@ -118,10 +133,7 @@ async function saveNetwork() {
   await run(async () => {
     await props.api('/networking/networks', 'POST', {
       ...network,
-      endpoints: network.endpoints
-        .split('\n')
-        .map((s) => s.trim())
-        .filter(Boolean),
+      endpoints: network.endpoints.map((s) => s.trim()).filter(Boolean),
     });
     await load();
     message.value =
@@ -168,7 +180,16 @@ onMounted(() => run(load));
     <p v-if="error" class="monitor-error" role="alert">{{ error }}</p>
     <p v-if="message" role="status">{{ message }}</p>
     <section v-if="tab === 'Proxies'" class="panel">
-      <h2>Connect a reverse proxy</h2>
+      <h2>Reverse proxy connections</h2>
+      <SshConnections
+        :api="api"
+        purpose="proxy"
+        @select="
+          (alias) => {
+            proxy.ssh_alias = alias;
+          }
+        "
+      />
       <p>Connect directly to its HTTPS API, or through an SSH alias for its host, VM or LXC.</p>
       <div v-for="p in inventory.data.proxies" :key="p.id" class="saved">
         <strong>{{ p.name }}</strong
@@ -176,8 +197,15 @@ onMounted(() => run(load));
           >{{ inventory.proxy_profiles[p.provider]?.name || p.provider }} ·
           {{ p.read_only ? 'Read only' : 'Writes enabled' }}</span
         >
+        <button type="button" class="button" :disabled="busy" @click="editProxy(p)">
+          View and edit
+        </button>
       </div>
+      <button type="button" class="button" :disabled="busy" @click="newProxy">
+        New proxy connection
+      </button>
       <form @submit.prevent="saveProxy">
+        <h3>{{ proxy.id ? 'Edit ' + proxy.name : 'Connect a reverse proxy' }}</h3>
         <div class="fields">
           <label>Name<input v-model="proxy.name" required /></label
           ><label
@@ -225,50 +253,21 @@ onMounted(() => run(load));
                   >Leave blank to keep the existing token for this connection.</small
                 ></label
               ></template
-            ><label v-for="(rule, key) in profile.settings_schema" :key="key"
-              >{{ rule.label
-              }}<template v-if="rule.kind === 'ca_pool'"
-                ><select
-                  :value="proxy.settings[key] === null ? 'system' : 'file'"
-                  @change="
-                    proxy.settings[key] =
-                      ($event.target as HTMLSelectElement).value === 'system'
-                        ? null
-                        : { provider: 'file', pem_files: [] }
-                  "
-                >
-                  <option value="system">System certificate authorities</option>
-                  <option value="file">Private CA files on the proxy</option></select
-                ><textarea
-                  v-if="proxy.settings[key]"
-                  :value="proxy.settings[key].pem_files.join('\n')"
-                  @input="
-                    proxy.settings[key].pem_files = ($event.target as HTMLTextAreaElement).value
-                      .split('\n')
-                      .filter(Boolean)
-                  "
-                  rows="3"
-                /></template
-              ><textarea
-                v-else-if="rule.kind === 'paths'"
-                :value="proxy.settings[key].join('\n')"
-                @input="
-                  proxy.settings[key] = ($event.target as HTMLTextAreaElement).value
-                    .split('\n')
-                    .filter(Boolean)
-                "
-                rows="3" /><input
-                v-else-if="rule.kind === 'accept'"
-                v-model="proxy.settings[key]"
-                type="checkbox" /><input
-                v-else
-                v-model="proxy.settings[key]"
-                :type="rule.kind === 'email' ? 'email' : 'text'"
-            /></label>
+            ><ProfileField
+              v-for="rule in proxyFields"
+              :key="rule.id"
+              :field="rule"
+              v-model="proxy.settings[rule.id]"
+              :disabled="busy"
+            />
           </div>
           <label class="check"><input v-model="proxy.read_only" type="checkbox" />Read only</label>
           <p v-if="!proxy.read_only">Reviewed route changes can be written to this proxy.</p>
-          <button class="button primary" :disabled="busy">Save proxy connection</button></template
+          <button class="button primary" :disabled="busy">
+            {{ proxy.id ? 'Save changes' : 'Save proxy connection' }}</button
+          ><button v-if="proxy.id" type="button" class="button" :disabled="busy" @click="newProxy">
+            Cancel editing
+          </button></template
         >
       </form>
     </section>
@@ -297,14 +296,11 @@ onMounted(() => run(load));
         <p>
           {{ inventory.network_profiles.find((p: any) => p.id === network.provider)?.guidance }}
         </p>
-        <label
-          >Endpoint identities<textarea
-            v-model="network.endpoints"
-            rows="3"
-            placeholder="One host or peer identity per line"
-            required
-          /></label
-        ><label
+        <StringListInput
+          v-model="network.endpoints"
+          label="Peer identities or endpoints"
+          :disabled="busy"
+        /><label
           >Access policy reference<input
             v-model="network.policy_reference"
             placeholder="Proxy peers may reach app peers on TCP 8443"

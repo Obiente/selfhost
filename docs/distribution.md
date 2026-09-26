@@ -1,7 +1,7 @@
 # Distribution and releases
 
 Selfhost uses one executable and matching versions on npm and crates.io. This
-checkout targets **0.1.3**. See the [release page](https://github.com/Obiente/selfhost/releases/tag/v0.1.3)
+checkout targets **0.1.4**. See the [release page](https://github.com/Obiente/selfhost/releases/tag/v0.1.4)
 for publication status and release notes. User installation commands are in
 [getting started](getting-started.md).
 
@@ -87,7 +87,7 @@ launchers](https://pnpm.io/cli/dlx).
 Update `Cargo.toml`, `Cargo.lock`, `packages/selfhost/package.json`, the dashboard
 package version and installation examples together. Choose an unused version on
 both registries. Version 0.1.0 already exists on crates.io, so the prepared release
-uses 0.1.3.
+uses 0.1.4.
 
 Review source and staged diffs for private paths, credentials and local captures.
 Run **Release packages** from a reviewed branch with both publication inputs off.
@@ -97,7 +97,7 @@ five targets.
 
 ### Publish later
 
-After release approval, create the matching tag, such as `v0.1.3`. Run **Release
+After release approval, create the matching tag, such as `v0.1.4`. Run **Release
 packages** manually **on that tag**, selecting `publish_npm`, `publish_cargo`, or
 both. The workflow rejects a publication request from a branch or a mismatched
 tag. All build and installation gates run again before the environment approval
@@ -109,22 +109,10 @@ registry enabled. Check package metadata and perform fresh registry installation
 on supported platforms afterward. Confirm the release notes and installation
 instructions match the versions actually available on each registry.
 
-If npm publication fails after every build and installation gate passes, the
-`verified_npm_run` input can recover the tested package. Run the workflow from
-`main`, enable only `publish_npm`, and enter the original tagged run ID. Recovery
-verifies the original workflow, unchanged release tag, source checks, all six
-native and installation jobs, archive checksum and package metadata. It corrects
-only the casing of `repository.url` to match GitHub's canonical owner name for
-provenance verification. Repacking must preserve the entry list and every other
-file byte for byte. The corrected archive receives a new checksum, an installation
-smoke test and a separate workflow artifact. Recovery does not rebuild binaries,
-move the tag or publish Cargo again. Use this only for an
-already reviewed release; it cannot bypass failed build or installation tests.
-
 The `binary-release` artifact contains the six native executables, shell and
 PowerShell installers, and `BINARY-SHA256SUMS`. It is assembled from the same
-checksum-verified binaries bundled in npm. Installation tests cover refusal to
-overwrite, corrupt-download rejection, explicit replacement and backup on the
+checksum-verified binaries bundled in npm. Installation tests cover unchanged installs, corrupt-download rejection,
+automatic replacement and backup on the
 six native runners. Upload these files together as GitHub Release assets to enable
 direct installation. Keep binary checksums separate from npm/crate archive checksums.
 

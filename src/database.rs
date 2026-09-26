@@ -283,6 +283,202 @@ pub(crate) fn postgres_client(
 }
 
 impl Store {
+    fn database_sources_lock(&self) -> Result<std::fs::File> {
+        use fs2::FileExt;
+        let file = std::fs::OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .read(true)
+            .write(true)
+            .open(self.root.join("database-sources.lock"))?;
+        file.try_lock_exclusive()
+            .context("Another database source operation is running")?;
+        Ok(file)
+    }
+    pub fn database_source_references(&self, id: &str) -> Result<Vec<String>> {
+        let mut references = Vec::new();
+        for project in self.read()?.projects {
+            let setup = self.setup(&project.id)?;
+            if setup
+                .database
+                .as_ref()
+                .is_some_and(|b| b.source_id.as_deref() == Some(id))
+            {
+                references.push(project.name);
+            }
+        }
+        Ok(references)
+    }
+    fn backup_database_source(&self, source: &Source) -> Result<()> {
+        let directory = self.root.join("database-source-recovery");
+        crate::core::private_dir(&directory)?;
+        atomic_write(
+            &directory.join(format!("{}-{}.json", source.id, token(8)?)),
+            &serde_json::to_vec_pretty(source)?,
+        )
+    }
+    pub fn rename_database_source(&self, id: &str, name: &str) -> Result<()> {
+        let _lock = self.database_sources_lock()?;
+        ensure!(
+            !name.trim().is_empty() && name.len() <= 64,
+            "Choose a source name up to 64 characters"
+        );
+        let mut source = self.database_source(id)?;
+        self.backup_database_source(&source)?;
+        source.name = name.trim().into();
+        atomic_write(
+            &self
+                .root
+                .join("database-sources")
+                .join(format!("{id}.json")),
+            &serde_json::to_vec_pretty(&source)?,
+        )
+    }
+    pub fn remove_database_source(&self, id: &str) -> Result<()> {
+        let _lock = self.database_sources_lock()?;
+        let source = self.database_source(id)?;
+        ensure!(
+            self.database_source_references(id)?.is_empty(),
+            "This database source is still referenced by projects"
+        );
+        self.backup_database_source(&source)?;
+        fs::remove_file(
+            self.root
+                .join("database-sources")
+                .join(format!("{id}.json")),
+        )?;
+        // This removes only a connection record. Hosted database projects and volumes remain intact.
+        Ok(())
+    }
+    pub async fn edit_database_source(&self, id: &str, mut replacement: Source) -> Result<()> {
+        let _lock = self.database_sources_lock()?;
+        let old = self.database_source(id)?;
+        ensure!(
+            old.managed_project.is_none(),
+            "Use source rename for a managed database; changing its saved password does not rotate the database account"
+        );
+        if replacement.password.is_empty() {
+            replacement.password = old.password.clone();
+        }
+        ensure!(
+            replacement.id == old.id
+                && replacement.engine == old.engine
+                && replacement.kind == old.kind
+                && replacement.server_id == old.server_id
+                && replacement.network == old.network
+                && replacement.managed_project == old.managed_project,
+            "Source identity, engine, placement and ownership cannot change"
+        );
+        ensure!(
+            !replacement.name.trim().is_empty() && replacement.name.len() <= 64,
+            "Choose a source name up to 64 characters"
+        );
+        ensure!(
+            replacement.port > 0
+                && !replacement.host.is_empty()
+                && !replacement.username.is_empty()
+                && !replacement.database.is_empty()
+                && !replacement.password.is_empty(),
+            "Complete the database connection"
+        );
+        ensure!(
+            [
+                &replacement.host,
+                &replacement.username,
+                &replacement.database,
+                &replacement.password,
+                &replacement.auth_database
+            ]
+            .iter()
+            .all(|v| !v.contains(['\0', '\r', '\n'])),
+            "Database values must be single lines"
+        );
+        ensure!(
+            ["disable", "require", "verify-full"].contains(&replacement.ssl_mode.as_str()),
+            "Invalid TLS mode"
+        );
+        if !self.database_source_references(id)?.is_empty() {
+            ensure!(
+                old.host == replacement.host
+                    && old.port == replacement.port
+                    && old.database == replacement.database
+                    && old.ssl_mode == replacement.ssl_mode
+                    && old.auth_database == replacement.auth_database,
+                "Projects use this source. Changing its database destination or TLS settings needs a reviewed data migration"
+            );
+            if old.kind == "external" {
+                ensure!(
+                    old.username == replacement.username && old.password == replacement.password,
+                    "Projects use these credentials. Rotate their database account and app connections together before changing the source"
+                );
+            }
+        }
+        connection_uri(&replacement.connection())?;
+        self.test_database_connection(&replacement).await?;
+        self.backup_database_source(&old)?;
+        atomic_write(
+            &self
+                .root
+                .join("database-sources")
+                .join(format!("{id}.json")),
+            &serde_json::to_vec_pretty(&replacement)?,
+        )
+    }
+    pub async fn test_database_source(&self, id: &str) -> Result<()> {
+        self.test_database_connection(&self.database_source(id)?)
+            .await
+    }
+    async fn test_database_connection(&self, source: &Source) -> Result<()> {
+        let connection = source.connection();
+        let client=match source.engine.as_str() {
+            "postgres"=>postgres_client(&connection,vec!["psql".into(),"-X".into(),"-v".into(),"ON_ERROR_STOP=1".into()],Some(b"SELECT 1;\n".to_vec()))?,
+            "mysql"|"mariadb"=>crate::database_mysql::client(&connection,"query",Some(b"SELECT 1;\n".to_vec()))?,
+            "mongodb"=>ClientCommand {
+                image:crate::catalog::database_driver("mongodb")?["image"].as_str().context("Missing client image")?.into(),
+                argv:crate::database_mongo::provisioning_command(),environment:BTreeMap::new(),
+                input:Some(format!("const target=new Mongo({}).getDB({}); if(target.runCommand({{ping:1}}).ok!==1) throw new Error('Connection failed');",serde_json::to_string(&crate::database_mongo::uri(&connection)?)?,serde_json::to_string(&connection.database)?).into_bytes()),
+            },
+            _=>anyhow::bail!("Unsupported database engine"),
+        };
+        let server = self.server(&source.server_id)?;
+        let name = format!("selfhost-db-check-{}", token(6)?);
+        let mut command = server.docker_command(true)?;
+        command.args(["run", "--rm", "-i", "--name", &name]);
+        if let Some(network) = &source.network {
+            command.args(["--network", network]);
+        }
+        for (key, value) in &client.environment {
+            command.args(["--env", key]);
+            command.env(key, value);
+        }
+        command
+            .arg(&client.image)
+            .args(&client.argv)
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .kill_on_drop(true);
+        let result = async {
+            let mut child = command.spawn()?;
+            child
+                .stdin
+                .take()
+                .context("Missing database input")?
+                .write_all(client.input.as_deref().unwrap_or_default())
+                .await?;
+            let status = tokio::time::timeout(Duration::from_secs(120), child.wait()).await??;
+            ensure!(
+                status.success(),
+                "Database connection failed. Check its host, credentials, TLS and host access"
+            );
+            Ok::<_, anyhow::Error>(())
+        }
+        .await;
+        let mut cleanup = server.docker_command(true)?;
+        cleanup.args(["rm", "-f", &name]);
+        let _ = crate::core::run(cleanup, 15).await;
+        result
+    }
     pub(crate) fn check_database_ready(&self, id: &str) -> Result<()> {
         if let Some(database) = self.setup(id)?.database {
             ensure!(
@@ -449,6 +645,7 @@ impl Store {
         .await
     }
     pub fn configure_database(&self, id: &str, selection: Selection) -> Result<()> {
+        let _sources = self.database_sources_lock()?;
         let _operation = self.project_lock(id)?;
         ensure!(
             ["dedicated", "external", "shared"].contains(&selection.mode.as_str()),
@@ -726,6 +923,7 @@ impl Store {
         Ok(())
     }
     pub async fn provision_database(&self, id: &str) -> Result<()> {
+        let _sources = self.database_sources_lock()?;
         let _operation = self.project_lock(id)?;
         self.project_docker(&self.project(id)?, true)?;
         let setup = self.setup(id)?;
@@ -824,6 +1022,103 @@ impl Store {
 
 #[cfg(test)]
 mod tests {
+    fn external_fixture(store: &Store) -> String {
+        store
+            .add_database_source(NewSource {
+                engine: "postgres".into(),
+                auth_database: String::new(),
+                name: "Fixture database".into(),
+                kind: "external".into(),
+                managed: false,
+                server_id: "local".into(),
+                host: "database.example.test".into(),
+                port: 5432,
+                username: "fixture".into(),
+                password: "synthetic-database-password".into(),
+                database: "fixture".into(),
+                ssl_mode: "verify-full".into(),
+            })
+            .unwrap()
+    }
+    #[test]
+    fn source_removal_preserves_recovery_copy_and_rejects_references() {
+        let directory = tempfile::tempdir().unwrap();
+        let store = Store::open(directory.path().into()).unwrap();
+        let id = external_fixture(&store);
+        store
+            .rename_database_source(&id, "Renamed database")
+            .unwrap();
+        assert_eq!(store.database_source(&id).unwrap().name, "Renamed database");
+        let setup = Setup {
+            compose: json!({"services":{"app":{"image":"example/app:1"}}}),
+            environment: BTreeMap::new(),
+            files: BTreeMap::new(),
+            database: Some(Binding {
+                engine: "postgres".into(),
+                mode: "external".into(),
+                source_id: Some(id.clone()),
+                provisioned: true,
+                provisioning_uncertain: false,
+            }),
+        };
+        store.create_setup("Example app", "local", setup).unwrap();
+        assert!(store.remove_database_source(&id).is_err());
+        assert!(store.database_source(&id).is_ok());
+        let unreferenced = external_fixture(&store);
+        store.remove_database_source(&unreferenced).unwrap();
+        assert!(store.database_source(&unreferenced).is_err());
+        assert_eq!(
+            fs::read_dir(directory.path().join("database-source-recovery"))
+                .unwrap()
+                .count(),
+            2
+        );
+        assert_eq!(store.read().unwrap().projects.len(), 1);
+    }
+    #[tokio::test]
+    async fn referenced_external_source_rejects_redirect_and_password_change_before_network() {
+        let directory = tempfile::tempdir().unwrap();
+        let store = Store::open(directory.path().into()).unwrap();
+        let id = external_fixture(&store);
+        let setup = Setup {
+            compose: json!({"services":{"app":{"image":"example/app:1"}}}),
+            environment: BTreeMap::new(),
+            files: BTreeMap::new(),
+            database: Some(Binding {
+                engine: "postgres".into(),
+                mode: "external".into(),
+                source_id: Some(id.clone()),
+                provisioned: true,
+                provisioning_uncertain: false,
+            }),
+        };
+        store.create_setup("Example app", "local", setup).unwrap();
+        let original = store.database_source(&id).unwrap();
+        let mut changed = original.clone();
+        changed.host = "another.example.test".into();
+        assert!(
+            store
+                .edit_database_source(&id, changed)
+                .await
+                .unwrap_err()
+                .to_string()
+                .contains("migration")
+        );
+        let mut changed = original.clone();
+        changed.password = "different-synthetic-password".into();
+        assert!(
+            store
+                .edit_database_source(&id, changed)
+                .await
+                .unwrap_err()
+                .to_string()
+                .contains("Rotate")
+        );
+        assert_eq!(
+            store.database_source(&id).unwrap().password,
+            original.password
+        );
+    }
     #[tokio::test]
     #[ignore = "Starts isolated local containers for all four database drivers and tests Store provisioning/backup/restore"]
     async fn all_engines_dedicated_shared_backup_restore_live() -> Result<()> {

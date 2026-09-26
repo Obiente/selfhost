@@ -26,7 +26,6 @@ $null = New-Item -ItemType Directory -Path $BinDir -Force
 $installRoot = (Resolve-Path -LiteralPath $BinDir).Path
 $target = Join-Path $installRoot 'selfhost.exe'
 if (Test-Path -LiteralPath $target) {
-    if (-not $Force) { throw 'Selfhost already exists here. Use -Force to update it with a backup.' }
     $existing = Get-Item -LiteralPath $target
     if ($existing.PSIsContainer -or ($existing.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
         throw 'Refusing to replace a link or non-file.'
@@ -49,7 +48,14 @@ try {
     $installedVersion = & $download --version
     if ($LASTEXITCODE -ne 0 -or $installedVersion -notmatch '^selfhost \d+\.\d+\.\d+$') { throw 'Downloaded binary did not start correctly.' }
     if ($Version -ne 'latest' -and $installedVersion -cne "selfhost $Version") { throw 'Downloaded binary reports a different version.' }
-    if (Test-Path -LiteralPath $target) {
+    $unchanged = (Test-Path -LiteralPath $target) -and -not $Force -and ((Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant() -ceq $expected)
+    if ($unchanged) {
+        Write-Output "$installedVersion is already up to date at $target"
+    } elseif (Test-Path -LiteralPath $target) {
+        $existing = Get-Item -LiteralPath $target
+        if ($existing.PSIsContainer -or ($existing.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+            throw 'Refusing to replace a link or non-file.'
+        }
         $backup = $target + '.backup.' + [guid]::NewGuid().ToString('N')
         [IO.File]::Replace($download, $target, $backup)
         Write-Output "Previous binary kept at $backup"
@@ -58,13 +64,17 @@ try {
     }
     if (-not $NoModifyPath) {
         $userPath = [string][Environment]::GetEnvironmentVariable('Path', 'User')
-        if (@($userPath -split ';' | Where-Object { $_.TrimEnd('\') -ieq $installRoot.TrimEnd('\') }).Count -eq 0) {
-            [Environment]::SetEnvironmentVariable('Path', (($userPath.TrimEnd(';') + ';' + $installRoot).TrimStart(';')), 'User')
+        $userEntries = @($userPath -split ';' | Where-Object { $_ -and $_.TrimEnd('\') -ine $installRoot.TrimEnd('\') })
+        $updatedUserPath = (@($installRoot) + $userEntries) -join ';'
+        if ($userPath -cne $updatedUserPath) {
+            [Environment]::SetEnvironmentVariable('Path', $updatedUserPath, 'User')
         }
-        if (@($env:PATH -split ';' | Where-Object { $_.TrimEnd('\') -ieq $installRoot.TrimEnd('\') }).Count -eq 0) { $env:PATH = "$installRoot;$env:PATH" }
+        $sessionEntries = @($env:PATH -split ';' | Where-Object { $_ -and $_.TrimEnd('\') -ine $installRoot.TrimEnd('\') })
+        $env:PATH = (@($installRoot) + $sessionEntries) -join ';'
     }
-    Write-Output "Installed $installedVersion at $target"
-    Write-Output 'Run selfhost --help or selfhost serve. Open a new terminal if needed. No services were started.'
+    if (-not $unchanged) { Write-Output "Installed $installedVersion at $target" }
+    if (-not $NoModifyPath) { Write-Output 'PATH is configured for this PowerShell session and future terminals.' }
+    Write-Output 'Run selfhost --help or selfhost serve. No services were started.'
 } finally {
     $resolvedStage = (Resolve-Path -LiteralPath $stage).Path
     if ([IO.Path]::GetDirectoryName($resolvedStage) -ne $installRoot -or [IO.Path]::GetFileName($resolvedStage) -notlike '.selfhost-install-*') { throw 'Unexpected installer staging path.' }

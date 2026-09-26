@@ -2,6 +2,7 @@
 import { sessionFetch } from './session';
 import { ref, computed, onMounted } from 'vue';
 import IdentityConnection from './IdentityConnection.vue';
+import ProfileField from './components/ProfileField.vue';
 type Field = {
   id: string;
   label: string;
@@ -71,22 +72,23 @@ const actions = computed(
   () => profile.value?.actions.filter((a: any) => advanced.value || !a.advanced) || [],
 );
 function display(v: any, f: Field) {
-  return ['string_list', 'arguments', 'json'].includes(f.kind)
-    ? JSON.stringify(v ?? [], null, 2)
-    : (v ?? '');
+  if (['string_list', 'arguments'].includes(f.kind)) return JSON.parse(JSON.stringify(v ?? []));
+  if (f.kind === 'json') return JSON.parse(JSON.stringify(v ?? {}));
+  return v ?? '';
 }
 function typed(v: any, f: Field) {
-  if (['string_list', 'arguments', 'json'].includes(f.kind)) return JSON.parse(v);
   if (f.kind === 'integer') {
-    if (v === '') throw Error(`${f.label} needs a number`);
-    return Number(v);
+    const number = Number(v);
+    if (v === '' || !Number.isSafeInteger(number)) throw Error(`${f.label} needs a whole number`);
+    return number;
   }
   return v;
 }
 function changes() {
   const out: Record<string, any> = {};
   for (const f of profile.value.fields) {
-    if (values.value[f.id] !== original.value[f.id]) out[f.id] = typed(values.value[f.id], f);
+    if (JSON.stringify(values.value[f.id]) !== JSON.stringify(original.value[f.id]))
+      out[f.id] = typed(values.value[f.id], f);
   }
   return out;
 }
@@ -98,7 +100,7 @@ async function load() {
     for (const f of profile.value.fields) {
       values.value[f.id] = display(d.values[f.id], f);
     }
-    original.value = { ...values.value };
+    original.value = JSON.parse(JSON.stringify(values.value));
     plan.value = null;
   } catch (e) {
     error.value = (e as Error).message;
@@ -183,28 +185,18 @@ onMounted(async () => {
       </p>
       <button class="text-button" :disabled="busy" @click="load">Read current settings</button>
       <form @submit.prevent="preview">
-        <label v-for="f in fields" :key="f.id"
-          >{{ f.label
-          }}<input
-            v-if="f.kind === 'boolean'"
-            type="checkbox"
-            v-model="values[f.id]"
-            @change="plan = null"
-          /><select v-else-if="f.choices?.length" v-model="values[f.id]" @change="plan = null">
-            <option value="">Not set</option>
-            <option v-for="v in f.choices" :key="v">{{ v }}</option></select
-          ><textarea
-            v-else-if="['string_list', 'arguments', 'json'].includes(f.kind)"
-            v-model="values[f.id]"
-            rows="3"
-            @input="plan = null"
-          /><input
-            v-else
-            :type="f.kind === 'integer' ? 'number' : f.kind === 'secret' ? 'password' : 'text'"
-            v-model="values[f.id]"
-            @input="plan = null"
-          /><small>{{ f.description }}</small></label
-        ><button class="button" :disabled="busy || !writable">Preview changes</button>
+        <ProfileField
+          v-for="f in fields"
+          :key="f.id"
+          :field="f"
+          :model-value="values[f.id]"
+          :disabled="busy || !writable"
+          @update:model-value="
+            values[f.id] = $event;
+            plan = null;
+          "
+        />
+        <button class="button" :disabled="busy || !writable">Preview changes</button>
       </form>
       <section v-if="plan">
         <h3>Review changes</h3>
@@ -270,19 +262,14 @@ onMounted(async () => {
       <form v-if="action" @submit.prevent="run">
         <h3>{{ action.label }}</h3>
         <p>{{ action.description }}</p>
-        <label v-for="f in action.inputs" :key="f.id"
-          >{{ f.label
-          }}<textarea
-            v-if="['arguments', 'string_list', 'json'].includes(f.kind)"
-            v-model="inputs[f.id]"
-            rows="3"
-            required /><input
-            v-else
-            :type="f.kind === 'secret' ? 'password' : 'text'"
-            v-model="inputs[f.id]"
-            required
-            autocomplete="off" /></label
-        ><button class="button primary" :disabled="busy || !writable">
+        <ProfileField
+          v-for="f in action.inputs"
+          :key="f.id"
+          :field="f"
+          v-model="inputs[f.id]"
+          :disabled="busy || !writable"
+        />
+        <button class="button primary" :disabled="busy || !writable">
           {{ busy ? 'Running…' : 'Run ' + action.label.toLowerCase() }}</button
         ><button type="button" class="text-button" :disabled="busy" @click="action = null">
           Cancel

@@ -42,6 +42,7 @@ export default defineConfig({
         text: 'Start here',
         items: [
           { text: 'Install Selfhost', link: '/getting-started' },
+          { text: 'Guided setup', link: '/guided-setup' },
           { text: 'Standalone CLI', link: '/standalone' },
           { text: 'Dashboard guide', link: '/dashboard' },
           { text: 'Background service & domains', link: '/dashboard-hosting' },
@@ -71,6 +72,7 @@ export default defineConfig({
           { text: 'Identity setup', link: '/identity-setup' },
           { text: 'Servers & clusters', link: '/infrastructure' },
           { text: 'Networking & login', link: '/networking-and-login' },
+          { text: 'Dedicated SSH keys', link: '/ssh-keys' },
           { text: 'Security', link: '/security' },
         ],
       },

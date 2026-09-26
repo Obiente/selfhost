@@ -13,21 +13,16 @@ For guided first-run initialization, API connections and dashboard population, s
 Open a service's **App settings** tab. Basic settings appear first; **Advanced** adds operational settings, arbitrary declared command arguments, and configuration restoration. A setting change follows preview, apply, readback verification. The preview includes a revision of the configuration and deployment: if either changes, review again.
 
 ```sh
-selfhost app-config PROJECT nextcloud
-selfhost app-plan PROJECT nextcloud changes.json
-selfhost app-apply PROJECT nextcloud changes.json --revision PREVIEW_REVISION
+selfhost app-config PROJECT nextcloud --edit
 selfhost app-action PROJECT nextcloud update-apps
 selfhost schedule PROJECT app:nextcloud:update-apps --hours 24
 selfhost app-backups PROJECT nextcloud
-selfhost app-restore PROJECT nextcloud BACKUP_ID
-selfhost app-restore PROJECT nextcloud BACKUP_ID --revision PREVIEW_REVISION
 ```
 
-Example `changes.json`:
-
-```json
-{ "default-phone-region": "NL", "maintenance-window": 3 }
-```
+Select settings from a menu and enter typed values. Action inputs use the same
+profile-driven prompts, with hidden secrets and individual list or argument
+entries. A readable review and y/n confirmation replace request files and copied
+revisions. Explicit `app-plan`/`app-apply` files remain available for automation.
 
 Backups save previous managed values before writes. Restore also previews changes, checks the revision, saves the current values, and verifies the result. A partially failed command is not automatically rolled back. Configuration backups do not replace application-data backups.
 
@@ -63,39 +58,29 @@ Mounted files currently require a local Docker engine and suitable Docker Deskto
 
 ## Guided identity connections
 
-Nextcloud and Grafana can connect to an existing ZITADEL provider. Enter the provider URL, app URL and a temporary provider token. Selfhost creates a dedicated provider project named **Selfhost** by default, discovers the token's organization, and registers one OIDC authorization-code client. ZITADEL permissions must allow `project.create` and `project.app.write`. Review the project, destination and callback before applying.
+Nextcloud and Grafana can connect to an existing ZITADEL provider. Enter the provider URL, app URL and a temporary provider token. Selfhost creates a dedicated provider project named for the app by default, discovers the token's organization, and registers one OIDC authorization-code client. ZITADEL permissions must allow `project.create` and `project.app.write`. Review the project, destination and callback before applying.
 
 Provider and app URLs accept HTTPS domains or HTTP loopback development addresses such as `http://localhost:3000`. Use origins without subpaths. A localhost callback is reached by the browser, so it must point to the app on that browser's computer. Provider discovery and API calls must also be reachable from the machine running Selfhost.
 
-```json
-{
-  "provider": "zitadel",
-  "issuer": "https://identity.example.com",
-  "app_url": "https://files.example.com",
-  "name": "Selfhost"
-}
-```
-
 ```sh
-# Supply SELFHOST_IDP_TOKEN through your shell or secret manager.
-selfhost app-connect-account PROJECT nextcloud connection.json
-selfhost app-connect-plan PROJECT nextcloud connection.json
-selfhost app-connect PROJECT nextcloud connection.json --revision PREVIEW_REVISION
-selfhost app-connection PROJECT nextcloud
-selfhost app-connection PROJECT nextcloud --resume
+selfhost app-connect PROJECT nextcloud
 ```
 
-`app-connect-account` is a read-only lookup. It reports whether the credential belongs to a human, the suggested subject ID, organization and the app's supported administrator role. The CLI does not silently grant that role: add the verified `administrator_subject` to your JSON request, then create a fresh plan. In the dashboard, **Use my provider account** selects the verified human account when the app supports it; you can clear the selection before reviewing. Machine credentials never receive app administrator access automatically.
+Choose the provider and enter its URL, the app URL and the temporary token when
+prompted. Token entry is hidden. Supported administrator mapping offers a human
+account lookup followed by an explicit authorization question. Machine credentials
+never receive app administrator access automatically. Review the complete plan
+and answer y/n; no JSON request or revision copying is needed.
 
-Advanced options include:
+Advanced options let you reuse an existing provider project, select an organization,
+load a private PEM CA bundle, or explicitly replace existing app login settings.
+The app's own runtime trust store still needs that CA when applicable. Explicit
+file-based `app-connect-plan`/`app-connect` commands with `--token-env` remain
+available for automation.
 
-- `create_project: false` with `provider_project: "YOUR_PROJECT_ID"` to reuse a project.
-- `project_name` and `organization_id` to choose the new project's name and organization.
-- `ca_certificate` containing a PEM certificate bundle for Selfhost's provider requests. Configure the app's own trust store separately if its runtime also needs that CA.
-- `replace_existing: true` to explicitly allow replacement of existing login environment settings after reviewing them.
-- `--token-env VARIABLE_NAME` to use another environment variable for the temporary token.
-
-Keep the token out of the request file. It is used in memory and is not persisted. Client credentials and a one-time provider response are retained in the private project store. Public status and activity omit credentials. HTTPS certificate verification is enabled and HTTP redirects are not followed. Local files are not encrypted; filesystem permissions restrict the store.
+The temporary token is used in memory and not persisted. Client credentials and
+recovery receipts are retained privately. HTTPS certificate verification is enabled
+and HTTP redirects are not followed. Filesystem permissions restrict the store.
 
 Connection progress is written before project and client creation. If a request outcome is uncertain, automatic creation retries are blocked. Inspect the recorded project and application IDs at the provider and the private response, if present, before manual recovery. If the client exists but app configuration failed, **Reapply app connection** reuses it. Configuration, deployment or server changes require a new review before recovery. One managed connection per service is supported; provider deletion, secret rotation and automatic domain changes for an existing connection are not implemented.
 

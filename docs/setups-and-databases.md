@@ -43,31 +43,26 @@ The Databases page manages PostgreSQL, MySQL, MariaDB and MongoDB connection sou
 
 A managed shared server publishes no host port. Its projects join a named Docker network on the same engine. Start the database source, configure the project, then select **Create database and user**. App startup is blocked while shared provisioning is pending. Source administrator passwords are excluded from app setups and exports.
 
-For a managed shared source, save this as a private JSON file:
+### Guided database setup
 
-```json
-{
-  "name": "Shared MariaDB",
-  "engine": "mariadb",
-  "kind": "shared",
-  "managed": true,
-  "server_id": "local"
-}
-```
+Run `selfhost database-setup` and choose a project. The terminal asks which supported engine to use and whether the database should be dedicated, shared, or external. It offers compatible saved sources or guides you through adding one. Password entry is hidden.
 
 ```sh
-selfhost database-add source.json
-selfhost database-start SOURCE
-selfhost database-attach PROJECT shared --source SOURCE
-selfhost database-provision PROJECT
-selfhost run PROJECT start
+selfhost database-setup
+selfhost database-add
+selfhost database-edit
+selfhost database-remove
 ```
 
-Choose `engine` from `postgres`, `mysql`, `mariadb` or `mongodb`. Omitting it preserves the PostgreSQL default for existing source files. A zero or omitted port uses the engine default. Dedicated containers have independent administrator and app credentials and publish no host port.
+For a managed shared source, the guided flow creates and starts its database container, waits for its health check, verifies its connection, and provisions the project's isolated database and user after confirmation. External sources are tested without changing their database contents. Tests run a temporary native database client on the selected Docker host, so that host needs permission to create the short-lived client container. The user does not prepare JSON or copy revisions between commands.
 
-For an external source use `kind: "external"`, `managed: false`, and supply `host`, `port`, `username`, `password`, `database`, and `ssl_mode` (`require`, `verify-full`, or `disable`). A supplied shared server uses `kind: "shared"` with the same connection fields and a provisioning account. Hosts must be reachable from the app containers. TLS certificate provisioning for external servers is the operator's responsibility.
+A cancelled project attachment can leave a newly created, explicitly confirmed source available for later use. If provisioning fails, repeat `database-setup` to resume an unstarted step. An uncertain administrative write is never repeated automatically.
 
-For MongoDB, also set `auth_database` to the database where the supplied account authenticates; external sources default to `admin`. Managed project users authenticate against their own project database. See [MongoDB details](mongodb.md).
+`database-edit` verifies replacement connection settings before saving and keeps a private recovery copy. Referenced sources cannot be redirected to a different database or TLS policy. Shared administrator credentials can be replaced with credentials already set on the database, because project accounts are separate. External credentials used by projects cannot be changed independently of their app configurations. Editing a saved password does not rotate the server account.
+
+`database-remove` refuses referenced sources and removes only the saved connection. Its private recovery copy, any hosted database project, containers and data remain intact. Use the project's separate removal flow to remove a hosted database after backing it up.
+
+Automation can still provide a source file to `database-add FILE`, or use the explicit `database-attach`, `database-start` and `database-provision` operations. They are not required for interactive setup. Source fields include the engine, placement, host, port, account and TLS mode. MongoDB also uses an authentication database, normally `admin` for supplied accounts. See [MongoDB details](mongodb.md).
 
 Setups receive DATABASE_HOST, DATABASE_PORT, DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_SSL_MODE and DATABASE_AUTH_DATABASE. DATABASE_URL provides an engine-specific URI with separately percent-encoded credentials and database name. PostgreSQL includes `sslmode`; MongoDB includes `authSource` and `tls`. MySQL/MariaDB use `mysql://` without driver-specific TLS parameters. DATABASE_GO_MYSQL_DSN is generated when a MySQL/MariaDB recipe explicitly references it; it preserves the Go driver credential syntax and requires a username without a colon. DATABASE_MYSQL_SSL_MODE provides `DISABLED`, `REQUIRED` or `VERIFY_IDENTITY` for adapters that accept that enum. DATABASE_SSL_ENABLED is `false` for `disable` and `true` otherwise. DATABASE_SSL_REJECT_UNAUTHORIZED is `true` for `verify-full`; other modes do not request certificate identity verification. Recipes can map these into application-specific environment variables. Custom Compose services must reference them explicitly. Changing placement after installation requires a data migration; changing environment values alone does not migrate a database or rotate an existing database password.
 
@@ -75,7 +70,7 @@ Adapters declare their supported TLS modes and reject unsupported combinations i
 
 A failed or interrupted shared provisioning attempt is marked uncertain before the first write. Selfhost refuses to repeat it automatically. Inspect the saved project credentials and the server account/database before manual recovery. It never silently adopts an existing SQL account or resets its password on collision.
 
-Source editing/removal and credential rotation are not implemented. Configuration snapshots are not database backups.
+Automatic server credential rotation is not implemented. Configuration snapshots and source recovery copies are not database backups.
 
 ## Database backups and restore
 

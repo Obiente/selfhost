@@ -708,9 +708,9 @@ pub enum TaskCommand {
     },
     /// Save a reviewed task; no remote writes until its first run
     Create {
-        file: PathBuf,
+        file: Option<PathBuf>,
         #[arg(long)]
-        revision: String,
+        revision: Option<String>,
     },
     /// Run an enabled task once, without the dashboard
     Run {
@@ -740,8 +740,12 @@ pub async fn run(store: &Store, command: TaskCommand) -> Result<()> {
             Box::pin(store.task_plan(serde_json::from_slice(&std::fs::read(file)?)?)).await?
         }
         TaskCommand::Create { file, revision } => {
-            Box::pin(store.task_create(serde_json::from_slice(&std::fs::read(file)?)?, &revision))
-                .await?
+            if let Some(file) = file {
+                Box::pin(store.task_create(serde_json::from_slice(&std::fs::read(file)?)?, revision.as_deref().context("Provide --revision for an automated task request, or omit the file for guided setup")?)).await?
+            } else {
+                crate::workflow::task_create(store).await?;
+                return Ok(());
+            }
         }
         TaskCommand::Run { id } => Box::pin(store.task_run(&id)).await?,
         TaskCommand::Tick => Box::pin(store.tasks_tick()).await?,

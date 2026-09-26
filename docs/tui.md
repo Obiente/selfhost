@@ -33,7 +33,7 @@ Once an operation begins, the interface waits for its result before accepting an
 
 Choose a project to start, stop, restart or refresh its services. You can review its generated Compose plan, save a configuration snapshot, change a generated project's name, image references and ports, edit environment variables and mounted files, or export an ordinary Compose archive.
 
-Each service has resource usage, logs, lifecycle actions and actions declared by its recipe. Native integrations expose common settings first, with advanced settings available separately. Settings changes are previewed and applied with the backend's revision check. Native configuration backups can be previewed and restored. Declared app workflows collect their typed inputs, including masked secrets.
+Each service has resource usage, logs, lifecycle actions and actions declared by its recipe. Native integrations expose common settings first, with advanced settings available separately. Settings changes are previewed and applied with the backend's revision check. Native configuration backups can be previewed and restored. App onboarding asks for the fields supported by the selected setup mode, masks passwords and lets you choose existing service links or add your own by name and URL. Declared app workflows collect their typed inputs, including masked secrets. Lists are edited one item at a time; command arguments keep spaces and punctuation intact and can be reordered. Structured settings use named fields, lists and typed values without requiring JSON syntax.
 
 App identity connections have creation plans and a saved-progress view. Resuming a connection uses its existing registration rather than silently creating another provider client. The dashboard-sync operation accepts a masked credential.
 
@@ -45,25 +45,25 @@ Creation prepares a stopped project. Review it before starting it. A custom setu
 
 ### Existing apps
 
-Link an app by URL, or select a connected Docker server and pin the existing container's identity. Read-only connection details, status and resource usage are separate from management permissions. Write operations require the individual action to be enabled, a writable server connection, backup acknowledgement and the exact app name.
+Link an app by URL, or select a connected Docker server and choose from matching containers. You can also enter an exact container name. The saved connection pins the container's identity. If it has been recreated, choose Reconnect, select its replacement and review its image and server. Reconnection clears management permissions so you can review them again. Read-only connection details, status and resource usage are separate from management permissions. Write operations require the individual action to be enabled, a writable server connection, backup acknowledgement and the exact app name.
 
 Unlinking deletes only the Selfhost reference. It does not stop or delete the external application. See [Existing apps](existing-apps.md).
 
 ### Servers and moves
 
-Add Docker SSH, Docker context or Proxmox SSH connections using named fields. New connections are read-only. Enabling management requires the exact connection name.
+Add Docker SSH, Docker context or Proxmox SSH connections using named fields. Remote management does not require a local Docker engine; Docker SSH connections use your local Docker client and SSH access to the remote engine. A Proxmox host connection manages that host's guests; connect separately to a guest when managing Docker inside it. New connections are read-only. Enabling management requires the exact connection name.
 
 You can inspect infrastructure, check Docker, edit connection settings, review a Docker workload move, assign an undeployed project, recover a saved move or review a stopped Proxmox VM/LXC migration. Proxmox task status can be queried by node and task ID. The same backend ownership, reachability, storage and read-only checks used by the dashboard apply.
 
 ### Databases
 
-Host a shared PostgreSQL source or connect an existing database. Configure a project for a dedicated container, a shared isolated database or an external database. Credentials are masked. Changing a database binding does not migrate existing data automatically.
+Host a shared database source or connect an existing database using a supported engine. Configure a project for a dedicated container, a shared isolated database or an external database. Test, rename or edit saved sources from the database menu. Editing tests the new connection before saving; leaving a replacement password blank preserves the existing password. Sources used by projects cannot change destination. Removal asks for the source name, refuses sources still in use and removes only the connection record. Hosted database projects and all database data remain. Credentials are masked. Changing a database binding does not migrate existing data automatically.
 
 Supported databases can be provisioned, backed up, exported and restored. Restore requires the project name, uses the backend's safety backup and stops the app containers before replacing database contents. See [Setups and databases](setups-and-databases.md).
 
 ### Networking and reverse proxies
 
-Add and edit proxy connections, including credentials, private CA certificates and provider-defined settings. Register a private network and its policy reference, create a route plan and apply its exact revision, or test upstream HTTPS from the proxy host.
+Add and edit proxy connections, including credentials, private CA certificates and provider-defined settings. Register a private network and its policy reference, review and apply a service route, or test upstream HTTPS from the proxy host.
 
 Registering a network records an existing network. Peer enrollment, key distribution and firewall policy deployment remain tasks for that network's provider. See [Networking and login](networking-and-login.md).
 

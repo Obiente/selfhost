@@ -15,6 +15,45 @@ const config = ref<any>({ public_url: defaultAddress, providers: [] }),
   review = ref<any>(null),
   confirmed = ref(false),
   mode = ref('manual');
+const handoffCode = ref(''),
+  handoffReview = ref<any>(null),
+  handoffConfirmed = ref(false);
+watch(handoffCode, () => {
+  handoffReview.value = null;
+  handoffConfirmed.value = false;
+});
+async function previewHandoff() {
+  busy.value = true;
+  error.value = '';
+  try {
+    handoffReview.value = await props.api('/login/handoff/plan', 'POST', {
+      code: handoffCode.value,
+    });
+  } catch (e) {
+    error.value = (e as Error).message;
+  } finally {
+    busy.value = false;
+  }
+}
+async function applyHandoff() {
+  busy.value = true;
+  error.value = '';
+  try {
+    const result = await props.api('/login/handoff/apply', 'POST', {
+      code: handoffCode.value,
+      revision: handoffReview.value.revision,
+      callbacks_confirmed: handoffConfirmed.value,
+    });
+    handoffCode.value = '';
+    handoffReview.value = null;
+    hydrate(await props.api('/login/settings'));
+    message.value = `Connection saved. Test sign-in at ${result.public_url} while keeping local recovery open.`;
+  } catch (e) {
+    error.value = (e as Error).message;
+  } finally {
+    busy.value = false;
+  }
+}
 const callback = computed(() => `${config.value.public_url.replace(/\/$/, '')}/auth/callback`);
 function add() {
   config.value.providers.push({
@@ -305,30 +344,74 @@ function download() {
           </button>
         </section>
       </TabsContent>
-      <TabsContent value="directory"
-        ><h3>Connect from the provider directory</h3>
+      <TabsContent value="directory">
+        <h3>Connect from the provider directory</h3>
         <p>
-          Run Selfhost where you manage the provider's configuration. Inspection reads Compose and
-          environment files without running them.
+          Run this in your identity provider's configuration directory. The CLI guides you through
+          setup, creates a client when the provider supports automatic registration, and prepares
+          the login connection.
         </p>
-        <pre><code>selfhost identity inspect . --selfhost-url {{config.public_url || (setup ? 'https://selfhost.example.com' : 'http://localhost:8372')}}</code></pre>
-        <p>Use the detected provider guidance to fill in a connection template.</p>
-        <button type="button" class="button" @click="download">
-          <Download :size="16" /> Download connection template
-        </button>
-        <pre><code>selfhost identity plan --directory .
-selfhost identity apply --directory . --revision &lt;reviewed-revision&gt; --confirm-callbacks</code></pre>
-        <p class="help">
-          Use the same Selfhost data directory as your dashboard. The CLI saves the connection and
-          backs up previous settings without changing the provider's files or running services.
-          Templates exclude secrets.
+        <pre><code>selfhost identity setup</code></pre>
+        <p>
+          If the dashboard uses the same machine and data directory, choose to apply the connection
+          there. Otherwise, paste the private setup code below or run
+          <code>selfhost identity connect</code> on the dashboard host. No JSON file is needed.
         </p>
-        <label
-          >Load a prepared connection file<input
-            type="file"
-            accept="application/json,.json"
-            @change="importFile" /></label
-      ></TabsContent>
+        <form @submit.prevent="previewHandoff">
+          <label
+            >Private setup code<input
+              v-model="handoffCode"
+              type="password"
+              autocomplete="off"
+              :spellcheck="false"
+              required
+              maxlength="131072"
+          /></label>
+          <p class="help">
+            The code expires after one hour and contains the OIDC client secret. Transfer it
+            privately. Your provider's administrative API token is not included.
+          </p>
+          <button class="button primary" :disabled="busy">Review connection</button>
+        </form>
+        <section v-if="handoffReview">
+          <h4>Review this login connection</h4>
+          <p>
+            Dashboard: <code>{{ handoffReview.public_url }}</code>
+          </p>
+          <p>
+            Callback: <code>{{ handoffReview.callback }}</code>
+          </p>
+          <div v-for="provider in handoffReview.providers" :key="provider.id">
+            <strong>{{ provider.name }}</strong>
+            <p>Issuer: {{ provider.issuer }}</p>
+            <p>Client ID: {{ provider.client_id }}</p>
+          </div>
+          <p>New administrator subject IDs: {{ handoffReview.administrators.join(', ') }}</p>
+          <label class="check"
+            ><input type="checkbox" v-model="handoffConfirmed" />I recognize this provider and these
+            administrators, and the exact callback is registered.</label
+          >
+          <button
+            class="button primary"
+            :disabled="busy || !handoffConfirmed"
+            @click="applyHandoff"
+          >
+            Connect identity provider
+          </button>
+        </section>
+        <details>
+          <summary>Advanced: existing manifests</summary>
+          <p>You can still import a prepared manifest when needed.</p>
+          <label
+            >Load connection manifest<input
+              type="file"
+              accept="application/json,.json"
+              @change="importFile" /></label
+          ><button type="button" class="button" @click="download">
+            Download connection template
+          </button>
+        </details>
+      </TabsContent>
     </TabsRoot>
   </section>
 </template>

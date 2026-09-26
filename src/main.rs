@@ -1,4 +1,6 @@
+mod access_diagnostics;
 mod adoption;
+mod app_assist;
 mod auth;
 mod backups;
 mod catalog;
@@ -9,8 +11,11 @@ mod database;
 mod database_mongo;
 mod database_mysql;
 mod deployments;
+mod guided;
+mod identity_assist;
 mod identity_setup;
 mod infrastructure;
+mod infrastructure_assist;
 mod integrations;
 mod migration;
 mod networking;
@@ -18,12 +23,14 @@ mod onboarding;
 mod removal;
 mod server;
 mod setup;
+mod ssh_keys;
 mod stacks;
 mod standalone;
 mod tasks;
 mod tui;
 mod updates;
 mod versions;
+mod workflow;
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use core::{CreateProject, Schedule, Store};
@@ -47,6 +54,15 @@ struct Cli {
 }
 #[derive(Subcommand)]
 enum Commands {
+    /// Guided setup for apps, servers, databases, proxies and recurring tasks
+    Guide,
+    /// Connect a Docker or Proxmox server interactively
+    ServerAdd,
+    /// Create and authorize dedicated SSH keys for servers and proxies
+    Ssh {
+        #[command(subcommand)]
+        command: ssh_keys::SshCommand,
+    },
     /// Review and run automatic app tasks and service-link triggers
     Task {
         #[command(subcommand)]
@@ -76,10 +92,10 @@ enum Commands {
     },
     /// List contributor-defined deployment methods
     Deployments,
-    /// Create a stopped project using a reviewed deployment JSON file
+    /// Choose an app and deployment method; an input file is optional for automation
     Deploy {
         #[arg(long)]
-        file: PathBuf,
+        file: Option<PathBuf>,
     },
     /// Connect an identity provider or inspect its existing configuration directory
     Identity {
@@ -99,15 +115,17 @@ enum Commands {
     /// List installable multi-service stacks
     Stacks,
     /// Create a portable stack from an installation JSON file, without starting it
-    StackCreate { file: PathBuf },
+    StackCreate { file: Option<PathBuf> },
     /// List connected proxies, networks and provider capabilities
     Networking,
-    /// Register a proxy from a private JSON file
-    ProxyAdd { file: PathBuf },
+    /// Connect a reverse proxy with guided questions
+    ProxyAdd { file: Option<PathBuf> },
     /// Update a saved proxy connection from a private JSON file containing its ID
-    ProxyEdit { file: PathBuf },
+    ProxyEdit { file: Option<PathBuf> },
+    /// Choose a proxy and service, then review and apply its route
+    RouteSetup,
     /// Register an existing private network and its access-policy reference
-    NetworkAdd { file: PathBuf },
+    NetworkAdd { file: Option<PathBuf> },
     /// Preview native proxy configuration for a route JSON file
     RoutePlan { file: PathBuf },
     /// Apply a reviewed route on a writable proxy
@@ -131,7 +149,16 @@ enum Commands {
         revision: Option<String>,
     },
     /// Inspect available automatic application setup and saved progress
-    AppSetup { project: String, service: String },
+    AppSetup {
+        project: String,
+        service: String,
+        #[arg(long)]
+        inspect: bool,
+    },
+    /// Choose service links and add them to a configured app dashboard
+    AppSync { project: String, service: String },
+    /// Select app versions, review backups and upgrade a project
+    AppUpdate { project: String },
     /// Preview declarative first-run setup or existing API-key connection
     AppSetupPlan {
         project: String,
@@ -142,9 +169,9 @@ enum Commands {
     AppSetupApply {
         project: String,
         service: String,
-        file: PathBuf,
+        file: Option<PathBuf>,
         #[arg(long)]
-        revision: String,
+        revision: Option<String>,
     },
     /// Find the authenticated human account before choosing an app administrator
     AppConnectAccount {
@@ -164,9 +191,9 @@ enum Commands {
     AppConnect {
         project: String,
         service: String,
-        file: PathBuf,
+        file: Option<PathBuf>,
         #[arg(long)]
-        revision: String,
+        revision: Option<String>,
         #[arg(long, default_value = "SELFHOST_IDP_TOKEN")]
         token_env: String,
     },
@@ -178,7 +205,12 @@ enum Commands {
         resume: bool,
     },
     /// Read the app-specific integration and typed settings
-    AppConfig { project: String, service: String },
+    AppConfig {
+        project: String,
+        service: String,
+        #[arg(long)]
+        edit: bool,
+    },
     /// Preview typed settings from a JSON object of field ids and values
     AppPlan {
         project: String,
@@ -189,9 +221,9 @@ enum Commands {
     AppApply {
         project: String,
         service: String,
-        file: PathBuf,
+        file: Option<PathBuf>,
         #[arg(long)]
-        revision: String,
+        revision: Option<String>,
     },
     /// Run a declared app-management workflow; input JSON may contain secrets
     AppAction {
@@ -223,7 +255,13 @@ enum Commands {
     /// List database engines and their default connection ports
     DatabaseEngines,
     /// Add a database source from a private JSON file
-    DatabaseAdd { file: PathBuf },
+    DatabaseAdd { file: Option<PathBuf> },
+    /// Choose, connect and prepare a project's database
+    DatabaseSetup { project: Option<String> },
+    /// Edit a saved database connection
+    DatabaseEdit { source: Option<String> },
+    /// Remove an unused database source after review
+    DatabaseRemove { source: Option<String> },
     /// Start a managed shared database server
     DatabaseStart { source: String },
     /// Attach a dedicated, external or shared database to a project
@@ -379,6 +417,13 @@ enum Commands {
 }
 #[derive(Subcommand)]
 enum IdentityCommands {
+    /// Guided setup from your provider directory; no JSON file required
+    Setup {
+        #[arg(default_value = ".")]
+        directory: PathBuf,
+    },
+    /// Paste and review a private setup code on the dashboard host
+    Connect,
     /// Read provider hints without executing scripts or printing credentials
     Inspect {
         #[arg(default_value = ".")]
@@ -432,11 +477,13 @@ enum ExistingCommands {
     List,
     /// List supported connection profiles and their declared actions
     Profiles,
-    /// Save a read-only app connection from a JSON file
+    /// Discover and connect an existing application
     Link {
         #[arg(long)]
-        file: PathBuf,
+        file: Option<PathBuf>,
     },
+    /// Review a replacement container for an existing connection
+    Reconnect { id: Option<String> },
     /// Inspect the pinned container without making changes
     Inspect { id: String },
     /// Read resource usage for the pinned container
@@ -445,7 +492,7 @@ enum ExistingCommands {
     Permissions {
         id: String,
         #[arg(long)]
-        file: PathBuf,
+        file: Option<PathBuf>,
     },
     /// Run a declared action; write actions require the exact saved app name
     Action {
@@ -553,7 +600,11 @@ fn confirm_update(
 async fn interactive_update(store: &Store) -> Result<()> {
     use std::io::{self, IsTerminal};
     let status = store.update_status().await?;
-    println!("{}", serde_json::to_string_pretty(&status)?);
+    if io::stdin().is_terminal() {
+        guided::review(&status);
+    } else {
+        println!("{}", serde_json::to_string_pretty(&status)?);
+    }
     if status["update_available"] != true || status["can_stage"] != true {
         return Ok(());
     }
@@ -564,7 +615,7 @@ async fn interactive_update(store: &Store) -> Result<()> {
         return Ok(());
     }
     let plan = store.plan_update().await?;
-    println!("{}", serde_json::to_string_pretty(&plan)?);
+    guided::review(&plan);
     let expected = plan["confirmation"]
         .as_str()
         .context("Missing update confirmation")?;
@@ -572,7 +623,7 @@ async fn interactive_update(store: &Store) -> Result<()> {
         &mut io::stdin().lock(),
         &mut io::stdout().lock(),
         &format!(
-            "Build and stage Selfhost {}?",
+            "Prepare Selfhost {} for installation?",
             plan["version"].as_str().unwrap_or("update")
         ),
     )? {
@@ -589,7 +640,7 @@ async fn interactive_update(store: &Store) -> Result<()> {
             confirmation: expected.into(),
         })
         .await?;
-    println!("{}", serde_json::to_string_pretty(&staged)?);
+    guided::review(&staged);
     let expected = staged["confirmation"]
         .as_str()
         .context("Missing activation confirmation")?;
@@ -696,7 +747,11 @@ async fn run() -> Result<()> {
     };
     if !matches!(
         cli.command,
-        Some(Commands::Update { .. }) | Some(Commands::Tui) | Some(Commands::Dashboard { .. })
+        Some(Commands::Update { .. })
+            | Some(Commands::Ssh { .. })
+            | Some(Commands::Identity { .. })
+            | Some(Commands::Tui)
+            | Some(Commands::Dashboard { .. })
     ) {
         let cached = store
             .cached_update_status()
@@ -726,6 +781,9 @@ async fn run() -> Result<()> {
         bind: std::net::Ipv4Addr::LOCALHOST.into(),
         setup: false,
     }) {
+        Commands::Guide => workflow::guide(&store).await?,
+        Commands::ServerAdd => infrastructure_assist::server_setup(&store).await?,
+        Commands::Ssh { command } => ssh_keys::execute(&store, command).await?,
         Commands::Task { command } => tasks::run(&store, command).await?,
         Commands::App { .. } => unreachable!("directory commands do not open a managed workspace"),
         Commands::Dashboard { command } => {
@@ -771,6 +829,9 @@ async fn run() -> Result<()> {
             println!("{}", serde_json::to_string_pretty(&store.deployments()?)?)
         }
         Commands::Deploy { file } => {
+            let Some(file) = file else {
+                return workflow::deploy(&store).await;
+            };
             let (project, instructions) = store.create_deployment(read_json(&file)?)?;
             println!(
                 "{}",
@@ -781,6 +842,14 @@ async fn run() -> Result<()> {
         }
         Commands::Identity { command } => {
             let result = match command {
+                IdentityCommands::Setup { directory } => {
+                    identity_assist::wizard(&store, &directory).await?;
+                    return Ok(());
+                }
+                IdentityCommands::Connect => {
+                    identity_assist::connect(&store).await?;
+                    return Ok(());
+                }
                 IdentityCommands::Inspect {
                     directory,
                     selfhost_url,
@@ -834,11 +903,18 @@ async fn run() -> Result<()> {
                 ExistingCommands::List => serde_json::json!(store.existing_apps()?),
                 ExistingCommands::Profiles => serde_json::json!(store.existing_profiles()?),
                 ExistingCommands::Link { file } => {
+                    let Some(file) = file else {
+                        return infrastructure_assist::existing_link(&store).await;
+                    };
                     serde_json::json!(Box::pin(store.link_existing(read_json(&file)?)).await?)
                 }
                 ExistingCommands::Inspect { id } => Box::pin(store.inspect_existing(&id)).await?,
                 ExistingCommands::Stats { id } => Box::pin(store.existing_stats(&id)).await?,
                 ExistingCommands::Permissions { id, file } => {
+                    let Some(file) = file else {
+                        return infrastructure_assist::existing_permissions(&store, Some(&id))
+                            .await;
+                    };
                     serde_json::json!(store.consent_existing(&id, read_json(&file)?)?)
                 }
                 ExistingCommands::Action {
@@ -851,6 +927,9 @@ async fn run() -> Result<()> {
                 ExistingCommands::Unlink { id, confirm } => {
                     store.unlink_existing(&id, &confirm)?;
                     serde_json::json!({"unlinked":true})
+                }
+                ExistingCommands::Reconnect { id } => {
+                    return infrastructure_assist::existing_reconnect(&store, id.as_deref()).await;
                 }
             };
             println!("{}", serde_json::to_string_pretty(&result)?);
@@ -901,6 +980,9 @@ async fn run() -> Result<()> {
 
         Commands::Stacks => println!("{}", serde_json::to_string_pretty(&store.stack_catalog()?)?),
         Commands::StackCreate { file } => {
+            let Some(file) = file else {
+                return workflow::stack(&store).await;
+            };
             let (project, instructions) =
                 store.install_blueprint(serde_json::from_slice(&std::fs::read(file)?)?)?;
             println!(
@@ -911,18 +993,28 @@ async fn run() -> Result<()> {
             );
         }
         Commands::Networking => println!("{}", serde_json::to_string_pretty(&store.networking()?)?),
-        Commands::ProxyAdd { file } => println!(
-            "{}",
-            store.add_proxy(serde_json::from_slice(&std::fs::read(file)?)?)?
-        ),
-        Commands::ProxyEdit { file } => println!(
-            "{}",
-            store.save_proxy(serde_json::from_slice(&std::fs::read(file)?)?)?
-        ),
-        Commands::NetworkAdd { file } => println!(
-            "{}",
-            store.add_network(serde_json::from_slice(&std::fs::read(file)?)?)?
-        ),
+        Commands::ProxyAdd { file } => {
+            if let Some(file) = file {
+                println!("{}", store.add_proxy(read_json(&file)?)?);
+            } else {
+                infrastructure_assist::proxy_setup(&store, None).await?;
+            }
+        }
+        Commands::ProxyEdit { file } => {
+            if let Some(file) = file {
+                println!("{}", store.save_proxy(read_json(&file)?)?);
+            } else {
+                infrastructure_assist::proxy_setup(&store, Some("")).await?;
+            }
+        }
+        Commands::NetworkAdd { file } => {
+            if let Some(file) = file {
+                println!("{}", store.add_network(read_json(&file)?)?);
+            } else {
+                infrastructure_assist::network_setup(&store).await?;
+            }
+        }
+        Commands::RouteSetup => infrastructure_assist::route_setup(&store).await?,
         Commands::RoutePlan { file } => println!(
             "{}",
             serde_json::to_string_pretty(
@@ -959,10 +1051,24 @@ async fn run() -> Result<()> {
                 );
             }
         }
-        Commands::AppSetup { project, service } => println!(
-            "{}",
-            serde_json::to_string_pretty(&store.onboarding_info(&project, &service)?)?
-        ),
+        Commands::AppSetup {
+            project,
+            service,
+            inspect,
+        } => {
+            if inspect {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&store.onboarding_info(&project, &service)?)?
+                );
+            } else {
+                app_assist::setup(&store, &project, &service).await?;
+            }
+        }
+        Commands::AppSync { project, service } => {
+            app_assist::sync(&store, &project, &service).await?
+        }
+        Commands::AppUpdate { project } => app_assist::update(&store, &project).await?,
         Commands::AppSetupPlan {
             project,
             service,
@@ -982,6 +1088,12 @@ async fn run() -> Result<()> {
             file,
             revision,
         } => {
+            let Some(file) = file else {
+                return app_assist::setup(&store, &project, &service).await;
+            };
+            let revision = revision.context(
+                "Provide --revision for automated input, or omit the file for guided setup",
+            )?;
             let request = onboarding::read_request(&file)?;
             println!(
                 "{}",
@@ -1028,6 +1140,12 @@ async fn run() -> Result<()> {
             revision,
             token_env,
         } => {
+            let Some(file) = file else {
+                return app_assist::connect(&store, &project, &service).await;
+            };
+            let revision = revision.context(
+                "Provide --revision for automated input, or omit the file for guided setup",
+            )?;
             let mut request: connections::ConnectRequest =
                 serde_json::from_slice(&std::fs::read(file)?)?;
             request.revision = revision;
@@ -1079,12 +1197,22 @@ async fn run() -> Result<()> {
                 .await?
             )?
         ),
-        Commands::AppConfig { project, service } => println!(
-            "{}",
-            serde_json::to_string_pretty(
-                &Box::pin(store.integration_state(&project, &service)).await?
-            )?
-        ),
+        Commands::AppConfig {
+            project,
+            service,
+            edit,
+        } => {
+            if edit {
+                app_assist::settings(&store, &project, &service).await?;
+            } else {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(
+                        &Box::pin(store.integration_state(&project, &service)).await?
+                    )?
+                );
+            }
+        }
         Commands::AppPlan {
             project,
             service,
@@ -1105,24 +1233,35 @@ async fn run() -> Result<()> {
             service,
             file,
             revision,
-        } => println!(
-            "{}",
-            serde_json::to_string_pretty(
-                &Box::pin(store.integration_apply(
-                    &project,
-                    &service,
-                    serde_json::from_slice(&std::fs::read(file)?)?,
-                    &revision
-                ))
-                .await?
-            )?
-        ),
+        } => {
+            let Some(file) = file else {
+                return app_assist::settings(&store, &project, &service).await;
+            };
+            let revision = revision.context(
+                "Provide --revision for automated input, or omit the file for guided setup",
+            )?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(
+                    &Box::pin(store.integration_apply(
+                        &project,
+                        &service,
+                        serde_json::from_slice(&std::fs::read(file)?)?,
+                        &revision
+                    ))
+                    .await?
+                )?
+            );
+        }
         Commands::AppAction {
             project,
             service,
             action,
             inputs,
         } => {
+            if inputs.is_none() {
+                return app_assist::action(&store, &project, &service, &action).await;
+            }
             let values = match inputs {
                 Some(path) => serde_json::from_slice(&std::fs::read(path)?)?,
                 None => Default::default(),
@@ -1162,10 +1301,25 @@ async fn run() -> Result<()> {
             "{}",
             serde_json::to_string_pretty(&store.database_sources()?)?
         ),
-        Commands::DatabaseAdd { file } => println!(
-            "Created database source {}",
-            store.add_database_source(serde_json::from_slice(&std::fs::read(file)?)?)?
-        ),
+        Commands::DatabaseAdd { file } => {
+            if let Some(file) = file {
+                println!(
+                    "Created database source {}",
+                    store.add_database_source(read_json(&file)?)?
+                );
+            } else {
+                infrastructure_assist::database_add(&store).await?;
+            }
+        }
+        Commands::DatabaseSetup { project } => {
+            infrastructure_assist::database_setup(&store, project.as_deref()).await?
+        }
+        Commands::DatabaseEdit { source } => {
+            infrastructure_assist::database_edit(&store, source.as_deref()).await?
+        }
+        Commands::DatabaseRemove { source } => {
+            infrastructure_assist::database_remove(&store, source.as_deref()).await?
+        }
         Commands::DatabaseStart { source } => {
             store.start_database_source(&source).await?;
             println!("Database server started");
@@ -1475,6 +1629,50 @@ async fn run() -> Result<()> {
 #[cfg(test)]
 mod cli_tests {
     use super::*;
+    #[test]
+    fn command_tree_has_unique_arguments() {
+        use clap::CommandFactory;
+        Cli::command().debug_assert();
+    }
+    #[test]
+    fn guided_workflows_accept_no_request_files_or_revision_arguments() {
+        for arguments in [
+            vec!["guide"],
+            vec!["deploy"],
+            vec!["stack-create"],
+            vec!["server-add"],
+            vec!["database-add"],
+            vec!["database-setup"],
+            vec!["database-edit"],
+            vec!["database-remove"],
+            vec!["proxy-add"],
+            vec!["proxy-edit"],
+            vec!["route-setup"],
+            vec!["network-add"],
+            vec!["existing", "link"],
+            vec!["existing", "reconnect"],
+            vec!["existing", "permissions", "synthetic-app"],
+            vec!["task", "create"],
+            vec!["dashboard", "setup"],
+            vec!["dashboard", "domain"],
+            vec!["app-setup", "synthetic-project", "homarr"],
+            vec!["app-connect", "synthetic-project", "nextcloud"],
+            vec!["app-apply", "synthetic-project", "nextcloud"],
+            vec!["app-sync", "synthetic-project", "homarr"],
+            vec!["app-update", "synthetic-project"],
+            vec!["app", "setup", "homarr"],
+            vec!["app", "connect", "nextcloud"],
+            vec!["app", "apply", "nextcloud"],
+            vec!["app", "sync", "homarr"],
+        ] {
+            let mut argv = vec!["selfhost"];
+            argv.extend(arguments);
+            assert!(
+                Cli::try_parse_from(&argv).is_ok(),
+                "Guided command requires extra arguments: {argv:?}"
+            );
+        }
+    }
     #[test]
     fn update_confirmation_requires_an_explicit_yes() {
         for answer in ["y\n", "Y\n", "yes\n", " YES \n"] {

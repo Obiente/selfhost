@@ -12,7 +12,7 @@ does not install anything. The dashboard Updates button, terminal UI and
 | Official crates.io release installed by Cargo          | Build an exact release in private staging, review activation, then replace the executable after Selfhost exits.                                                 |
 | Verified bundled npm launcher                          | Report the published launcher version and exact `npx --package=selfhost@VERSION selfhost` invocation. Existing npm packages and npx caches are not overwritten. |
 | Debug build, source checkout or Cargo path/git install | Instructions to update the checkout and rebuild. Selfhost never overwrites these builds.                                                                        |
-| Direct release binary                                  | Rerun the release installer with explicit replacement and a retained backup. Version 0.1.3 does not automate this through `selfhost update`.                    |
+| Direct release binary                                  | Since 0.1.4: verified GitHub binary download, reviewed activation and executable backup through the CLI, TUI or dashboard.                                      |
 | Other standalone binary                                | Use its original installation method. No automatic binary download or replacement.                                                                              |
 
 Cargo identification requires a release executable in the recorded installation's
@@ -27,14 +27,19 @@ metadata identifies the Obiente launcher.
 Stop Selfhost before replacing its executable, especially a persistent dashboard
 service on Windows. Back up its private data before upgrading. Download the
 installer again from the [latest release](https://github.com/Obiente/selfhost/releases/latest),
-then explicitly allow replacement:
+then rerun it for the desired version:
+
+> **Since 0.1.4:** Updates no longer require `--force` or `-Force`.
+> Installers bundled with 0.1.3 and earlier still require that flag when a binary
+> exists. The revised installer keeps a backup automatically and skips an
+> unchanged binary. The force option remains available for a deliberate reinstall.
 
 ```sh
-sh install.sh --version 0.1.3 --force
+sh install.sh --version 0.1.4 && export PATH="$HOME/.local/bin:$PATH"
 ```
 
 ```powershell
-./install.ps1 -Version 0.1.3 -Force
+./install.ps1 -Version 0.1.4
 ```
 
 Choose the version you want; omit the version option to use the latest stable
@@ -49,9 +54,22 @@ executable path. Binary rollback does not reverse application or configuration
 changes. Removing the installed executable and its PATH entry uninstalls the CLI;
 it does not remove your projects, containers or private data.
 
-In version 0.1.3, `selfhost update` treats direct binaries as standalone installs
-and directs you to the original installation method. Its staged activation flow
-below applies to official Cargo installations.
+Version 0.1.3 requires the installer to update a direct binary. **Starting with 0.1.4**, standalone installs use `selfhost update` or the dashboard's
+Updates control without Cargo or npm. Upgrade once with the installer to receive
+that support.
+
+The plan verifies the running executable against its current official platform
+release checksum, then pins the selected update's checksum. Staging downloads
+that exact GitHub release asset and checks SHA-256, native format and executable
+version before separate activation approval. Unknown or modified binaries are
+not eligible. Checksums come from the same HTTPS source; they are not independent
+publisher signatures.
+
+Standalone activation replaces only the executable and retains a sibling backup.
+Cargo/npm records remain unchanged. Dashboard activation restarts with the same
+data directory, bind and port. CLI activation exits so you can restart it yourself.
+No privilege elevation is attempted; protected installation directories may need
+the original installer run by an appropriately privileged account.
 
 ## Review, stage and activate
 

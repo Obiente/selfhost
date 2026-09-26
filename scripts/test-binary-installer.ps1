@@ -17,19 +17,22 @@ function Invoke-WebRequest {
 try {
     & "$PSScriptRoot/install.ps1" -Version $testVersion -BinDir $binDir -NoModifyPath
     $binary = Join-Path $binDir 'selfhost.exe'
+    # Changed regular-file contents model an existing installation without
+    # executing it or fetching a second release during the test.
+    $stream = [IO.File]::Open($binary, [IO.FileMode]::Append)
+    try { $stream.WriteByte(0) } finally { $stream.Dispose() }
     $hash = (Get-FileHash -LiteralPath $binary).Hash
-    $refused = $false
-    try { & "$PSScriptRoot/install.ps1" -Version $testVersion -BinDir $binDir -NoModifyPath } catch { $refused = $true }
-    if (-not $refused) { throw 'Installer overwrote an existing installation without -Force.' }
     $corruptChecksum = $true
     $refused = $false
-    try { & "$PSScriptRoot/install.ps1" -Version $testVersion -BinDir $binDir -NoModifyPath -Force } catch { $refused = $true }
+    try { & "$PSScriptRoot/install.ps1" -Version $testVersion -BinDir $binDir -NoModifyPath } catch { $refused = $true }
     if (-not $refused -or (Get-FileHash -LiteralPath $binary).Hash -ne $hash) { throw 'Checksum failure did not preserve the installation.' }
     $corruptChecksum = $false
-    & "$PSScriptRoot/install.ps1" -Version $testVersion -BinDir $binDir -NoModifyPath -Force
+    & "$PSScriptRoot/install.ps1" -Version $testVersion -BinDir $binDir -NoModifyPath
     $backups = @(Get-ChildItem -LiteralPath $binDir -Filter '*.backup.*')
     if ($backups.Count -ne 1 -or (Get-FileHash -LiteralPath $backups[0].FullName).Hash -ne $hash) { throw 'Backup verification failed.' }
-    Write-Output 'Installer passed: fresh install, explicit replacement, corrupt download rejection and backup.'
+    & "$PSScriptRoot/install.ps1" -Version $testVersion -BinDir $binDir -NoModifyPath
+    if (@(Get-ChildItem -LiteralPath $binDir -Filter '*.backup.*').Count -ne 1) { throw 'Unchanged install created another backup.' }
+    Write-Output 'Installer passed: fresh install, automatic update, corrupt download rejection, backup and unchanged reinstallation.'
 } finally {
     $resolvedTestRoot = (Resolve-Path -LiteralPath $testRoot).Path
     if ([IO.Path]::GetDirectoryName($resolvedTestRoot).TrimEnd('\') -ne ([IO.Path]::GetTempPath()).TrimEnd('\')) { throw 'Unexpected test directory.' }

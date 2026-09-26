@@ -138,6 +138,7 @@ function appUrl(p: Project, port: number) {
 }
 
 const engine = reactive({
+  optional: false,
   available: false,
   checked: false,
   message: '',
@@ -538,10 +539,11 @@ async function checkEngine() {
   try {
     const result = await api(`/servers/${requestedServer}/docker`);
     if (requestedServer === (project.value?.server_id || 'local'))
-      Object.assign(engine, result, { checked: true });
+      Object.assign(engine, { optional: false }, result, { checked: true });
   } catch {
     if (requestedServer === (project.value?.server_id || 'local')) {
       engine.available = false;
+      engine.optional = false;
       engine.checked = true;
     }
   } finally {
@@ -844,7 +846,9 @@ onUnmounted(() => {
                 ? 'Connecting'
                 : engine.available
                   ? 'Docker connected'
-                  : 'Docker offline'
+                  : engine.optional
+                    ? 'Remote management'
+                    : 'Docker offline'
             }}<small>{{ activeServer?.name || 'This computer' }}</small></span
           ><i :class="{ online: engine.available }"></i>
         </button>
@@ -879,7 +883,9 @@ onUnmounted(() => {
                 ? 'Connecting'
                 : engine.available
                   ? 'Docker connected'
-                  : 'Docker offline'
+                  : engine.optional
+                    ? 'Remote management'
+                    : 'Docker offline'
             }}</span
           ><button
             class="icon-button notification-button"
@@ -974,7 +980,7 @@ onUnmounted(() => {
             </button>
           </div>
 
-          <div v-if="engine.checked && !engine.available" class="engine-notice">
+          <div v-if="engine.checked && !engine.available && !engine.optional" class="engine-notice">
             <div class="notice-icon"><Server :size="19" /></div>
             <div>
               <strong>Docker is not running</strong>

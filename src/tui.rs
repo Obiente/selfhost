@@ -64,14 +64,6 @@ fn revision(value: &Value) -> Result<&str> {
 fn project_summary(project: &Project) -> Value {
     json!({"id":project.id,"name":project.name,"server":project.server_id,"access":project.access,"apps":project.services.iter().map(|s|json!({"id":s.app,"name":s.definition.name,"image":s.image,"host_port":s.port})).collect::<Vec<_>>()})
 }
-fn strings(value: &str) -> Vec<String> {
-    value
-        .split([',', '\n'])
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-        .map(str::to_owned)
-        .collect()
-}
 fn dynamic_input(
     label: &str,
     kind: &str,
@@ -111,29 +103,76 @@ fn dynamic_input(
             }
         }
         "port" => Ok(number(label, current.as_u64().unwrap_or(8080))?.map(|v| json!(v))),
-        "string_list" => {
-            let initial = current
+        "string_list" | "string_array" | "paths" | "arguments" => {
+            let values = current
                 .as_array()
-                .map(|a| {
-                    a.iter()
+                .map(|items| {
+                    items
+                        .iter()
                         .filter_map(Value::as_str)
+                        .map(str::to_owned)
                         .collect::<Vec<_>>()
-                        .join(", ")
                 })
                 .unwrap_or_default();
-            Ok(prompt(label, "Comma-separated values", &initial, false)?
-                .map(|v| json!(strings(&v))))
+            Ok(string_list_edit(label, &values, kind == "arguments")?.map(|values| json!(values)))
         }
-        "certificate" => Ok(prompt(
-            label,
-            "Certificate ID, or new",
-            current.as_str().unwrap_or("new"),
-            false,
-        )?
-        .map(|v| v.parse::<u64>().map_or_else(|_| json!(v), |n| json!(n)))),
-        "string_array" | "array" | "json" | "object" | "paths" | "ca_pool" | "arguments" => {
-            json_edit(label, current)
+        "ca_pool" => {
+            match menu(
+                label,
+                &[
+                    "System certificate authorities",
+                    "Private CA files on the proxy",
+                ],
+            )? {
+                Some(0) => Ok(Some(Value::Null)),
+                Some(_) => {
+                    let paths = current["pem_files"]
+                        .as_array()
+                        .map(|items| {
+                            items
+                                .iter()
+                                .filter_map(Value::as_str)
+                                .map(str::to_owned)
+                                .collect::<Vec<_>>()
+                        })
+                        .unwrap_or_default();
+                    Ok(
+                        string_list_edit("CA certificate file paths", &paths, false)?
+                            .map(|paths| json!({"provider":"file","pem_files":paths})),
+                    )
+                }
+                None => Ok(None),
+            }
         }
+        "certificate" => {
+            match menu(
+                label,
+                &[
+                    "Request a new certificate automatically",
+                    "Use an existing certificate",
+                ],
+            )? {
+                Some(0) => Ok(Some(json!("new"))),
+                Some(_) => loop {
+                    let Some(value) = number(
+                        "Certificate ID in your proxy",
+                        current.as_u64().filter(|v| *v > 0).unwrap_or(1),
+                    )?
+                    else {
+                        return Ok(None);
+                    };
+                    if value > 0 {
+                        return Ok(Some(json!(value)));
+                    }
+                    view(
+                        "Invalid certificate ID",
+                        "Choose a certificate ID greater than zero.",
+                    )?;
+                },
+                None => Ok(None),
+            }
+        }
+        "array" | "json" | "object" => structured_edit(label, current, true),
         _ => Ok(prompt(
             label,
             if kind == "secret" {
@@ -211,6 +250,38 @@ pub async fn run(store: Store) -> Result<()> {
     }
     Ok(())
 }
+async fn container_pick(store: &Store, server: &str, profile: &str) -> Result<Option<String>> {
+    let candidates = wait(
+        "Finding matching containers",
+        store.discover_existing(server, profile),
+    )
+    .await?;
+    let mut choices = candidates
+        .iter()
+        .map(|row| {
+            format!(
+                "{} | {} | {}",
+                row["name"].as_str().unwrap_or(""),
+                row["image"].as_str().unwrap_or(""),
+                row["status"].as_str().unwrap_or("")
+            )
+        })
+        .collect::<Vec<_>>();
+    choices.push("Enter an exact container name manually".into());
+    let Some(index) = select("Choose a container to link read-only", &choices)? else {
+        return Ok(None);
+    };
+    if index == candidates.len() {
+        required("Exact container name or ID", "")
+    } else {
+        Ok(Some(
+            candidates[index]["id"]
+                .as_str()
+                .context("Container identity missing")?
+                .into(),
+        ))
+    }
+}
 async fn existing(store: &Store) -> Result<()> {
     loop {
         let apps = store.existing_apps()?;
@@ -242,7 +313,7 @@ async fn existing(store: &Store) -> Result<()> {
             {
                 let server = take!(server_pick(store, false, true));
                 server_id = server.id;
-                container = take!(required("Container name or ID", &profile.container_hint));
+                container = take!(container_pick(store, &server_id, &profile.id).await);
             }
             let out = wait(
                 "Linking existing app",
@@ -267,6 +338,7 @@ async fn existing(store: &Store) -> Result<()> {
                 "Resource usage",
                 "Declared app actions",
                 "Management permissions",
+                "Reconnect to its current container",
                 "Unlink (preserve the running app)"
             ]
         )) {
@@ -337,6 +409,37 @@ async fn existing(store: &Store) -> Result<()> {
                         },
                     )?;
                     show("Saved permissions", &out)?;
+                }
+            }
+            5 => {
+                let server = take!(server_pick(store, false, true));
+                let container = take!(container_pick(store, &server.id, &app.profile.id).await);
+                let plan = wait(
+                    "Checking replacement container",
+                    store.reconnect_existing_plan(&app.id, &server.id, &container),
+                )
+                .await?;
+                let replacement = &plan["replacement"];
+                view(
+                    "Review replacement",
+                    &format!(
+                        "App: {}\nServer: {}\nContainer: {}\nImage: {}\n\nThe URL stays the same. Management permissions will be reset to read-only. Containers and data are not changed.",
+                        app.name,
+                        server.name,
+                        replacement["name"].as_str().unwrap_or(""),
+                        replacement["image"].as_str().unwrap_or("")
+                    ),
+                )?;
+                if yes("Reconnect this app read-only?")? {
+                    wait(
+                        "Reconnecting app",
+                        store.reconnect_existing(&app.id, &server.id, &container, revision(&plan)?),
+                    )
+                    .await?;
+                    view(
+                        "App reconnected",
+                        "Review management permissions separately before enabling changes.",
+                    )?;
                 }
             }
             _ => {

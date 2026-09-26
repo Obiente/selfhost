@@ -41,26 +41,22 @@ pub(super) async fn tasks(store: &Store) -> Result<()> {
             ));
             let d = choices[selected];
             let name = take!(required("Task name", "Keep dashboard links current"));
-            let managed =
-                yes("Include managed projects? An empty ID list includes future projects too.")?;
-            let project_ids = if managed {
-                strings(&take!(field(
-                    "Project IDs, comma separated; blank includes all current and future projects",
-                    ""
-                )))
-            } else {
-                vec![]
-            };
-            let existing =
-                yes("Include linked existing apps? An empty ID list includes future links too.")?;
-            let existing_ids = if existing {
-                strings(&take!(field(
-                    "Existing app IDs, comma separated; blank includes all current and future links",
-                    ""
-                )))
-            } else {
-                vec![]
-            };
+            let projects = store.read()?.projects;
+            let (managed, project_ids) = take!(source_scope(
+                "Managed project links",
+                &projects
+                    .iter()
+                    .map(|p| (p.id.clone(), p.name.clone()))
+                    .collect::<Vec<_>>()
+            ));
+            let apps = store.existing_apps()?;
+            let (existing, existing_ids) = take!(source_scope(
+                "Existing app links",
+                &apps
+                    .iter()
+                    .map(|p| (p.id.clone(), p.name.clone()))
+                    .collect::<Vec<_>>()
+            ));
             let interval_seconds =
                 take!(required("Interval in seconds, at least 60", "300")).parse::<u64>()?;
             let request = TaskRequest {
@@ -119,6 +115,57 @@ pub(super) async fn tasks(store: &Store) -> Result<()> {
                     ));
                     store.task_remove(id, &name)?;
                 }
+            }
+        }
+    }
+}
+
+fn source_scope(title: &str, sources: &[(String, String)]) -> Result<Option<(bool, Vec<String>)>> {
+    loop {
+        let Some(scope) = menu(
+            title,
+            &[
+                "Do not include",
+                "Include all current and future sources",
+                "Choose specific sources",
+            ],
+        )?
+        else {
+            return Ok(None);
+        };
+        match scope {
+            0 => return Ok(Some((false, vec![]))),
+            1 => return Ok(Some((true, vec![]))),
+            _ => {
+                if sources.is_empty() {
+                    view(
+                        "No sources yet",
+                        "Choose all current and future sources, or return without including this category.",
+                    )?;
+                    continue;
+                }
+                let Some(selected) = multi(
+                    title,
+                    &sources
+                        .iter()
+                        .map(|(_, name)| name.clone())
+                        .collect::<Vec<_>>(),
+                    &[],
+                )?
+                else {
+                    continue;
+                };
+                if selected.is_empty() {
+                    view(
+                        "No sources selected",
+                        "Select at least one source, or choose Do not include.",
+                    )?;
+                    continue;
+                }
+                return Ok(Some((
+                    true,
+                    selected.into_iter().map(|i| sources[i].0.clone()).collect(),
+                )));
             }
         }
     }

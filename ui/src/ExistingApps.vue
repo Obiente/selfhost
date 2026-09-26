@@ -2,6 +2,8 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { ExternalLink, Link, Plus, RefreshCw, Settings2, Unlink } from 'lucide-vue-next';
 import BaseDialog from './components/BaseDialog.vue';
+import ContainerPicker from './components/ContainerPicker.vue';
+import ExistingReconnect from './ExistingReconnect.vue';
 import EmptyState from './components/EmptyState.vue';
 import { useAsyncTask } from './composables/useAsyncTask';
 const props = defineProps<{
@@ -11,6 +13,7 @@ const { busy, error, run, clearError } = useAsyncTask();
 const apps = ref<any[]>([]),
   profiles = ref<any[]>([]),
   servers = ref<any[]>([]);
+const reconnect = ref<any>(null);
 const addOpen = ref(false),
   profile = ref(''),
   name = ref(''),
@@ -53,7 +56,7 @@ function readOnly(app: any) {
 const selectedProfile = computed(() => profiles.value.find((p) => p.id === profile.value));
 watch(profile, () => {
   name.value = selectedProfile.value?.name || '';
-  container.value = selectedProfile.value?.container_hint || '';
+  container.value = '';
   if (!selectedProfile.value?.image_repositories.length) advanced.value = false;
 });
 async function load() {
@@ -206,6 +209,14 @@ async function execute(app: any, item: any, confirm: string) {
             ><button class="button" :disabled="busy" @click="show(app, 'stats', 'Resource usage')">
               Usage
             </button></template
+          ><button
+            v-if="app.profile.image_repositories?.length"
+            type="button"
+            class="button"
+            :disabled="busy"
+            @click="reconnect = app"
+          >
+            Reconnect</button
           ><button class="button" @click="manage(app, 'unlink')">
             <Unlink :size="15" />Unlink
           </button>
@@ -242,6 +253,14 @@ async function execute(app: any, item: any, confirm: string) {
       </article>
     </div>
   </section>
+  <ExistingReconnect
+    v-if="reconnect"
+    :api="api"
+    :app="reconnect"
+    :servers="servers"
+    @close="reconnect = null"
+    @saved="run(load)"
+  />
   <BaseDialog
     :open="addOpen"
     title="Link an existing app"
@@ -284,13 +303,13 @@ async function execute(app: any, item: any, confirm: string) {
               {{ s.name }}
             </option>
           </select></label
-        ><label
-          >Container name or ID<input
-            v-model="container"
-            required
-            maxlength="128"
-            autocomplete="off"
-        /></label>
+        ><ContainerPicker
+          :api="api"
+          :server="server"
+          :profile="profile"
+          v-model="container"
+          :disabled="busy"
+        />
         <p>
           Selfhost checks the container image and records its identity. If the container is
           replaced, review and link the replacement explicitly.

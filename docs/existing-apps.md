@@ -6,7 +6,7 @@ Open **Existing apps** and choose **Link an app**. Select the app type, give it 
 
 Choose **Other app or website** for any service without a dedicated profile. That option provides a URL link; container inspection and commands require a profile defining the expected image repositories. A saved URL does not imply that Selfhost has checked the app's health or identity-provider configuration.
 
-For status, resource usage and supported app commands, enable **Connect its Docker container**. Choose a server from Infrastructure and enter the container name or ID. A Docker connection can point to a host, a Docker VM or a Docker LXC. Connect to the guest running Docker, not just its Proxmox host.
+For status, resource usage and supported app commands, enable **Connect its Docker container**. Choose a server from Infrastructure and select a discovered matching container. Advanced users can still supply a full container ID. A Docker connection can point to a host, a Docker VM or a Docker LXC. Connect to the guest running Docker, not just its Proxmox host.
 
 Selfhost reads only the selected container's ID, image identity, name and state. It does not import environment variables, mount paths, volumes or Compose files. The running image must match the selected profile's exact image repository. It saves the full container ID, so reusing the same container name cannot silently redirect commands to another container.
 
@@ -16,7 +16,7 @@ Choose **Nextcloud AIO** and select the Nextcloud app container, usually `nextcl
 
 The **Management permissions** dialog can enable specific operations such as updating Nextcloud apps. Both the server and that individual action must permit writes. Each write requires the exact app name again. AIO remains responsible for core upgrades, container lifecycle and its backups. Selfhost does not take over AIO's generated Compose stack.
 
-If AIO recreates the Nextcloud container during an update, unlink the old reference and link the replacement after reviewing its identity. Selfhost never follows a new container automatically.
+If AIO recreates the Nextcloud container during an update, choose Reconnect and select the replacement after reviewing both identities. Management permissions are cleared and must be reviewed again. Selfhost never follows a new container automatically.
 
 ### ZITADEL
 
@@ -52,33 +52,19 @@ Stopping the Selfhost AIO project stops only the administration container. AIO's
 Use the same `--data-dir` as the dashboard when managing its connections.
 
 ```sh
-selfhost existing profiles
-selfhost existing link --file existing-app.json
+selfhost existing link
+selfhost existing reconnect
+selfhost existing permissions CONNECTION_ID
 selfhost existing list
 selfhost existing inspect CONNECTION_ID
 selfhost existing action CONNECTION_ID status
-selfhost existing unlink CONNECTION_ID --confirm "My files"
-selfhost deployments
-selfhost deploy --file deployment.json
 ```
 
-A URL-only `existing-app.json` can contain:
+`existing link` asks for an app profile, name and URL, then offers container discovery on a saved Docker host. It displays only matching images for that profile. Linking starts without management permissions. `existing permissions` lets you choose the individual operations you want to allow and reviews the result before saving.
 
-```json
-{ "profile": "nextcloud-aio", "name": "My files", "url": "https://files.example.com" }
-```
+`existing reconnect` keeps the saved app name and URL, checks the replacement container's image against the linked profile, and binds the reviewed change to its immutable container identity. It refuses a stale plan or a container already linked elsewhere. Permission reset prevents previously approved writes from transferring silently to a different container.
 
-Add `server_id` and `container` together for a verified Docker connection. To enable write operations, `selfhost existing permissions CONNECTION_ID --file permissions.json` accepts `{"confirmation":"My files","allowed_actions":["update-apps"]}`. A subsequent write action also requires `--confirm "My files"`.
-
-Server IDs are generated when adding a connection under Infrastructure. Use the saved server's ID, rather than its display name or SSH alias. Keep production server connections read-only until you deliberately enable management. Command output is shown only in the current response and may contain app information that should remain private.
-
-A single-image `deployment.json` can contain:
-
-```json
-{ "app": "nextcloud", "method": "docker", "name": "My files", "server_id": "local" }
-```
-
-For AIO, choose `"method":"aio"`, supply its input values and include the three requirement IDs from `selfhost deployments` in `acknowledgements`. This creates a stopped project for review. It does not start the privileged manager automatically.
+No JSON file or copied revision is required for these interactive flows. Explicit `--file` inputs remain available for automation. Use the same `--data-dir` as the dashboard. Production server connections can remain read-only until you explicitly enable management.
 
 ## Contributor configuration
 

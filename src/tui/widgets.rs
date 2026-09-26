@@ -740,3 +740,256 @@ mod safety_tests {
         assert!(completed.load(std::sync::atomic::Ordering::SeqCst));
     }
 }
+
+/// Edit literal values individually; commas, spaces and empty arguments are never split.
+pub fn string_list_edit(
+    title: &str,
+    values: &[String],
+    ordered: bool,
+) -> Result<Option<Vec<String>>> {
+    let mut current = values.to_vec();
+    loop {
+        let mut choices = vec!["Save list".to_string(), "Add value".into()];
+        choices.extend(
+            current
+                .iter()
+                .enumerate()
+                .map(|(i, v)| format!("{}. {}", i + 1, if v.is_empty() { "(empty)" } else { v })),
+        );
+        let Some(choice) = select(title, &choices)? else {
+            return Ok(None);
+        };
+        if choice == 0 {
+            return Ok(Some(current));
+        }
+        if choice == 1 {
+            if current.len() >= 64 {
+                view("List limit", "A list can contain up to 64 values.")?;
+                continue;
+            }
+            if let Some(value) = prompt(
+                "New value",
+                "The entire line is one value. Spaces and commas are preserved.",
+                "",
+                false,
+            )? {
+                current.push(value);
+            }
+            continue;
+        }
+        let index = choice - 2;
+        let actions = if ordered {
+            vec!["Edit value", "Move up", "Move down", "Remove value"]
+        } else {
+            vec!["Edit value", "Remove value"]
+        };
+        match menu(&format!("Value {}", index + 1), &actions)? {
+            Some(0) => {
+                if let Some(value) = prompt(
+                    "Edit value",
+                    "The entire line is one value.",
+                    &current[index],
+                    false,
+                )? {
+                    current[index] = value;
+                }
+            }
+            Some(1) if ordered => {
+                if index > 0 {
+                    current.swap(index, index - 1);
+                }
+            }
+            Some(2) if ordered => {
+                if index + 1 < current.len() {
+                    current.swap(index, index + 1);
+                }
+            }
+            Some(_) => {
+                current.remove(index);
+            }
+            None => {}
+        }
+    }
+}
+
+/// A typed tree editor for application-defined structures; raw JSON remains a separate advanced tool.
+pub fn structured_edit(
+    title: &str,
+    value: &serde_json::Value,
+    container_only: bool,
+) -> Result<Option<serde_json::Value>> {
+    structured_edit_inner(title, value, container_only, 0)
+}
+fn structured_edit_inner(
+    title: &str,
+    value: &serde_json::Value,
+    container_only: bool,
+    depth: usize,
+) -> Result<Option<serde_json::Value>> {
+    use serde_json::{Value, json};
+    let mut current = value.clone();
+    if container_only && !current.is_object() && !current.is_array() {
+        current = json!({});
+    }
+    loop {
+        let mut choices = vec!["Save value".to_string(), "Change value type".into()];
+        if current.is_object() || current.is_array() {
+            choices.push("Add field or item".into());
+        }
+        let entries: Vec<(String, Value)> = match &current {
+            Value::Object(map) => map.iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
+            Value::Array(list) => list
+                .iter()
+                .enumerate()
+                .map(|(i, v)| (i.to_string(), v.clone()))
+                .collect(),
+            _ => vec![],
+        };
+        let offset = choices.len();
+        choices.extend(entries.iter().map(|(key, value)| {
+            format!(
+                "{}: {}",
+                if current.is_array() {
+                    format!("Item {}", key.parse::<usize>().unwrap() + 1)
+                } else {
+                    key.clone()
+                },
+                match value {
+                    Value::Object(v) => format!("{} fields", v.len()),
+                    Value::Array(v) => format!("{} items", v.len()),
+                    Value::String(v) => v.clone(),
+                    v => v.to_string(),
+                }
+            )
+        }));
+        if entries.is_empty() && !current.is_object() && !current.is_array() {
+            choices.push(format!(
+                "Edit current value: {}",
+                match &current {
+                    Value::String(s) => s.clone(),
+                    v => v.to_string(),
+                }
+            ));
+        }
+        let Some(choice) = select(title, &choices)? else {
+            return Ok(None);
+        };
+        if choice == 0 {
+            return Ok(Some(current));
+        }
+        if choice == 1 {
+            let types = if container_only {
+                vec!["Named fields", "List"]
+            } else {
+                vec![
+                    "Named fields",
+                    "List",
+                    "Text",
+                    "Number",
+                    "On / off",
+                    "Empty",
+                ]
+            };
+            let Some(kind) = menu("Value type", &types)? else {
+                continue;
+            };
+            current = match kind {
+                0 => json!({}),
+                1 => json!([]),
+                2 => json!(""),
+                3 => json!(0),
+                4 => json!(false),
+                _ => Value::Null,
+            };
+            continue;
+        }
+        if current.is_object() || current.is_array() {
+            if choice == 2 {
+                if entries.len() >= 128 {
+                    view("Too many values", "Use at most 128 items in one group.")?;
+                    continue;
+                }
+                let key = if current.is_object() {
+                    let Some(key) = required("New field name", "")? else {
+                        continue;
+                    };
+                    if current.get(&key).is_some() {
+                        view(
+                            "Field already exists",
+                            "Choose the existing field to edit it.",
+                        )?;
+                        continue;
+                    }
+                    Some(key)
+                } else {
+                    None
+                };
+                if let Some(key) = key {
+                    current.as_object_mut().unwrap().insert(key, json!(""));
+                } else {
+                    current.as_array_mut().unwrap().push(json!(""));
+                }
+                continue;
+            }
+            let (key, child) = &entries[choice - offset];
+            match menu(key, &["Edit value", "Remove field or item"])? {
+                Some(0) => {
+                    if depth >= 16 {
+                        view(
+                            "Deep configuration",
+                            "Use the advanced configuration editor for values nested more than 16 levels.",
+                        )?;
+                        continue;
+                    }
+                    if let Some(value) = structured_edit_inner(key, child, false, depth + 1)? {
+                        if let Some(map) = current.as_object_mut() {
+                            map.insert(key.clone(), value);
+                        } else {
+                            current.as_array_mut().unwrap()[key.parse::<usize>()?] = value;
+                        }
+                    }
+                }
+                Some(1) => {
+                    if let Some(map) = current.as_object_mut() {
+                        map.remove(key);
+                    } else {
+                        current
+                            .as_array_mut()
+                            .unwrap()
+                            .remove(key.parse::<usize>()?);
+                    }
+                }
+                _ => {}
+            }
+        } else {
+            match &current {
+                Value::Bool(value) => {
+                    if let Some(index) = menu("Enabled", &["Off", "On"])? {
+                        let _ = value;
+                        current = json!(index == 1);
+                    }
+                }
+                Value::Number(value) => {
+                    if let Some(text) = prompt(
+                        "Number",
+                        "Enter a whole number or decimal.",
+                        &value.to_string(),
+                        false,
+                    )? {
+                        match text.parse::<serde_json::Number>() {
+                            Ok(value) => current = Value::Number(value),
+                            Err(_) => view("Invalid number", "Enter a whole number or decimal.")?,
+                        }
+                    }
+                }
+                _ => {
+                    if let Some(value) =
+                        prompt("Text value", "", current.as_str().unwrap_or(""), false)?
+                    {
+                        current = json!(value);
+                    }
+                }
+            }
+        }
+    }
+}

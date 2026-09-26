@@ -50,91 +50,38 @@ initialization or changing those initial privacy settings.
 
 ## Use the CLI
 
-For a Selfhost workspace project:
+For a workspace project:
 
 ```sh
 selfhost app-setup PROJECT homarr
-selfhost app-setup-plan PROJECT homarr onboarding.json
-selfhost app-setup-apply PROJECT homarr onboarding.json --revision REVIEWED_REVISION
 ```
 
 For an independent app directory:
 
 ```sh
 selfhost app --directory ./home setup homarr
-selfhost app --directory ./home setup-plan homarr onboarding.json
-selfhost app --directory ./home setup-apply homarr onboarding.json --revision REVIEWED_REVISION
 ```
 
-`setup` reports the available fields, suggestions and saved progress. Standalone
-commands stay within their app directory's metadata; they do not read a global
-workspace to discover services. Supply the links you want explicitly.
+The wizard asks for the setup mode, required fields, and application links.
+Passwords and API keys are hidden while you enter them. Workspace projects offer
+existing service links as suggestions; standalone directories remain independent
+of the global workspace. Review the actions and answer y/n. Selfhost retains
+revision checks internally, so no request file or revision copying is required.
 
-Example `onboarding.json` for a fresh installation:
-
-```json
-{
-  "mode": "bootstrap",
-  "inputs": {
-    "username": "admin",
-    "password": "env:SELFHOST_APP_PASSWORD",
-    "board": "Home"
-  },
-  "apps": [
-    {
-      "name": "Cloud",
-      "url": "https://files.example.com",
-      "icon": "",
-      "description": "Files and collaboration"
-    }
-  ]
-}
-```
-
-Set `SELFHOST_APP_PASSWORD` privately in the environment for both the plan and
-apply commands. Values beginning with `env:` read the named environment variable.
-Do not paste passwords into command arguments or publish request files containing
-credentials. A password must have at least eight characters. Board names use
-letters, digits, hyphens and underscores.
-
-For an already configured installation, replace the mode and inputs:
-
-```json
-{
-  "mode": "connect",
-  "inputs": {
-    "api_key": "env:SELFHOST_DASHBOARD_API_KEY",
-    "board": "Home"
-  },
-  "apps": []
-}
-```
-
-Add the desired links to `apps` before reviewing. Connecting this way still
-creates a new private board; it does not adopt or overwrite an existing board.
+Use `setup homarr --inspect` (or `app-setup PROJECT homarr --inspect`) for read-only
+status. Repeating setup after completion offers to add application links.
 
 ## Reuse the API connection
 
-After successful setup, reuse the privately saved API key and board to add more
-reviewed links. In the dashboard, reopen the completed setup section, choose the
-additional service links, review the plan and apply it. For a standalone directory,
-save `links.json` as an array:
-
-```json
-[
-  {
-    "name": "Status",
-    "url": "https://status.example.com",
-    "icon": "",
-    "description": "Service availability"
-  }
-]
-```
+In the dashboard, reopen the completed setup section and select additional links.
+From an independent directory:
 
 ```sh
-selfhost app --directory ./home sync-plan homarr links.json
-selfhost app --directory ./home sync homarr links.json --revision REVIEWED_REVISION
+selfhost app --directory ./home sync homarr
 ```
+
+The wizard suggests known services and lets you add names and URLs individually.
+It reuses the saved private API key and board after review and confirmation.
 
 These commands add both app entries and items to the saved private board. A URL
 already linked through this workflow, or repeated in the request, is rejected.
@@ -193,3 +140,11 @@ Profiles are trusted executable configuration. Test a new workflow on a disposab
 installation, including interrupted writes, credential handling and an already
 configured instance, before offering it to users. Support depends on the app and
 profile version; the presence of an HTTP API alone does not imply automatic setup.
+
+## File-based automation
+
+Scripts may still use `app-setup-plan` and `app-setup-apply` (or standalone
+`setup-plan` and `setup-apply`) with an explicit request file and reviewed revision.
+That request contains a `mode`, a map of `inputs`, and an `apps` list. Secrets in
+input files can use `env:VARIABLE_NAME`. The guided commands are the normal
+human workflow and require neither files nor environment variables.

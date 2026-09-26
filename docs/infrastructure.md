@@ -2,7 +2,7 @@
 
 ## Connections
 
-Open **Infrastructure** to save a connection. Connections default to read-only.
+Open **Infrastructure** or run `selfhost server-add` to save a connection. The guided CLI asks for the transport, offers inline dedicated SSH key setup or an existing alias, collects an optional app hostname and permissions, then checks inventory. Connections default to read-only. No request file is required.
 
 | Connection              | Discovery                                                         | Project execution                                  |
 | ----------------------- | ----------------------------------------------------------------- | -------------------------------------------------- |
@@ -11,7 +11,7 @@ Open **Infrastructure** to save a connection. Connections default to read-only.
 | Existing Docker context | Uses the endpoint and authentication already configured in Docker | Compose on that context                            |
 | Proxmox over SSH        | Cluster nodes, QEMU VMs, LXCs and storage inventory               | Native offline guest migration within that cluster |
 
-SSH aliases resolve through the user's OpenSSH configuration. Keys are not copied into selfhost. Verify host trust before connecting. Proxmox connections need permission to run `pvesh` on a cluster node. Docker inside a VM or LXC is a separate Docker endpoint using that guest's SSH alias.
+SSH aliases resolve through the user's OpenSSH configuration. Existing keys remain in OpenSSH. Selfhost can also create a dedicated key through its [SSH connection setup](ssh-keys.md). Verify host trust before connecting. Proxmox connections need permission to run `pvesh` on a cluster node. Docker inside a VM or LXC is a separate Docker endpoint using that guest's SSH alias.
 
 Server groups organize connections; they do not create a cluster. Swarm inventory reflects the real orchestrator. Compose deployment does not create a Swarm service, reschedule a Swarm task, or deploy Kubernetes resources.
 

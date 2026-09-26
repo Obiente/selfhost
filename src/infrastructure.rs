@@ -169,6 +169,14 @@ impl Store {
         Ok(servers)
     }
     pub fn server(&self, id: &str) -> Result<Server> {
+        ensure!(
+            id != "local"
+                || !matches!(
+                    self.local_docker_mode()?,
+                    crate::dashboard::LocalDockerMode::Disabled
+                ),
+            "Local Docker is disabled. Choose a remote host or enable local Docker under Infrastructure"
+        );
         self.servers()?
             .into_iter()
             .find(|s| s.id == id)
@@ -214,6 +222,11 @@ impl Store {
         self.server(&project.server_id)?.docker_command(write)
     }
     pub async fn infrastructure_inventory(&self, id: &str) -> Result<Value> {
+        if id == "local" && !self.monitor_local_docker()? {
+            return Ok(
+                json!({"available":true,"provider":"local","resources":[],"optional":true,"message":"Local Docker is not in use. Connect a remote host or enable local monitoring."}),
+            );
+        }
         let server = self.server(id)?;
         if server.provider == Provider::ProxmoxSsh {
             let resources: Value = serde_json::from_str(

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SshConnections from './SshConnections.vue';
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { Server as ServerIcon, Network, RefreshCw, Plus, ShieldCheck } from 'lucide-vue-next';
 type Server = {
@@ -21,6 +22,20 @@ const servers = ref<Server[]>([]),
   error = ref(''),
   adding = ref(false);
 const editing = ref('');
+const dockerMode = ref('auto');
+async function saveDockerMode() {
+  busy.value = true;
+  error.value = '';
+  try {
+    await props.api('/dashboard/docker-mode', 'PUT', dockerMode.value);
+    emit('changed');
+    await inspect(selected.value);
+  } catch (e) {
+    error.value = (e as Error).message;
+  } finally {
+    busy.value = false;
+  }
+}
 function editConnection() {
   if (!current.value) return;
   Object.assign(form, current.value);
@@ -179,6 +194,7 @@ const provider = (kind: string) =>
   })[kind] || kind;
 async function load() {
   servers.value = await props.api('/servers');
+  dockerMode.value = await props.api('/dashboard/docker-mode');
 }
 async function inspect(id: string) {
   selected.value = id;
@@ -277,6 +293,30 @@ onMounted(async () => {
       Group your hosts, inspect Docker clusters, and browse Proxmox nodes, virtual machines and
       containers.
     </p>
+    <form class="panel" @submit.prevent="saveDockerMode">
+      <label
+        >Docker on this machine<select v-model="dockerMode">
+          <option value="auto">Automatic: monitor when local projects exist</option>
+          <option value="disabled">Remote hosts only</option>
+          <option value="required">Monitor local Docker</option>
+        </select></label
+      >
+      <p class="form-help">
+        The dashboard can run without a local Docker engine. Remote Docker operations still require
+        the Docker CLI and SSH client on this machine.
+      </p>
+      <button class="button" :disabled="busy">Save hosting preference</button>
+    </form>
+    <SshConnections
+      :api="api"
+      @select="
+        (alias, purpose) => {
+          newConnection();
+          form.provider = purpose === 'proxmox' ? 'proxmox_ssh' : 'docker_ssh';
+          form.endpoint = alias;
+        }
+      "
+    />
     <form v-if="adding" class="panel connection-form" @submit.prevent="save">
       <h2>{{ editing ? 'Edit connection' : 'Connect a server' }}</h2>
       <label
@@ -361,6 +401,7 @@ onMounted(async () => {
             <RefreshCw :size="19" :class="{ spin: busy }" />
           </button>
         </div>
+        <p v-if="inventory?.optional" class="form-help">{{ inventory.message }}</p>
         <p v-if="busy" class="form-help">Reading server inventory…</p>
         <button
           v-if="!inventory && current?.id !== 'local'"

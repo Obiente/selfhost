@@ -1,5 +1,55 @@
 # Connect your identity provider
 
+## Guided setup from the provider directory
+
+> The guided wizard and setup codes are available since 0.1.4.
+
+Run one command in your provider's configuration directory:
+
+```sh
+selfhost identity setup
+```
+
+The wizard reads supported Compose, environment and native configuration hints,
+then asks for the Selfhost browser address, provider issuer and connection name.
+It does not execute configuration files or require a hand-written JSON file.
+
+ZITADEL can create a dedicated Selfhost project and OIDC client. Enter a temporary
+provider API token at the hidden prompt, explicitly select the human account that
+should administer Selfhost, and review before registration. Advanced prompts allow
+an existing project, organization and private CA. Other OIDC providers use guided
+entry of an existing client ID, secret and exact administrator subject IDs.
+Automatic registration requires a provider registration profile; detecting its
+directory alone does not imply that capability.
+
+Use the browser address you intend to visit. Localhost HTTP is supported for
+development; a domain uses HTTPS. The provider issuer must be reachable by both
+the dashboard and its users. Another server's localhost address does not refer to
+that provider from the dashboard host. Later domain changes require callback review.
+
+If the dashboard is on this machine, confirm its data directory and apply directly.
+Use `--data-dir` when the dashboard uses a custom path. Existing identity providers
+are preserved; this flow will not silently change the dashboard address or replace
+a connection with the same ID.
+
+For another machine, the wizard prints a private setup code valid for one hour.
+Paste it under **Access > Use the CLI**, or run on the dashboard host:
+
+```sh
+selfhost identity connect
+```
+
+Paste the code at the hidden prompt, review the issuer, client, callback and exact
+administrator IDs, then confirm. The code contains the OIDC client secret, but
+never the provider's administrative API token. It is encoded, not encrypted or
+signed: transfer it privately and verify the review. It can be applied once per
+receiving workspace. Expiry does not revoke credentials already copied elsewhere.
+The dashboard does not save the code in browser storage.
+
+Prepared connections are kept privately so rerunning setup can issue a fresh code
+without creating another client. Provider errors with uncertain outcomes retain
+the registration journal for inspection rather than creating duplicates.
+
 Open **Access** in the dashboard. **Connect an existing identity provider** comes first. Use **Host a new identity provider** if you want Selfhost to create a separate identity project instead.
 
 ## Use an existing client
