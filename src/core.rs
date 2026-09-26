@@ -11,6 +11,17 @@ use std::{
 };
 use tokio::process::Command;
 
+pub(crate) struct ProjectLock(File);
+
+impl Drop for ProjectLock {
+    fn drop(&mut self) {
+        // Closing alone leaves a Unix flock held while a concurrent process
+        // spawn still owns an inherited descriptor between fork and exec.
+        // Release it at the operation boundary even if a duplicate remains.
+        let _ = FileExt::unlock(&self.0);
+    }
+}
+
 pub fn now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -327,7 +338,7 @@ impl Store {
         validate_id(id)?;
         Ok(self.root.join("projects").join(id))
     }
-    pub(crate) fn project_lock(&self, id: &str) -> Result<File> {
+    pub(crate) fn project_lock(&self, id: &str) -> Result<ProjectLock> {
         self.project(id)?;
         ensure!(
             !self.project_dir(id)?.join("migration.json").exists(),
@@ -345,6 +356,7 @@ impl Store {
             .open(self.project_dir(id)?.join("operation.lock"))?;
         file.try_lock_exclusive()
             .context("Another action is already running for this project")?;
+        let lock = ProjectLock(file);
         // Recheck after acquiring the lock: another operation can finish and leave
         // a recovery marker between the optimistic checks above and this acquisition.
         self.project(id)?;
@@ -356,7 +368,7 @@ impl Store {
             !self.project_dir(id)?.join("removal.pending.json").exists(),
             "An interrupted removal needs reconciliation from the removal archive before this project can change"
         );
-        Ok(file)
+        Ok(lock)
     }
     pub fn create(&self, input: CreateProject) -> Result<Project> {
         self.create_versioned(input, std::collections::BTreeMap::new())
@@ -1171,6 +1183,22 @@ async fn run_output(mut command: Command, timeout: u64, include_stderr: bool) ->
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn project_lock_releases_even_when_an_inherited_descriptor_remains_open() {
+        let temp = tempfile::tempdir().unwrap();
+        let store = Store::open(temp.path().into()).unwrap();
+        let project = create(&store);
+        let lock = store.project_lock(&project.id).unwrap();
+        let inherited = lock.0.try_clone().unwrap();
+        assert!(store.project_lock(&project.id).is_err());
+        drop(lock);
+        let next = store.project_lock(&project.id).unwrap();
+        assert!(store.project_lock(&project.id).is_err());
+        drop(inherited);
+        assert!(store.project_lock(&project.id).is_err());
+        drop(next);
+        assert!(store.project_lock(&project.id).is_ok());
+    }
     #[tokio::test]
     async fn service_actions_reject_unowned_services_and_unknown_actions() {
         let temp = tempfile::tempdir().unwrap();
