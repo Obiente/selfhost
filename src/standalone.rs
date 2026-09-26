@@ -11,6 +11,7 @@ use sha2::{Digest, Sha256};
 use std::{
     collections::BTreeMap,
     fs,
+    io::{self, IsTerminal},
     path::{Path, PathBuf},
 };
 
@@ -622,14 +623,17 @@ pub async fn execute(path: &Path, catalog: Option<&Path>, command: AppCommand) -
         allow_untested,
     } = command
     {
+        let guided = inputs.is_none() && io::stdin().is_terminal() && io::stdout().is_terminal();
         let values = if let Some(file) = &inputs {
             read_json(file)?
-        } else {
+        } else if guided {
             let temp = tempfile::tempdir()?;
             let prompt_store = Store::with_catalog(temp.path().join("data"), catalog)?;
             crate::app_assist::init_inputs(&prompt_store, &app, stack, &mut method, &mut ack)?
+        } else {
+            BTreeMap::new()
         };
-        if inputs.is_none() {
+        if guided {
             crate::guided::review(
                 &json!({"application":app,"deployment":method,"inputs":values,"start_after_creation":start}),
             );
@@ -658,7 +662,7 @@ pub async fn execute(path: &Path, catalog: Option<&Path>, command: AppCommand) -
         if start {
             store.action(&project.id, "start").await?;
             println!("Application started. No Selfhost process needs to stay running.");
-            if inputs.is_none() {
+            if guided {
                 for service in &project.services {
                     if service.definition.onboarding.is_some()
                         && crate::guided::confirm(
