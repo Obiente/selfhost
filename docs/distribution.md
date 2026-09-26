@@ -52,7 +52,8 @@ Every run:
 2. Builds the dashboard, checks Rust formatting/Clippy/tests, and builds the docs.
 3. Verifies the Cargo package, installs from that packaged source, and checks its
    embedded assets, catalog and authenticated API from outside the checkout.
-4. Builds and tests six native targets on matching runners.
+4. Builds six native targets on matching runners. The full Rust suite runs once
+   on Linux, macOS and Windows; every native executable gets a release smoke test.
 5. Assembles one npm tarball only when all versions and checksums agree.
 6. Installs that tarball with scripts disabled, npx, pnpm dlx and pnpx on each
    target, then tests the installed application from an isolated directory.
@@ -62,6 +63,23 @@ artifacts. They contain product files only, not private test data. The npm artif
 includes `SHA256SUMS`. No registry credentials are needed for these preparation
 steps. Dependencies are locked, actions are pinned by commit, and the Rust
 toolchain is pinned in the workflow.
+
+### Build caching
+
+Rust registry downloads and dependency build outputs are cached separately for
+the source job and each native target. Keys include the Rust toolchain,
+dependencies and platform. npm download caches use the dashboard and site
+lockfiles. Cached outputs never replace the release or installation checks.
+
+Run a preparation build on `main` with both publishing inputs disabled to populate
+caches that later release tags can restore. GitHub allows tags to restore caches
+from the default branch, but not from a different tag. Caches may be evicted, so
+cold builds remain supported. See [GitHub's cache scope rules](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#restrictions-for-accessing-a-cache).
+
+The source archive is compiled once through installation from its extracted
+contents, using a shared target directory. This verifies the packaged source
+without a second package-verification build. All six platforms still test npm,
+npx, pnpm, direct binary installation and the installed dashboard/API.
 
 ### One-time registry setup
 
