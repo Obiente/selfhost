@@ -213,12 +213,22 @@ jobs:
           path: release
           run-id: ${{ inputs.verified_npm_run }}
           github-token: ${{ github.token }}
-      - name: Verify and publish the original tarball
+      - name: Verify and correct repository casing
         run: |
           cd release
           sha256sum --check SHA256SUMS
           node ../scripts/verify-npm-recovery.mjs --package
-          npm publish ./*.tgz --access public --provenance
+          node --test ../scripts/canonicalize-npm-repository.test.mjs
+          node ../scripts/canonicalize-npm-repository.mjs ./*.tgz ../canonical-release
+      - name: Install and smoke test the corrected package
+        run: |
+          npm install --ignore-scripts --prefix .local/recovered ./canonical-release/*.tgz
+          node .local/recovered/node_modules/selfhost/bin/selfhost.mjs --version
+          node scripts/smoke-release.mjs .local/recovered/node_modules/selfhost/native/selfhost-linux-x64
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with: { name: npm-release-canonical, path: canonical-release, if-no-files-found: error }
+      - name: Publish verified package with canonical repository metadata
+        run: npm publish ./canonical-release/*.tgz --access public --provenance
 
   publish-cargo:
     if: github.event_name == 'workflow_dispatch' && inputs.publish_cargo

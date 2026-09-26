@@ -110,11 +110,15 @@ on supported platforms afterward. Confirm the release notes and installation
 instructions match the versions actually available on each registry.
 
 If npm publication fails after every build and installation gate passes, the
-`verified_npm_run` input can recover that exact tarball. Run the workflow from
+`verified_npm_run` input can recover the tested package. Run the workflow from
 `main`, enable only `publish_npm`, and enter the original tagged run ID. Recovery
 verifies the original workflow, unchanged release tag, source checks, all six
-native and installation jobs, archive checksum and package metadata. It does not
-rebuild artifacts, move the tag or publish Cargo again. Use this only for an
+native and installation jobs, archive checksum and package metadata. It corrects
+only the casing of `repository.url` to match GitHub's canonical owner name for
+provenance verification. Repacking must preserve the entry list and every other
+file byte for byte. The corrected archive receives a new checksum, an installation
+smoke test and a separate workflow artifact. Recovery does not rebuild binaries,
+move the tag or publish Cargo again. Use this only for an
 already reviewed release; it cannot bypass failed build or installation tests.
 
 This workflow does not create a GitHub Release or publish the documentation site.
