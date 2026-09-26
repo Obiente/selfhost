@@ -10,9 +10,6 @@ on:
         description: Publish the verified Cargo source (matching release tag required)
         type: boolean
         default: false
-  push:
-    tags: ['v*']
-
 permissions:
   contents: read
 concurrency:

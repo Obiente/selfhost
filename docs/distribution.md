@@ -43,8 +43,9 @@ Release assembly removes that flag only after validating every platform artifact
 ## GitHub Actions
 
 `.github/workflows/release.yml` is the release entry point in `obiente/selfhost`.
-It supports both manual dispatch and `v*` tags. **Both publishing inputs default
-to false. A tag push builds artifacts but does not publish packages.**
+Run it with manual dispatch on a branch for preparation or on the matching release
+tag for publication. **Both publishing inputs default to false. Pushing a tag
+alone does not start a second build or publish packages.**
 
 Every run:
 
