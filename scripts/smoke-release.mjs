@@ -31,6 +31,14 @@ try {
   assert.match(run(['deployments']), /nextcloud/);
   assert.match(run(['identity', '--help']), /register-account/);
   assert.doesNotMatch(run(['identity', '--help']), /selfhost\.exe/);
+  assert.match(run(['serve', '--help']), /--bind/);
+  const remoteWithoutIdentity = spawnSync(
+    executable,
+    ['--data-dir', data, 'serve', '--bind', '0.0.0.0', '--port', '18372'],
+    { cwd: data, env, encoding: 'utf8', timeout: 10000, windowsHide: true },
+  );
+  assert.equal(remoteWithoutIdentity.status, 1, 'Unconfigured remote binding must fail');
+  assert.match(remoteWithoutIdentity.stderr, /HTTPS.*identity provider/);
   const service = JSON.parse(run(['dashboard', 'install', '--dry-run']));
   assert.equal(service.starts_now, false);
   assert.ok(service.definition);

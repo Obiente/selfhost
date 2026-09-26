@@ -18,8 +18,8 @@ schedules. You can also schedule ordinary Compose or CLI commands yourself.
 
 ## Install or run directly
 
-::: info Version 0.1.1
-These commands target version 0.1.1. Check the [release page](https://github.com/Obiente/selfhost/releases/tag/v0.1.1)
+::: info Version 0.1.2
+These commands target version 0.1.2. Check the [release page](https://github.com/Obiente/selfhost/releases/tag/v0.1.2)
 for publication status and release notes. You do not need to clone the repository
 when installing a published release.
 :::
@@ -36,13 +36,13 @@ supported on x64 and ARM64.
 Linux or macOS:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -fsSL https://github.com/Obiente/selfhost/releases/latest/download/install.sh | sh -s -- --version 0.1.1
+curl --proto '=https' --tlsv1.2 -fsSL https://github.com/Obiente/selfhost/releases/latest/download/install.sh | sh -s -- --version 0.1.2
 ```
 
 Windows PowerShell:
 
 ```powershell
-& ([scriptblock]::Create((Invoke-RestMethod https://github.com/Obiente/selfhost/releases/latest/download/install.ps1))) -Version 0.1.1
+& ([scriptblock]::Create((Invoke-RestMethod https://github.com/Obiente/selfhost/releases/latest/download/install.ps1))) -Version 0.1.2
 ```
 
 The installer checks the download's SHA-256 checksum and reported version before
@@ -52,7 +52,7 @@ installer prints PATH guidance; the Windows installer adds its directory to your
 user PATH. Open a new terminal if needed, then run `selfhost --help`.
 
 You can download and inspect the installer before running it, or download the
-binary directly from [the release assets](https://github.com/Obiente/selfhost/releases/tag/v0.1.1)
+binary directly from [the release assets](https://github.com/Obiente/selfhost/releases/tag/v0.1.2)
 and verify it against `BINARY-SHA256SUMS`. Rename it to `selfhost` on Linux/macOS
 or keep the platform's executable extension on Windows. On Linux/macOS, make it
 executable with `chmod +x selfhost` and put it on PATH.
@@ -68,33 +68,33 @@ authenticate its publisher.
 With Node.js 22 or newer:
 
 ```sh
-npx selfhost@0.1.1 --help
+npx selfhost@0.1.2 --help
 ```
 
 ### pnpm or pnpx
 
 ```sh
-pnpm dlx selfhost@0.1.1 --help
+pnpm dlx selfhost@0.1.2 --help
 ```
 
-The equivalent short command is `pnpx selfhost@0.1.1 --help`. No install scripts
+The equivalent short command is `pnpx selfhost@0.1.2 --help`. No install scripts
 or separate Rust installation are required. The npm package includes native
 executables for Windows, Linux and macOS, on x64 and ARM64.
 
 ### Install with npm or pnpm
 
 ```sh
-npm install --global selfhost@0.1.1
+npm install --global selfhost@0.1.2
 ```
 
-Or use `pnpm add --global selfhost@0.1.1`. Use `selfhost --help` to choose a command.
+Or use `pnpm add --global selfhost@0.1.2`. Use `selfhost --help` to choose a command.
 
 ### Install with Cargo
 
 With Rust 1.98 or newer and your platform's native build tools:
 
 ```sh
-cargo install selfhost --locked --version 0.1.1
+cargo install selfhost --locked --version 0.1.2
 ```
 
 Use `selfhost --help` to choose a command. Cargo compiles the CLI locally. Its source package

@@ -12,7 +12,7 @@ does not install anything. The dashboard Updates button, terminal UI and
 | Official crates.io release installed by Cargo          | Build an exact release in private staging, review activation, then replace the executable after Selfhost exits.                                                 |
 | Verified bundled npm launcher                          | Report the published launcher version and exact `npx --package=selfhost@VERSION selfhost` invocation. Existing npm packages and npx caches are not overwritten. |
 | Debug build, source checkout or Cargo path/git install | Instructions to update the checkout and rebuild. Selfhost never overwrites these builds.                                                                        |
-| Direct release binary                                  | Rerun the release installer with explicit replacement and a retained backup. Version 0.1.1 does not automate this through `selfhost update`.                    |
+| Direct release binary                                  | Rerun the release installer with explicit replacement and a retained backup. Version 0.1.2 does not automate this through `selfhost update`.                    |
 | Other standalone binary                                | Use its original installation method. No automatic binary download or replacement.                                                                              |
 
 Cargo identification requires a release executable in the recorded installation's
@@ -30,11 +30,11 @@ installer again from the [latest release](https://github.com/Obiente/selfhost/re
 then explicitly allow replacement:
 
 ```sh
-sh install.sh --version 0.1.1 --force
+sh install.sh --version 0.1.2 --force
 ```
 
 ```powershell
-./install.ps1 -Version 0.1.1 -Force
+./install.ps1 -Version 0.1.2 -Force
 ```
 
 Choose the version you want; omit the version option to use the latest stable
@@ -49,7 +49,7 @@ executable path. Binary rollback does not reverse application or configuration
 changes. Removing the installed executable and its PATH entry uninstalls the CLI;
 it does not remove your projects, containers or private data.
 
-In version 0.1.1, `selfhost update` treats direct binaries as standalone installs
+In version 0.1.2, `selfhost update` treats direct binaries as standalone installs
 and directs you to the original installation method. Its staged activation flow
 below applies to official Cargo installations.
 

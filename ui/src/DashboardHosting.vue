@@ -6,7 +6,7 @@ const error = ref('');
 const commands = computed(() => {
   if (!runtime.value) return '';
   const prefix = runtime.value.command_prefix;
-  return `${prefix} dashboard install --port ${runtime.value.port}\n${prefix} dashboard start\n${prefix} dashboard logs`;
+  return `${prefix} dashboard install --port ${runtime.value.port} --bind ${runtime.value.bind || '127.0.0.1'}\n${prefix} dashboard start\n${prefix} dashboard logs`;
 });
 onMounted(async () => {
   try {
@@ -40,18 +40,20 @@ onMounted(async () => {
       <pre tabindex="0">{{ commands }}</pre>
       <p>
         On Linux, enable user lingering to start without signing in. Windows and macOS user services
-        start at sign-in. The private logs contain your local sign-in link.
+        start at sign-in. The private logs show the sign-in address and recovery instructions.
       </p>
     </details>
     <h3>Use your own domain</h3>
     <p>
-      Set your HTTPS Selfhost address in the sign-in setup below. Point your reverse proxy at
-      <code>http://127.0.0.1:{{ runtime?.port || 'PORT' }}</code> on this host, and preserve the
-      public Host header.
+      Set your HTTPS Selfhost address in the sign-in setup below. Point your reverse proxy at its
+      private backend address on port <code>{{ runtime?.port || 'PORT' }}</code
+      >, and preserve the public Host header.
     </p>
     <p>
-      A proxy in another server, container or LXC needs a secured tunnel to this loopback address.
-      Its own localhost points to a different place.
+      The listener is <code>{{ runtime?.bind || '127.0.0.1' }}</code
+      >. For a proxy on another server, VM or LXC, use a secured tunnel to the default loopback
+      listener or restart Selfhost with <code>--bind YOUR_PRIVATE_OR_VPN_IP</code>. Allow only your
+      proxy through the backend firewall and use an encrypted VPN or tunnel between hosts.
     </p>
     <p>
       Configure DNS, TLS and the provider callback before applying the new address. Keep local

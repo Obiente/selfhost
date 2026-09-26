@@ -3,7 +3,7 @@ use anyhow::Result;
 use axum::{
     Json, Router,
     body::Body,
-    extract::{Path, Request, State},
+    extract::{ConnectInfo, Path, Request, State},
     http::{StatusCode, header},
     middleware::{self, Next},
     response::{IntoResponse, Response},
@@ -12,7 +12,11 @@ use axum::{
 use rust_embed::RustEmbed;
 use serde::Deserialize;
 use serde_json::{Value, json};
-use std::{sync::Arc, time::Duration};
+use std::{
+    net::{IpAddr, SocketAddr},
+    sync::Arc,
+    time::Duration,
+};
 
 #[derive(RustEmbed)]
 #[folder = "ui/dist/"]
@@ -21,6 +25,7 @@ struct Assets;
 struct App {
     store: Store,
     port: u16,
+    bind: IpAddr,
     login: Arc<crate::auth::LoginState>,
     shutdown: tokio_util::sync::CancellationToken,
 }
@@ -51,6 +56,7 @@ type ApiResult<T> = std::result::Result<Json<T>, ApiError>;
 async fn dashboard_runtime(State(app): State<AppState>) -> ApiResult<Value> {
     let mut value = crate::dashboard::summary(&app.store)?;
     value["port"] = json!(app.port);
+    value["bind"] = json!(app.bind);
     Ok(Json(value))
 }
 async fn stacks(State(app): State<AppState>) -> ApiResult<Value> {
@@ -78,7 +84,9 @@ async fn update_activate(
     State(app): State<AppState>,
     Json(input): Json<crate::updates::UpdateActivation>,
 ) -> ApiResult<Value> {
-    let result = app.store.activate_update(input, Some(app.port))?;
+    let result = app
+        .store
+        .activate_update(input, Some(SocketAddr::new(app.bind, app.port)))?;
     if result["shutdown_required"] == true {
         let shutdown = app.shutdown.clone();
         tokio::spawn(async move {
@@ -92,7 +100,9 @@ async fn update_recover(
     State(app): State<AppState>,
     Json(input): Json<crate::updates::UpdateActivation>,
 ) -> ApiResult<Value> {
-    let result = app.store.recover_update(input, Some(app.port))?;
+    let result = app
+        .store
+        .recover_update(input, Some(SocketAddr::new(app.bind, app.port)))?;
     if result["shutdown_required"] == true {
         let shutdown = app.shutdown.clone();
         tokio::spawn(async move {
@@ -171,12 +181,15 @@ fn request_origin(app: &App, headers: &axum::http::HeaderMap) -> Option<(String,
             return Some((origin, config.is_loopback()));
         }
     }
-    if [
+    let mut local_hosts = vec![
         format!("127.0.0.1:{}", app.port),
         format!("localhost:{}", app.port),
-    ]
-    .contains(&host.to_string())
-    {
+        format!("[::1]:{}", app.port),
+    ];
+    if app.bind.is_loopback() {
+        local_hosts.push(SocketAddr::new(app.bind, app.port).to_string());
+    }
+    if local_hosts.iter().any(|allowed| allowed == host) {
         return Some((format!("http://{host}"), true));
     }
     None
@@ -304,7 +317,14 @@ async fn security_headers(State(app): State<AppState>, request: Request, next: N
     let public_https = request_origin(&app, request.headers())
         .is_some_and(|(origin, _)| origin.starts_with("https://"));
     let valid_host = request.headers().get_all(header::HOST).iter().count() == 1
-        && request_origin(&app, request.headers()).is_some();
+        && request_origin(&app, request.headers()).is_some_and(|(_, local)| {
+            // Never trust Host or forwarded headers as evidence of a local peer.
+            !local
+                || request
+                    .extensions()
+                    .get::<ConnectInfo<SocketAddr>>()
+                    .is_some_and(|peer| peer_is_loopback(peer.0.ip()))
+        });
     let mut response = if valid_host {
         next.run(request).await
     } else {
@@ -1503,33 +1523,83 @@ async fn termination_signal() {
     }
     let _ = tokio::signal::ctrl_c().await;
 }
-pub async fn serve(store: Store, port: u16) -> Result<()> {
-    // Keep a usable direct HTTP recovery alias when an HTTPS proxy uses the
-    // listener's numeric loopback host and port as its configured public address.
-    let recovery_host = if store
-        .login_config()
-        .ok()
-        .flatten()
-        .is_some_and(|c| c.origin() == format!("https://127.0.0.1:{port}"))
-    {
-        "localhost"
+fn peer_is_loopback(ip: IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(ip) => ip.is_loopback(),
+        IpAddr::V6(ip) => {
+            ip.is_loopback() || ip.to_ipv4_mapped().is_some_and(|ip| ip.is_loopback())
+        }
+    }
+}
+
+pub(crate) fn validate_bind(store: &Store, bind: IpAddr) -> Result<()> {
+    anyhow::ensure!(
+        !bind.is_multicast(),
+        "A multicast address cannot host the dashboard"
+    );
+    if !bind.is_loopback() {
+        let config = store.login_config()?.ok_or_else(|| anyhow::anyhow!(
+            "Before binding remotely, configure an HTTPS Selfhost address and an identity provider with authorized administrators using the loopback dashboard or identity CLI"
+        ))?;
+        anyhow::ensure!(
+            !config.is_loopback() && config.origin().starts_with("https://"),
+            "Remote binding requires a non-loopback HTTPS Selfhost address and an identity provider"
+        );
+    }
+    Ok(())
+}
+
+fn recovery_address(
+    bind: IpAddr,
+    port: u16,
+    config: Option<&crate::auth::LoginConfig>,
+) -> Option<String> {
+    if !bind.is_loopback() && !bind.is_unspecified() {
+        return None;
+    }
+    let ip = if bind.is_unspecified() {
+        if bind.is_ipv6() {
+            std::net::Ipv6Addr::LOCALHOST.into()
+        } else {
+            std::net::Ipv4Addr::LOCALHOST.into()
+        }
     } else {
-        "127.0.0.1"
+        bind
     };
-    let listener = tokio::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, port)).await?;
+    let address = SocketAddr::new(ip, port).to_string();
+    if config.is_some_and(|c| c.origin() == format!("https://{address}")) {
+        // localhost resolves to the standard loopbacks, not arbitrary 127/8 IPs.
+        return (ip == IpAddr::V4(std::net::Ipv4Addr::LOCALHOST)
+            || ip == IpAddr::V6(std::net::Ipv6Addr::LOCALHOST))
+        .then(|| format!("localhost:{port}"));
+    }
+    Some(address)
+}
+
+pub async fn serve(store: Store, bind: IpAddr, port: u16) -> Result<()> {
+    validate_bind(&store, bind)?;
+    let listener = tokio::net::TcpListener::bind((bind, port)).await?;
     let recovery = core::token(32)?;
     let app = Arc::new(App {
         store: store.clone(),
         login: Arc::new(crate::auth::LoginState::with_recovery(recovery.clone())),
         port: listener.local_addr()?.port(),
+        bind,
         shutdown: tokio_util::sync::CancellationToken::new(),
     });
     let router = router(app.clone());
-    println!(
-        "selfhost dashboard: http://{recovery_host}:{}/#token={}",
-        app.port, recovery
-    );
-    println!("This local sign-in link expires in 10 minutes and can be used once.");
+    println!("Selfhost listening on {}", listener.local_addr()?);
+    if let Some(config) = app.store.login_config()? {
+        println!("Dashboard sign-in: {}", config.origin());
+    }
+    if let Some(address) = recovery_address(bind, app.port, app.store.login_config()?.as_ref()) {
+        println!("selfhost dashboard: http://{address}/#token={recovery}");
+        println!("This local sign-in link expires in 10 minutes and can be used once.");
+    } else {
+        println!(
+            "Local recovery is unavailable on this listener. Stop it and run serve --bind 127.0.0.1 with the same data directory if recovery is needed."
+        );
+    }
     println!("Schedules run while this process is open. Press Ctrl+C to stop.");
     let scheduler_shutdown = app.shutdown.clone();
     let scheduler = tokio::spawn(async move {
@@ -1573,12 +1643,15 @@ pub async fn serve(store: Store, port: u16) -> Result<()> {
         }
     });
     let shutdown = app.shutdown.clone();
-    axum::serve(listener, router)
-        .with_graceful_shutdown(async move {
-            tokio::select! { _=termination_signal()=>{},_=shutdown.cancelled()=>{} }
-            shutdown.cancel();
-        })
-        .await?;
+    axum::serve(
+        listener,
+        router.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(async move {
+        tokio::select! { _=termination_signal()=>{},_=shutdown.cancelled()=>{} }
+        shutdown.cancel();
+    })
+    .await?;
     scheduler.await?;
     Ok(())
 }
@@ -1594,6 +1667,7 @@ mod tests {
         let app = Arc::new(App {
             store: Store::open(directory.path().into()).unwrap(),
             port: 8797,
+            bind: std::net::Ipv4Addr::LOCALHOST.into(),
             shutdown: tokio_util::sync::CancellationToken::new(),
             login: Arc::new(crate::auth::LoginState::with_recovery("test-link".into())),
         });
@@ -1602,6 +1676,7 @@ mod tests {
     fn request(method: &str, path: &str) -> axum::http::request::Builder {
         Request::builder()
             .method(method)
+            .extension(ConnectInfo(SocketAddr::from(([127, 0, 0, 1], 12345))))
             .uri(path)
             .header("host", HOST)
             .header("content-type", "application/json")
@@ -1633,6 +1708,140 @@ mod tests {
             set.split(';').next().unwrap().into(),
             value["client_key"].as_str().unwrap().into(),
         )
+    }
+    fn remote_config() -> crate::auth::LoginConfig {
+        crate::auth::LoginConfig {
+            public_url: "https://selfhost.example.test".into(),
+            providers: vec![crate::auth::LoginProvider {
+                id: "home".into(),
+                name: "Home".into(),
+                issuer: "https://identity.example.test".into(),
+                client_id: "selfhost".into(),
+                client_secret: String::new(),
+                ca_certificate: String::new(),
+                admin_subjects: vec!["owner".into()],
+            }],
+        }
+    }
+    #[test]
+    fn remote_bind_requires_https_identity_and_recovery_matches_listener() {
+        let (_dir, app) = app();
+        for ip in ["0.0.0.0", "::", "192.0.2.10", "2001:db8::10"] {
+            assert!(validate_bind(&app.store, ip.parse().unwrap()).is_err());
+        }
+        for ip in ["127.0.0.1", "::1"] {
+            assert!(validate_bind(&app.store, ip.parse().unwrap()).is_ok());
+        }
+        let mut config = remote_config();
+        config.public_url = "http://localhost:8797".into();
+        app.store.save_login_config(config.clone()).unwrap();
+        assert!(validate_bind(&app.store, "0.0.0.0".parse().unwrap()).is_err());
+        std::fs::remove_file(app.store.root.join("login.json")).unwrap();
+        app.store.save_login_config(remote_config()).unwrap();
+        for ip in ["0.0.0.0", "::", "192.0.2.10", "2001:db8::10"] {
+            assert!(validate_bind(&app.store, ip.parse().unwrap()).is_ok());
+        }
+        assert!(validate_bind(&app.store, "224.0.0.1".parse().unwrap()).is_err());
+        assert_eq!(
+            recovery_address("::".parse().unwrap(), 8797, None).as_deref(),
+            Some("[::1]:8797")
+        );
+        assert_eq!(
+            recovery_address("127.0.0.2".parse().unwrap(), 8797, None).as_deref(),
+            Some("127.0.0.2:8797")
+        );
+        assert!(recovery_address("192.0.2.10".parse().unwrap(), 8797, None).is_none());
+        config.public_url = "https://[::1]:8797".into();
+        assert_eq!(
+            recovery_address("::1".parse().unwrap(), 8797, Some(&config)).as_deref(),
+            Some("localhost:8797")
+        );
+        assert!(peer_is_loopback("::ffff:127.0.0.1".parse().unwrap()));
+        assert!(!peer_is_loopback("::ffff:192.0.2.10".parse().unwrap()));
+    }
+    #[tokio::test]
+    async fn remote_peers_cannot_spoof_local_recovery_or_replay_local_sessions() {
+        let (_dir, app) = app();
+        app.store.save_login_config(remote_config()).unwrap();
+        let router = router(app);
+        let (cookie, proof) = exchange(&router).await;
+        for peer in [
+            "192.0.2.20:12345",
+            "[2001:db8::20]:12345",
+            "[::ffff:192.0.2.20]:12345",
+        ] {
+            for path in ["/auth/local", "/api/account/activity"] {
+                let response = router
+                    .clone()
+                    .oneshot(
+                        request("POST", path)
+                            .extension(ConnectInfo(peer.parse::<SocketAddr>().unwrap()))
+                            .header("origin", ORIGIN)
+                            .header("cookie", &cookie)
+                            .header("x-selfhost-client", &proof)
+                            .header("x-forwarded-for", "127.0.0.1")
+                            .header("forwarded", "for=127.0.0.1;proto=https")
+                            .body(Body::from(r#"{"token":"test-link"}"#))
+                            .unwrap(),
+                    )
+                    .await
+                    .unwrap();
+                assert_eq!(response.status(), StatusCode::FORBIDDEN);
+            }
+        }
+        let mut missing_peer = request("GET", "/auth/info").body(Body::empty()).unwrap();
+        missing_peer
+            .extensions_mut()
+            .remove::<ConnectInfo<SocketAddr>>();
+        assert_eq!(
+            router.clone().oneshot(missing_peer).await.unwrap().status(),
+            StatusCode::FORBIDDEN
+        );
+        for (path, expected) in [
+            ("/auth/info", StatusCode::OK),
+            ("/api/projects", StatusCode::UNAUTHORIZED),
+        ] {
+            let response = router
+                .clone()
+                .oneshot(
+                    Request::builder()
+                        .uri(path)
+                        .extension(ConnectInfo(
+                            "192.0.2.20:12345".parse::<SocketAddr>().unwrap(),
+                        ))
+                        .header("host", "selfhost.example.test")
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(response.status(), expected);
+        }
+    }
+    #[tokio::test]
+    async fn real_listener_supplies_peer_identity() {
+        let (_dir, app) = app();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let task = tokio::spawn(async move {
+            axum::serve(
+                listener,
+                router(app).into_make_service_with_connect_info::<SocketAddr>(),
+            )
+            .await
+            .unwrap();
+        });
+        let response = reqwest::Client::builder()
+            .no_proxy()
+            .build()
+            .unwrap()
+            .get(format!("http://{address}/auth/info"))
+            .header("host", HOST)
+            .send()
+            .await
+            .unwrap();
+        task.abort();
+        assert_eq!(response.status(), StatusCode::OK);
     }
     #[tokio::test]
     async fn account_recovery_logout_and_api_authorization() {
@@ -1810,6 +2019,7 @@ mod tests {
                 Request::builder()
                     .method("POST")
                     .uri("/auth/local")
+                    .extension(ConnectInfo(SocketAddr::from(([127, 0, 0, 1], 12345))))
                     .header("host", "localhost:8797")
                     .header("origin", "https://localhost:8797")
                     .header("content-type", "application/json")

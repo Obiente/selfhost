@@ -65,6 +65,8 @@ struct Job {
     parent_pid: Option<u32>,
     restart_port: Option<u16>,
     #[serde(default)]
+    restart_bind: Option<std::net::IpAddr>,
+    #[serde(default)]
     restart_catalog: Option<PathBuf>,
     #[serde(default)]
     restart_pid: Option<u32>,
@@ -346,7 +348,7 @@ impl Store {
     pub fn activate_update(
         &self,
         approval: UpdateActivation,
-        restart_port: Option<u16>,
+        restart_address: Option<std::net::SocketAddr>,
     ) -> Result<Value> {
         id(&approval.job_id)?;
         let root = self.updates_dir()?;
@@ -377,7 +379,8 @@ impl Store {
             "Updater helper verification failed"
         );
         job.parent_pid = Some(std::process::id());
-        job.restart_port = restart_port;
+        job.restart_port = restart_address.map(|address| address.port());
+        job.restart_bind = restart_address.map(|address| address.ip());
         job.restart_catalog = restart_catalog()?;
         job.status = "activating".into();
         save(&path.join("job.json"), &job)?;
@@ -431,7 +434,7 @@ impl Store {
     pub fn recover_update(
         &self,
         approval: UpdateActivation,
-        restart_port: Option<u16>,
+        restart_address: Option<std::net::SocketAddr>,
     ) -> Result<Value> {
         id(&approval.job_id)?;
         let root = self.updates_dir()?;
@@ -462,7 +465,8 @@ impl Store {
             "Original update helper is unavailable or changed; preserve the backups and recover manually"
         );
         job.parent_pid = Some(std::process::id());
-        job.restart_port = restart_port;
+        job.restart_port = restart_address.map(|address| address.port());
+        job.restart_bind = restart_address.map(|address| address.ip());
         job.restart_catalog = restart_catalog()?;
         job.status = "recovering".into();
         save(&path.join("job.json"), &job)?;
@@ -592,6 +596,7 @@ fn stage(root: &Path, data_dir: &Path, approval: UpdateApproval) -> Result<Value
         staged_hash: None,
         parent_pid: None,
         restart_port: None,
+        restart_bind: None,
         restart_catalog: None,
         restart_pid: None,
         restart_status: None,
@@ -1074,7 +1079,11 @@ fn restart_dashboard(path: &Path, job: &mut Job) -> Result<()> {
         command
             .arg("--data-dir")
             .arg(&job.data_dir)
-            .args(["serve", "--port", &port.to_string()])
+            .args(["serve", "--port", &port.to_string()]);
+        if let Some(bind) = job.restart_bind {
+            command.args(["--bind", &bind.to_string()]);
+        }
+        command
             .stdin(Stdio::null())
             .stdout(restart_output.try_clone()?)
             .stderr(restart_output);
@@ -1199,6 +1208,7 @@ mod tests {
             staged_hash: Some(hash(&staged).unwrap()),
             parent_pid: None,
             restart_port: None,
+            restart_bind: None,
             restart_catalog: None,
             restart_pid: None,
             restart_status: None,
@@ -1279,6 +1289,7 @@ mod tests {
             let port = listener.local_addr().unwrap().port();
             drop(listener);
             job.restart_port = Some(port);
+            job.restart_bind = Some("127.0.0.2".parse().unwrap());
             let helper = path.join(if cfg!(windows) {
                 "update-helper.exe"
             } else {
@@ -1398,6 +1409,12 @@ mod tests {
             assert!(
                 link_saved,
                 "Restart recovery link must remain available in the private owner log"
+            );
+            assert!(
+                fs::read_to_string(restart_log(&job))
+                    .unwrap()
+                    .contains(&format!("Selfhost listening on 127.0.0.2:{port}")),
+                "Both replacement and recovery must preserve the explicit bind address"
             );
             assert_eq!(
                 job.status,

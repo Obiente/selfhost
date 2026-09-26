@@ -57,7 +57,7 @@ Commands:
   env                     Edit environment variables; values are read from stdin, never command arguments
   config                  Edit a mounted configuration file
   export                  Export standalone Compose, environment and config files (includes secrets, excludes volume data)
-  serve                   Open the local dashboard server
+  serve                   Open the dashboard server (loopback by default)
   tui                     Browse and control projects in the terminal
   catalog                 Validate and list the service catalog
   versions                List recipe versions, optionally check its upstream release source
@@ -777,9 +777,10 @@ Install a private copy as a user service (starts at sign-in); does not start it 
 Usage: selfhost dashboard install [OPTIONS]
 
 Options:
+      --bind <BIND>                Listener IP; use a private/VPN address for a remote proxy [default: 127.0.0.1]
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
-      --port <PORT>                [default: 8372]
       --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+      --port <PORT>                [default: 8372]
       --dry-run                    Show service definitions without installing anything
   -h, --help                       Print help
 ```
@@ -874,9 +875,10 @@ Arguments:
   <URL>
 
 Options:
+      --bind <BIND>                Listener IP used in proxy examples; wildcard listeners need a reachable host IP instead [default: 127.0.0.1]
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
-      --port <PORT>                [default: 8372]
       --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+      --port <PORT>                [default: 8372]
       --revision <REVISION>
       --confirm-callbacks
   -h, --help                       Print help
@@ -2053,14 +2055,15 @@ Options:
 ## serve
 
 ```text
-Open the local dashboard server
+Open the dashboard server (loopback by default)
 
 Usage: selfhost serve [OPTIONS]
 
 Options:
+      --bind <BIND>                Listener IP; remote access requires a configured HTTPS origin and identity provider [default: 127.0.0.1]
       --data-dir <DATA_DIR>        Directory for projects, secrets, and configuration snapshots
-      --port <PORT>                [default: 8372]
       --catalog-dir <CATALOG_DIR>  Additional TOML service manifests; matching ids override recipes for new projects
+      --port <PORT>                [default: 8372]
   -h, --help                       Print help
 ```
 

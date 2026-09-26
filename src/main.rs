@@ -283,8 +283,11 @@ enum Commands {
     },
     /// Export standalone Compose, environment and config files (includes secrets, excludes volume data)
     Export { project: String, output: PathBuf },
-    /// Open the local dashboard server
+    /// Open the dashboard server (loopback by default)
     Serve {
+        /// Listener IP; remote access requires a configured HTTPS origin and identity provider
+        #[arg(long, default_value = "127.0.0.1")]
+        bind: std::net::IpAddr,
         #[arg(long, default_value_t = 8372)]
         port: u16,
     },
@@ -696,7 +699,10 @@ async fn run() -> Result<()> {
             );
         }
     }
-    match cli.command.unwrap_or(Commands::Serve { port: 8372 }) {
+    match cli.command.unwrap_or(Commands::Serve {
+        port: 8372,
+        bind: std::net::Ipv4Addr::LOCALHOST.into(),
+    }) {
         Commands::Task { command } => tasks::run(&store, command).await?,
         Commands::App { .. } => unreachable!("directory commands do not open a managed workspace"),
         Commands::Dashboard { command } => {
@@ -1273,7 +1279,7 @@ async fn run() -> Result<()> {
                 "Exported standalone setup. Archive includes credentials; volume data is not included."
             );
         }
-        Commands::Serve { port } => Box::pin(server::serve(store, port)).await?,
+        Commands::Serve { port, bind } => Box::pin(server::serve(store, bind, port)).await?,
         Commands::Tui => Box::pin(tui::run(store)).await?,
         Commands::Catalog => unreachable!(),
         Commands::Versions { app, check } => {

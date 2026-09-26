@@ -32,7 +32,9 @@ using the same port before running `dashboard start`. The dry run prints the
 service definition without registering it. Debug builds are not installable as
 background services.
 
-The private log contains the one-use local sign-in link. It expires after ten
+For loopback or wildcard listeners, the private log contains the one-use local
+sign-in link. A listener bound to one private IP instead prints the configured
+public sign-in address and local recovery instructions. Local links expire after ten
 minutes. Use your configured identity provider for later sign-ins, or restart
 the dashboard and read the new link locally. Do not share the log.
 
@@ -82,7 +84,7 @@ of the exact task shown in the installation plan.
 
 ## Use a domain and your existing proxy
 
-Selfhost continues listening only on `127.0.0.1`. Configure an HTTPS reverse proxy
+Selfhost listens on `127.0.0.1` by default. Configure an HTTPS reverse proxy
 with your desired DNS name, valid TLS and the original public `Host` header.
 
 ```sh
@@ -116,6 +118,52 @@ the public Host header. Configure TLS at the proxy. A container's loopback addre
 is its own namespace, not the host's loopback.
 
 ### Proxy on another server, VM or LXC
+
+> **Available since 0.1.2:** `--bind` selects the listener address. Version 0.1.1
+> uses a loopback listener; use the SSH tunnel below with that release.
+
+For direct access from a remote proxy, bind the backend to its **private or VPN IP**.
+`0.0.0.0` also works, but listens on every IPv4 interface, including public ones.
+`::` selects the IPv6 wildcard; whether it also accepts IPv4 depends on the host.
+Binding does not configure DNS, TLS, routing or firewall rules.
+
+First configure an HTTPS Selfhost address, identity provider and explicitly allowed
+administrators using the loopback dashboard or identity CLI. Remote binding refuses
+to start without these settings. Verify domain sign-in through a tunnel before
+switching the listener. Then, on the Selfhost machine:
+
+```sh
+selfhost serve --bind 10.20.0.10 --port 8372
+```
+
+Replace `10.20.0.10` with an address assigned to that machine, reachable from the
+proxy. For persistent hosting, install the listener settings with the service:
+
+```sh
+selfhost dashboard install --bind 10.20.0.10 --port 8372
+selfhost dashboard start
+selfhost dashboard domain https://selfhost.example.com --bind 10.20.0.10 --port 8372
+```
+
+An already installed service must be stopped and uninstalled before reinstalling
+with a different bind address. Its workspace is preserved. `dashboard status`
+shows the saved bind address; web update restarts retain the selected address. Existing service settings without a bind field stay on
+`127.0.0.1`. The domain command prints proxy examples; it does not change the
+running listener. Give it a reachable IP, never `0.0.0.0` or `::` as an upstream.
+
+Point the proxy at `http://10.20.0.10:8372`, preserve the public `Host` header, and
+terminate browser HTTPS at the proxy. Restrict inbound backend traffic to the
+proxy's IP using a host firewall and use WireGuard, NetBird or another authenticated
+encrypted tunnel between hosts. The backend speaks HTTP; TLS at the public proxy
+does not encrypt that second connection. Do not publish the backend port through
+your router. `--bind` does not enforce a proxy source-IP allowlist for you.
+
+Remote clients must sign in through the configured HTTPS origin. Direct private-IP
+URLs and forged localhost/forwarded headers do not enable remote local recovery.
+If a private-IP listener needs recovery, stop it and run `selfhost serve --bind
+127.0.0.1` with the same data directory, then use the new local sign-in link.
+
+#### Keep the backend on loopback instead
 
 Create an authenticated tunnel from the proxy's network namespace to the Selfhost
 host's loopback listener. For example, run this on the proxy host with a verified

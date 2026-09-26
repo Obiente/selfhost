@@ -8,6 +8,7 @@ use sha2::{Digest, Sha256};
 use std::{
     fs,
     io::{Read, Seek, SeekFrom},
+    net::{IpAddr, Ipv4Addr, SocketAddr},
     path::{Path, PathBuf},
     process::{Command, Stdio},
 };
@@ -16,6 +17,9 @@ use std::{
 pub enum DashboardCommand {
     /// Install a private copy as a user service (starts at sign-in); does not start it now
     Install {
+        /// Listener IP; use a private/VPN address for a remote proxy
+        #[arg(long, default_value = "127.0.0.1")]
+        bind: IpAddr,
         #[arg(long, default_value_t = 8372)]
         port: u16,
         /// Show service definitions without installing anything
@@ -40,6 +44,9 @@ pub enum DashboardCommand {
     /// Review a domain and proxy instructions; apply an existing login configuration with its revision
     Domain {
         url: String,
+        /// Listener IP used in proxy examples; wildcard listeners need a reachable host IP instead
+        #[arg(long, default_value = "127.0.0.1")]
+        bind: IpAddr,
         #[arg(long, default_value_t = 8372)]
         port: u16,
         #[arg(long)]
@@ -49,6 +56,8 @@ pub enum DashboardCommand {
     },
     #[command(hide = true)]
     Run {
+        #[arg(long, default_value = "127.0.0.1")]
+        bind: IpAddr,
         #[arg(long)]
         port: u16,
     },
@@ -58,8 +67,14 @@ pub enum DashboardCommand {
 #[serde(deny_unknown_fields)]
 struct Settings {
     port: u16,
+    #[serde(default = "default_bind")]
+    bind: IpAddr,
     catalog: Option<PathBuf>,
     state: String,
+}
+
+fn default_bind() -> IpAddr {
+    Ipv4Addr::LOCALHOST.into()
 }
 
 fn directory(store: &Store) -> PathBuf {
@@ -196,6 +211,8 @@ fn arguments(store: &Store, config: &Settings) -> Result<Vec<String>> {
         "run".into(),
         "--port".into(),
         config.port.to_string(),
+        "--bind".into(),
+        config.bind.to_string(),
     ]);
     Ok(args)
 }
@@ -319,7 +336,7 @@ fn manager(store: &Store, action: &str) -> Result<Value> {
 pub fn status(store: &Store) -> Result<Value> {
     let config = settings(store)?;
     Ok(
-        json!({"installed":config.as_ref().is_some_and(|s|s.state=="installed"),"state":config.as_ref().map(|s|&s.state),"port":config.as_ref().map(|s|s.port),"startup":"User sign-in. Linux can use loginctl enable-linger for startup without a login.","log":directory(store).join("dashboard.log"),"manager":if config.is_some(){manager(store,"status")?}else{json!(null)}}),
+        json!({"installed":config.as_ref().is_some_and(|s|s.state=="installed"),"state":config.as_ref().map(|s|&s.state),"port":config.as_ref().map(|s|s.port),"bind":config.as_ref().map(|s|s.bind),"startup":"User sign-in. Linux can use loginctl enable-linger for startup without a login.","log":directory(store).join("dashboard.log"),"manager":if config.is_some(){manager(store,"status")?}else{json!(null)}}),
     )
 }
 pub fn summary(store: &Store) -> Result<Value> {
@@ -334,10 +351,18 @@ pub fn summary(store: &Store) -> Result<Value> {
         json!({"installed":config.as_ref().is_some_and(|s|s.state=="installed"),"platform":std::env::consts::OS,"command_prefix":format!("selfhost --data-dir {quoted}"),"supervised":std::env::var("SELFHOST_DASHBOARD_SERVICE").as_deref()==Ok("1")}),
     )
 }
-fn install(store: &Store, catalog: Option<&Path>, port: u16, dry_run: bool) -> Result<Value> {
+fn install(
+    store: &Store,
+    catalog: Option<&Path>,
+    bind: IpAddr,
+    port: u16,
+    dry_run: bool,
+) -> Result<Value> {
     ensure!(port > 0, "Choose a fixed nonzero port");
+    crate::server::validate_bind(store, bind)?;
     let config = Settings {
         port,
+        bind,
         catalog: catalog.map(fs::canonicalize).transpose()?,
         state: "prepared".into(),
     };
@@ -363,7 +388,7 @@ fn install(store: &Store, catalog: Option<&Path>, port: u16, dry_run: bool) -> R
     )?;
     if dry_run {
         return Ok(
-            json!({"definition":spec,"path":unit_path(store)?,"port":port,"startup":"User sign-in","copies_executable":true,"starts_now":false}),
+            json!({"definition":spec,"path":unit_path(store)?,"port":port,"bind":bind,"startup":"User sign-in","copies_executable":true,"starts_now":false}),
         );
     }
     ensure!(
@@ -430,7 +455,7 @@ fn install(store: &Store, catalog: Option<&Path>, port: u16, dry_run: bool) -> R
         &serde_json::to_vec_pretty(&config)?,
     )?;
     Ok(
-        json!({"installed":true,"starts_now":false,"next":"Run selfhost dashboard start, then selfhost dashboard logs for your local sign-in link","port":port}),
+        json!({"installed":true,"starts_now":false,"next":"Run selfhost dashboard start, then selfhost dashboard logs for sign-in and recovery instructions","port":port,"bind":bind}),
     )
 }
 fn uninstall(store: &Store) -> Result<Value> {
@@ -472,7 +497,18 @@ fn uninstall(store: &Store) -> Result<Value> {
 fn stop(store: &Store) -> Result<Value> {
     let config = settings(store)?.context("No dashboard service installed")?;
     let result = manager(store, "stop");
-    let address = std::net::SocketAddr::from(([127, 0, 0, 1], config.port));
+    let address = SocketAddr::new(
+        if config.bind.is_unspecified() {
+            if config.bind.is_ipv6() {
+                std::net::Ipv6Addr::LOCALHOST.into()
+            } else {
+                default_bind()
+            }
+        } else {
+            config.bind
+        },
+        config.port,
+    );
     for _ in 0..100 {
         if std::net::TcpStream::connect_timeout(&address, std::time::Duration::from_millis(100))
             .is_err()
@@ -490,6 +526,7 @@ fn stop(store: &Store) -> Result<Value> {
 fn domain(
     store: &Store,
     value: &str,
+    bind: IpAddr,
     port: u16,
     revision: Option<&str>,
     confirm: bool,
@@ -499,6 +536,10 @@ fn domain(
         url.scheme() == "https" && url.path() == "/" && port > 0,
         "Use an HTTPS origin without a path and a fixed backend port"
     );
+    ensure!(
+        !bind.is_unspecified() && !bind.is_multicast(),
+        "Proxy examples need a reachable backend IP, not a wildcard or multicast address"
+    );
     let origin = url.origin().ascii_serialization();
     let config = store.login_config()?;
     if let Some(mut config) = config {
@@ -507,7 +548,7 @@ fn domain(
             return crate::identity_setup::apply(store, config, revision, confirm);
         }
         let mut plan = crate::identity_setup::plan(store, &config)?;
-        plan["proxy"] = proxy_help(&url, port);
+        plan["proxy"] = proxy_help(&url, bind, port);
         return Ok(plan);
     }
     ensure!(
@@ -515,19 +556,25 @@ fn domain(
         "Connect an identity provider before applying a public domain"
     );
     Ok(
-        json!({"public_url":origin,"callback":format!("{origin}/auth/callback"),"proxy":proxy_help(&url,port),"next":"In Access, connect an identity provider using this Selfhost address. Remote access requires an explicitly authorized identity."}),
+        json!({"public_url":origin,"callback":format!("{origin}/auth/callback"),"proxy":proxy_help(&url,bind,port),"next":"In Access, connect an identity provider using this Selfhost address. Remote access requires an explicitly authorized identity."}),
     )
 }
-fn proxy_help(url: &reqwest::Url, port: u16) -> Value {
-    json!({"upstream":format!("http://127.0.0.1:{port}"),"preserve_host":url.authority(),"caddy":format!("{} {{\n  reverse_proxy 127.0.0.1:{port}\n}}",url.authority()),"nginx":format!("location / {{\n  proxy_pass http://127.0.0.1:{port};\n  proxy_set_header Host $http_host;\n  proxy_set_header X-Forwarded-Proto https;\n}}"),"notes":["Configure DNS and a valid TLS certificate on your proxy. Keep the original public Host header.","Selfhost stays bound to loopback. For a proxy on another host or in an LXC/container, use a secured tunnel to this backend. The proxy's own localhost is a different machine/namespace.","Forwarded headers cannot grant access. Configure the exact Selfhost public origin and an identity provider before remote sign-in."]})
+fn proxy_help(url: &reqwest::Url, bind: IpAddr, port: u16) -> Value {
+    let upstream = SocketAddr::new(bind, port);
+    json!({"upstream":format!("http://{upstream}"),"preserve_host":url.authority(),"caddy":format!("{} {{\n  reverse_proxy {upstream}\n}}",url.authority()),"nginx":format!("location / {{\n  proxy_pass http://{upstream};\n  proxy_set_header Host $http_host;\n  proxy_set_header X-Forwarded-Proto https;\n}}"),"notes":["Configure DNS and a valid TLS certificate on your proxy. Keep the original public Host header.","Use --bind with a private/VPN IP for a remote proxy, and restrict backend traffic to that proxy. A loopback listener instead needs a secured tunnel from the proxy's namespace. This command does not change the listener.","Forwarded headers cannot grant access. Configure the exact Selfhost HTTPS origin and an identity provider before remote binding. Use an encrypted tunnel or VPN between hosts."]})
 }
+
 pub async fn execute(
     store: &Store,
     catalog: Option<&Path>,
     command: DashboardCommand,
 ) -> Result<()> {
     let result = match command {
-        DashboardCommand::Install { port, dry_run } => install(store, catalog, port, dry_run)?,
+        DashboardCommand::Install {
+            port,
+            bind,
+            dry_run,
+        } => install(store, catalog, bind, port, dry_run)?,
         DashboardCommand::Start => {
             ensure!(
                 settings(store)?.is_some(),
@@ -566,11 +613,19 @@ pub async fn execute(
         }
         DashboardCommand::Domain {
             url,
+            bind,
             port,
             revision,
             confirm_callbacks,
-        } => domain(store, &url, port, revision.as_deref(), confirm_callbacks)?,
-        DashboardCommand::Run { port } => {
+        } => domain(
+            store,
+            &url,
+            bind,
+            port,
+            revision.as_deref(),
+            confirm_callbacks,
+        )?,
+        DashboardCommand::Run { port, bind } => {
             let dir = directory(store);
             private_dir(&dir)?;
             let log = fs::OpenOptions::new()
@@ -581,7 +636,13 @@ pub async fn execute(
             if let Some(catalog) = catalog {
                 args.extend(["--catalog-dir".into(), text(catalog)?]);
             }
-            args.extend(["serve".into(), "--port".into(), port.to_string()]);
+            args.extend([
+                "serve".into(),
+                "--port".into(),
+                port.to_string(),
+                "--bind".into(),
+                bind.to_string(),
+            ]);
             let mut child = Command::new(std::env::current_exe()?);
             child
                 .args(args)
@@ -616,6 +677,36 @@ pub async fn execute(
 mod tests {
     use super::*;
     #[test]
+    fn service_settings_upgrade_preserves_loopback_and_explicit_bind_arguments() {
+        let mut config: Settings =
+            serde_json::from_str(r#"{"port":8372,"catalog":null,"state":"installed"}"#).unwrap();
+        assert_eq!(config.bind, default_bind());
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::open(dir.path().into()).unwrap();
+        config.bind = "192.0.2.10".parse().unwrap();
+        let args = arguments(&store, &config).unwrap();
+        assert!(args.windows(2).any(|pair| pair == ["--bind", "192.0.2.10"]));
+        let restored: Settings =
+            serde_json::from_slice(&serde_json::to_vec(&config).unwrap()).unwrap();
+        assert_eq!(restored.bind, config.bind);
+        let url = reqwest::Url::parse("https://selfhost.example.test").unwrap();
+        assert_eq!(
+            proxy_help(&url, "2001:db8::10".parse().unwrap(), 8372)["upstream"],
+            "http://[2001:db8::10]:8372"
+        );
+        assert!(
+            domain(
+                &store,
+                url.as_str(),
+                "0.0.0.0".parse().unwrap(),
+                8372,
+                None,
+                false
+            )
+            .is_err()
+        );
+    }
+    #[test]
     fn service_definitions_escape_literal_arguments() {
         let args = vec![
             "--data-dir".into(),
@@ -641,8 +732,26 @@ mod tests {
     fn domain_plan_never_saves_unconfigured_remote_access() {
         let dir = tempfile::tempdir().unwrap();
         let store = Store::open(dir.path().into()).unwrap();
-        assert!(domain(&store, "http://example.test", 8372, None, false).is_err());
-        let plan = domain(&store, "https://example.test", 8372, None, false).unwrap();
+        assert!(
+            domain(
+                &store,
+                "http://example.test",
+                default_bind(),
+                8372,
+                None,
+                false
+            )
+            .is_err()
+        );
+        let plan = domain(
+            &store,
+            "https://example.test",
+            default_bind(),
+            8372,
+            None,
+            false,
+        )
+        .unwrap();
         assert_eq!(plan["callback"], "https://example.test/auth/callback");
         assert!(store.login_config().unwrap().is_none());
     }
